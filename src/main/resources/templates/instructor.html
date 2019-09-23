@@ -1,0 +1,800 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <title th:text="#{instructor_view_title}">LTI Gradebook Home</title>
+<body>
+
+<div class="alert alert-info" th:if="${assignmentList.isEmpty()}" th:text="#{shared_no_assignments}">
+  There are no assignments in this course.
+</div>
+
+<div class="alert alert-success" th:if="${errors != null}" th:text="#{instructor_import_success_msg}">
+  CSV file imported successfully.
+</div>
+
+<div class="alert alert-warning" th:if="${errors != null && errors}" th:text="#{instructor_import_errors_msg}">
+  One or some grades in the CSV file could not be saved due to an error in them.
+</div>
+
+<div class="alert alert-warning" th:if="${groupWeightsNot100}" th:text="#{instructor_weights_not_100}">
+  The sum of group weights belonging this course does not add up to 100%.
+</div>
+
+<div class="table-container" id="tableContainer">
+  <div class="top-bar row">
+    <div class="top-bar-left col-md-3">
+      <input type="text" id="studentFilter" class="canvas-input" th:placeholder="#{instructor_filter_placeholder}" />
+    </div>
+    <div class="top-bar-right col-md-9">
+      <div class="canvas-btn-group">
+        <select id="conversionScaleSelector" class="canvas-btn" name="conversionScaleSelector">
+            <option value="FIFTY" th:selected="${'0.5'==coursePreference.conversionScale}"><span th:text="#{instructor_conversion_scale(' 50%')}"></span></option>
+            <option value="SIXTY" th:selected="${'0.6'==coursePreference.conversionScale}"><span th:text="#{instructor_conversion_scale(' 60%')}"></span></option>
+            <option value="SEVENTY" th:selected="${'0.7'==coursePreference.conversionScale}"><span th:text="#{instructor_conversion_scale(' 70%')}"></span></option>
+            <option value="EIGHTY" th:selected="${'0.8'==coursePreference.conversionScale}"><span th:text="#{instructor_conversion_scale(' 80%')}"></span></option>
+            <option value="NINETY" th:selected="${'0.9'==coursePreference.conversionScale}"><span th:text="#{instructor_conversion_scale(' 90%')}"></span></option>
+        </select>
+      </div>
+      <div class="canvas-btn-group">
+        <button class="canvas-btn" th:title="#{instructor_option_import}" data-toggle="modal" data-target="#importCsv">
+          <span class="fas fa-file-import"></span>
+          <span class="d-none d-sm-inline-block" th:text="#{instructor_option_import}">Import</span>
+        </button>
+        <button class="canvas-btn" th:title="#{instructor_option_export}" data-toggle="modal" data-target="#exportCsv">
+          <span class="fas fa-file-export"></span>
+          <span class="d-none d-sm-inline-block" th:text="#{instructor_option_export}">Export</span>
+          <div class="spinner-border" role="status">
+            <span class="sr-only" th:text="#{instructor_spinner_loading}">Loading</span>
+          </div>
+        </button>
+      </div>
+      <div class="canvas-btn-group" th:if="${isBannerEnabled}">
+        <a class="canvas-btn" href="/send_to_banner" th:href="@{/send_to_banner}" th:title="#{instructor_send_grades_banner}">
+          <span class="fas fa-graduation-cap"></span>
+          <span class="d-none d-sm-inline-block" th:text="#{instructor_send_grades_banner}">Send grades to banner</span>
+        </a>
+      </div>
+      <div class="canvas-btn-group" th:if="${isAdminUser}">
+        <a class="canvas-btn" href="/admin_main" th:href="@{/admin_main}" target="_blank" th:title="#{instructor_option_admin}">
+          <span class="fas fa-cog"></span>
+        </a>
+      </div>
+    </div>
+  </div>
+  <div th:id="${'studentTable' + courseId}" th:if="${!assignmentList.isEmpty()}" class="studentTable"></div>
+
+  <!-- Modal Import -->
+  <div class="modal fade" id="importCsv" tabindex="-1" role="dialog" aria-labelledby="importCsvModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="importCsvModalLabel" th:text="#{instructor_import_modal_title(${courseName})}">Import Gradebook</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-danger d-none" id="import-error" role="alert" th:text="#{instructor_import_modal_error}">Invalid CSV file. Failed to update course grades.</div>
+          <form th:action="@{/import_csv}" class="dropzone" id="file-dropzone"></form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="cancelSubmitCsv" class="canvas-btn rounded-btn" data-dismiss="modal" th:text="#{instructor_import_modal_cancel}">Cancel</button>
+          <button type="button" id="submitCsv" class="canvas-btn rounded-btn primary-btn" disabled="true">
+            <span th:text="#{instructor_import_modal_import}">Import</span>
+            <div class="spinner-border" role="status">
+              <span class="sr-only" th:text="#{instructor_spinner_loading}">Loading</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Export -->
+  <div class="modal fade" id="exportCsv" tabindex="-1" role="dialog" aria-labelledby="exportCsvModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exportCsvModalLabel" th:text="#{instructor_export_modal_title(${courseName})}">Export Gradebook</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="exportCsvSection" th:text="#{instructor_export_modal_label_section}">Filter by section</label>
+            <select class="form-control" name="sectionId" id="exportCsvSection">
+              <option value="all" th:text="#{instructor_export_modal_all_sections}">All sections</option>
+              <option th:each="section : ${sectionList}" th:value="${section.id}" th:text="${section.name}"></option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="cancelSubmitCsv" class="canvas-btn rounded-btn" data-dismiss="modal" th:text="#{instructor_export_modal_close}">Close</button>
+          <button type="button" id="export-button" class="canvas-btn rounded-btn primary-btn">
+            <span th:text="#{instructor_export_modal_export}">Export</span>
+            <div class="spinner-border" role="status">
+              <span class="sr-only" th:text="#{instructor_spinner_loading}">Loading</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Assignment Details -->
+  <div class="modal fade" id="assignmentDetails" tabindex="-1" role="dialog" aria-labelledby="assignmentDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="assignmentDetailsModalLabel"></h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-sm-7"><span th:text="#{instructor_details_modal_label_mean}"></span></div>
+            <div class="col-sm-5"><span id="meanValue"></span></div>
+          </div>
+          <div class="row">
+            <div class="col-sm-7"><span th:text="#{instructor_details_modal_label_max}"></span></div>
+            <div class="col-sm-5"><span id="maxValue"></span></div>
+          </div>
+          <div class="row">
+            <div class="col-sm-7"><span th:text="#{instructor_details_modal_label_min}"></span></div>
+            <div class="col-sm-5"><span id="minValue"></span></div>
+          </div>
+          <div class="row">
+            <div class="col-sm-7"><span th:text="#{instructor_details_modal_label_total}"></span></div>
+            <div class="col-sm-5"><span id="totalGraded"></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Group Details -->
+  <div class="modal fade" id="groupDetails" tabindex="-1" role="dialog" aria-labelledby="groupDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="groupDetailsModalLabel"></h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-sm-7"><span th:text="#{instructor_details_modal_label_mean}"></span></div>
+            <div class="col-sm-5"><span id="meanValue"></span></div>
+          </div>
+          <div class="row">
+            <div class="col-sm-7"><span th:text="#{instructor_details_modal_label_max}"></span></div>
+            <div class="col-sm-5"><span id="maxValue"></span></div>
+          </div>
+          <div class="row">
+            <div class="col-sm-7"><span th:text="#{instructor_details_modal_label_min}"></span></div>
+            <div class="col-sm-5"><span id="minValue"></span></div>
+          </div>
+          <div class="row">
+            <div class="col-sm-7"><span th:text="#{instructor_details_modal_label_total}"></span></div>
+            <div class="col-sm-5"><span id="totalGraded" th:attr="data-template=#{instructor_details_modal_total}"></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="omitFromFinalGrade" class="d-none">
+  <span class="col-icon fas fa-exclamation-circle" th:title="#{instructor_header_omit_final_grade}"></span>
+</div>
+<div id="assignmentMuted" class="d-none">
+  <span class="col-icon fas fa-bell-slash" th:title="#{instructor_header_muted_assignment}"></span>
+</div>
+
+<!-- Header cell dropdown -->
+<div id="header-cell-dropdown" class="d-none">
+  <div class="header-cell-dropdown dropdown">
+    <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></button>
+    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+      <a class="dropdown-item dropdown-assignment-details" href="#" data-toggle="modal" data-target="#assignmentDetails" th:text="#{instructor_dropdown_assignment_details}">Assignment Details</a>
+      <a class="dropdown-item dropdown-speed-grader" target="_blank" href="#" th:text="#{instructor_dropdown_speed_grader}">Speed Grader</a>
+      <a class="dropdown-item dropdown-minimum-score" href="#" th:text="#{instructor_dropdown_minimum_score}">Set Minimum Score for Empty Cells</a>
+    </div>
+  </div>
+</div>
+
+<!-- Header group cell dropdown -->
+<div id="header-group-cell-dropdown" class="d-none">
+  <div class="header-cell-dropdown header-group-cell-dropdown dropdown">
+    <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></button>
+    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+      <a class="dropdown-item dropdown-group-details" href="#" data-toggle="modal" data-target="#groupDetails" th:text="#{instructor_dropdown_group_details}">Group Details</a>
+    </div>
+  </div>
+</div>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const LEFT_READ_ONLY_COLS = /*[[${LEFT_READ_ONLY_COLS}]]*/;
+    const RIGHT_READ_ONLY_COLS = /*[[${RIGHT_READ_ONLY_COLS}]]*/;
+    const TOTAL_COLUMNS = /*[[${TOTAL_COLUMNS}]]*/;
+    const INVALID_VALUES_ARRAY = ['', '-', 'A+', 'A', 'A-','B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'F'];
+    const MIN_GRADE = 1;
+    const MAX_GRADE = 7;
+    const GRADE_NOT_AVAILABLE = '-';
+
+    window.GbGradeTable = { _onReadyCallbacks: [] };
+    var assignmentGroupArray = /*[[${assignmentGroupArray}]]*/;
+    var columns = /*[[${tableHeaderList}]]*/;
+    var data = /*[[${studentRowList}]]*/;
+    var cellSettings = /*[[${cellRowListSettings}]]*/;
+    var messages = {
+      instructor_import_modal_info: /*[[#{instructor_import_modal_info}]]*/,
+      instructor_not_supported: /*[[#{instructor_not_supported}]]*/,
+      instructor_replaced_grade: /*[[#{instructor_replaced_grade}]]*/,
+      instructor_assignment_not_assigned: /*[[#{instructor_assignment_not_assigned}]]*/,
+      instructor_details_modal_title: /*[[#{instructor_details_modal_title}]]*/,
+      instructor_details_modal_total: /*[[#{instructor_details_modal_total}]]*/,
+      instructor_group_details_modal_title: /*[[#{instructor_group_details_modal_title}]]*/,
+      instructor_grade_out_range: /*[[#{instructor_grade_out_range}]]*/,
+      instructor_no_points_possible: /*[[#{instructor_no_points_possible}]]*/
+    };
+    var container = $('#studentTable' + [[${courseId}]])[0];
+    var studentFilter = document.getElementById('studentFilter');
+
+    var isValidGrade = function isValidGrade(grade) {
+      var floatValue = parseFloat(grade);
+      if (floatValue !== NaN && floatValue >= MIN_GRADE && floatValue <= MAX_GRADE) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+
+    GbGradeTable.instance = new Handsontable(container, {
+      data: data,
+      colHeaders: columns,
+      dropdownMenu: false,
+      columnSorting: true,
+      manualColumnMove: true,
+      manualColumnResize: true,
+      filters: true,
+      autoRowSize: true,
+      autoColSize: false,
+      currentRowClassName: 'currentRow',
+      currentColClassName: 'currentCol',
+      multiSelect: false,
+      copyPaste: false,
+      persistentState: true,
+      width: '100%',
+      height: 320,
+      fixedColumnsLeft: LEFT_READ_ONLY_COLS-1,
+      fixedColumnsRight: RIGHT_READ_ONLY_COLS,
+      className: 'htCenter',
+      modifyColWidth: function(width, col){
+          // Max column width is the half of the screen less 20 pixels
+          var maxWidth = window.innerWidth / 2 - 20;
+          if(width > maxWidth) {
+            return maxWidth
+          }
+      },
+      colHeaders: function(col) {
+          return columnRenderer(col);
+      },
+      cells: function(row, col, prop) {
+          var properties = cellSettings[row+1][col];
+          var prevRenderer = properties.renderer;
+          if (properties === undefined) properties = [];
+
+          properties.renderer = cellBlankRenderer;
+
+          if (properties.noPointsPossible) {
+            properties.renderer = cellNoPointsRenderer;
+          }
+
+          if (properties.overwrittenGrade) {
+            if (properties.gradedPreviously)
+              properties.renderer = cellConvertedRatingRenderer;
+            else
+              properties.renderer = cellRatingRenderer;
+          }
+
+          if (col >= (TOTAL_COLUMNS - RIGHT_READ_ONLY_COLS)) {
+            properties.editor = false;
+          }
+
+          if (properties.isVisibleForUser !== undefined && !properties.isVisibleForUser) {
+            properties.editor = false;
+            properties.renderer = cellLockedRenderer;
+          }
+
+          if (properties.gradeTypeNotSupported) {
+            properties.editor = false;
+            properties.renderer = cellNotSupportedRenderer;
+          }
+
+          if (prevRenderer) {
+            properties.renderer = prevRenderer;
+          }
+
+          if (col < LEFT_READ_ONLY_COLS) {
+            properties.editor = false;
+            if (properties.className)
+              properties.className = properties.className + ' align-left';
+            else
+              properties.className = 'align-left';
+          }
+
+          return properties;
+      },
+      beforeColumnMove: function(columnsMoving, target) {
+          //Ignore first columns when moving another column
+          if (columnsMoving[0] < LEFT_READ_ONLY_COLS || target < LEFT_READ_ONLY_COLS) {
+            return false;
+          }
+          //Ignore last columns when moving another column
+          if (columnsMoving[0] >= (TOTAL_COLUMNS - RIGHT_READ_ONLY_COLS) || target > (TOTAL_COLUMNS - RIGHT_READ_ONLY_COLS)) {
+            return false;
+          }
+          return true;
+      },
+      afterRender: function() {
+          filterTable();
+      },
+      beforeChange: function(changes, source) {
+          $(changes).each(function(idx, elem) {
+            var physicalRow = GbGradeTable.instance.toPhysicalRow(elem[0]);
+            var cellMeta = cellSettings[physicalRow+1][elem[1]];
+            //If not editable, avoid the change
+            if (cellMeta.editor !== undefined && !cellMeta.editor && changes[idx][3] === '') {
+              changes[idx][3] = changes[idx][2];
+              return;
+            }
+            var input = elem[3].replace(/,/g, '.');
+            if (isValidGrade(input)) {
+              var value = parseFloat(input);
+              value = math.round(value, 1);
+              if (Number.isInteger(value)) value = value + '.0';
+              changes[idx][3] = value;
+            }
+          });
+          return changes;
+      },
+      afterColumnSort: function() {
+        $('.header-cell-dropdown.show').dropdown('toggle');
+        $('body > .dropdown-menu.show').remove();
+      },
+      afterChange: function(changes, source) {
+          if (changes) {
+            for (var i=0; i<changes.length; i++) {
+              var change = changes[i];
+              var row = change[0];
+              var col = change[1];
+              if (col >= (TOTAL_COLUMNS - RIGHT_READ_ONLY_COLS)) continue;
+              var $cell = $(GbGradeTable.instance.getCell(row, col));
+              var visualRow = GbGradeTable.instance.toVisualRow(row);
+              var visualCol = GbGradeTable.instance.toVisualColumn(col);
+              var physicalRow = GbGradeTable.instance.toPhysicalRow(row);
+              var physicalCol = GbGradeTable.instance.toPhysicalColumn(col);
+              var cellMeta = GbGradeTable.instance.getCellMeta(row, visualCol);
+
+              var oldScore = change[2];
+              var newScore = change[3];
+              var studentGrade = {};
+              studentGrade['assignmentId'] = cellMeta.assignmentId;
+              studentGrade['userId'] = cellMeta.userId;
+              studentGrade['grade'] = newScore;
+              console.debug('Assignment ' + cellMeta.assignmentId + ' changed to ' + newScore + ' for user '+cellMeta.userId);
+
+              if (oldScore+'' !== newScore+'') {
+                $.ajax({
+                  url: /*[[@{/postGrade}]]*/,
+                  type: 'POST',
+                  data: JSON.stringify(studentGrade),
+                  dataType: 'json',
+                  custom: {
+                    row: row,
+                    col: col,
+                    visualRow: visualRow,
+                    physicalRow: physicalRow,
+                    physicalCol: physicalCol
+                  },
+                  contentType: 'application/json; charset=utf-8'
+
+                }).done(function() {
+                  console.debug('The grade has been saved successfully.');
+                  var settings = cellSettings[this.custom.physicalRow+1][this.custom.col];
+                  cellSettings[this.custom.physicalRow+1][this.custom.col].renderer = cellSaveSuccessRenderer;
+                  var groupId = settings.assignmentGroupId;
+                  var userId = settings.userId;
+                  if (!settings.omitFromFinalGrade && !settings.assignmentIsMuted && !settings.isZeroPoints) {
+                    calcGroupGrade(groupId, userId, this.custom.physicalRow, true);
+                    calcFinalGrade(userId, this.custom.physicalRow, true, true);
+                    calcFinalGrade(userId, this.custom.physicalRow, false, true);
+                  }
+
+                }).fail(function() {
+                  console.debug('The grade has not been saved.');
+                  cellSettings[this.custom.physicalRow+1][this.custom.col].renderer = cellSaveErrorRenderer;
+
+                }).always(function(){
+                  console.debug('After posting the grades to the tool.');
+                  GbGradeTable.instance.render();
+                });
+              }
+            }
+          }
+        }
+    });
+
+    /**** RENDERERS ****/
+    function columnRenderer(col) {
+      var html = '';
+      var properties = cellSettings[0][col];
+      if (properties === undefined) properties = [];
+      if (properties.omitFromFinalGrade) html += document.getElementById('omitFromFinalGrade').firstElementChild.outerHTML;
+      if (properties.assignmentIsMuted) html += document.getElementById('assignmentMuted').firstElementChild.outerHTML;
+      html += '<span>' + columns[col] + '</span>';
+      if (col >= LEFT_READ_ONLY_COLS && col < (TOTAL_COLUMNS - RIGHT_READ_ONLY_COLS)) {
+        var toClone = document.getElementById('header-cell-dropdown').firstElementChild.outerHTML;
+        toClone = toClone.replace('class="dropdown-menu"', 'class="dropdown-menu" data-col="' + col + '"');
+        html += toClone;
+      }
+      if ((col >= (TOTAL_COLUMNS - RIGHT_READ_ONLY_COLS)) && (col < (TOTAL_COLUMNS - 2))) {
+        var toClone = document.getElementById('header-group-cell-dropdown').firstElementChild.outerHTML;
+        toClone = toClone.replace('class="dropdown-menu"', 'class="dropdown-menu" data-col="' + col + '"');
+        html += toClone;
+      }
+      return html;
+    }
+
+    function cellBlankRenderer(instance, td, row, col, prop, value, cellProperties) {
+      Handsontable.renderers.TextRenderer.apply(this, arguments);
+      $(td).html('<div>' + td.innerHTML + '</div>');
+    }
+
+    function cellRatingRenderer(instance, td, row, col, prop, value, cellProperties) {
+      Handsontable.renderers.TextRenderer.apply(this, arguments);
+      $(td).html('<div class="gb-save-info">' + td.innerHTML + '</div>');
+    }
+
+    function cellConvertedRatingRenderer(instance, td, row, col, prop, value, cellProperties) {
+      Handsontable.renderers.TextRenderer.apply(this, arguments);
+      $(td).html('<div class="gb-save-info" title="' + messages.instructor_replaced_grade + '">' + td.innerHTML + '</div>');
+    }
+
+    function cellNotSupportedRenderer(instance, td, row, col, prop, value, cellProperties) {
+        Handsontable.renderers.TextRenderer.apply(this, arguments);
+        $(td).html('<div class="gb-cell-disabled" title="' + messages.instructor_not_supported + '">' + td.innerHTML + '</div>');
+    }
+
+    function cellNoPointsRenderer(instance, td, row, col, prop, value, cellProperties) {
+        Handsontable.renderers.TextRenderer.apply(this, arguments);
+        $(td).html('<div class="gb-not-supported" title="' + messages.instructor_no_points_possible + '">' + td.innerHTML + '</div>');
+    }
+
+    var timeout;
+    function cellSaveSuccessRenderer(instance, td, row, col, prop, value, cellProperties) {
+      Handsontable.renderers.TextRenderer.apply(this, arguments);
+      var value = td.innerHTML;
+      //if (Number.isInteger(value)) GbGradeTable.instance.setDataAtCell(row, col, value);
+      $(td).html('<div class="gb-save-success">' + value + '</div>');
+      var physicalRow = GbGradeTable.instance.toPhysicalRow(row);
+      var physicalCol = GbGradeTable.instance.toPhysicalColumn(col);
+      clearTimeout(timeout);
+      var timeout = setTimeout(function() {
+        var gradedPreviously = cellSettings[physicalRow+1][physicalCol].gradedPreviously;
+        if (gradedPreviously)
+          cellSettings[physicalRow+1][physicalCol].renderer = cellConvertedRatingRenderer;
+        else
+          cellSettings[physicalRow+1][physicalCol].renderer = cellRatingRenderer;
+        var hasClassSuccess = $(td).find('.gb-save-success');
+        if (hasClassSuccess.length > 0) {
+          hasClassSuccess.removeClass('gb-save-success').addClass('gb-save-info');
+          if (gradedPreviously) hasClassSuccess.attr('title', messages.instructor_replaced_grade);
+        }
+      }, 3000);
+    }
+
+    function cellSaveErrorRenderer(instance, td, row, col, prop, value, cellProperties) {
+      Handsontable.renderers.TextRenderer.apply(this, arguments);
+      $(td).html('<div class="gb-save-error" title="' + messages.instructor_grade_out_range + '">' + td.innerHTML + '</div>');
+    }
+
+    function cellLoadingRenderer(instance, td, row, col, prop, value, cellProperties) {
+      Handsontable.renderers.TextRenderer.apply(this, arguments);
+      $(td).html('<div class="spinner"></div>');
+    }
+
+    function cellLockedRenderer(instance, td, row, col, prop, value, cellProperties) {
+      Handsontable.renderers.TextRenderer.apply(this, arguments);
+      $(td).html('<div class="gb-cell-disabled" title="' + messages.instructor_assignment_not_assigned + '">' + td.innerHTML + '</div>');
+    }
+    /**** END OF RENDERERS ****/
+
+    // Filter table
+    function filterTable() {
+      if (GbGradeTable.instance === undefined) return false;
+      $('.ht_master.handsontable .htCore tbody tr, .ht_clone_left.handsontable .htCore tbody tr').removeClass('hidden');
+      $(GbGradeTable.instance.getData()).each(function(index, elem) {
+        var idValue = elem[0].toLowerCase();
+        var nameValue = elem[1].toLowerCase();
+        var sectionValue = elem[2].toLowerCase();
+        var inputValue = studentFilter.value.toLowerCase();
+        if (idValue.indexOf(inputValue) == -1 && nameValue.indexOf(inputValue) == -1 && sectionValue.indexOf(inputValue) == -1) {
+          $($('.ht_master.handsontable .htCore tbody tr')[index]).addClass('hidden');
+          $($('.ht_clone_left.handsontable .htCore tbody tr')[index]).addClass('hidden');
+        }
+      });
+    }
+    var debounceFilterTable = Handsontable.helper.debounce(filterTable, 200);
+    studentFilter.addEventListener('keydown', function(event) {
+      debounceFilterTable();
+    });
+
+    /**** IMPORT AND EXPORT ****/
+    // Export data to CSV
+    $('#export-button').click(function() {
+      $('#export-button').prop('disabled', true);
+      $('#export-button').addClass('spinner');
+      $.ajax({
+        url: /*[[@{/export_csv}]]*/,
+        method: 'GET',
+        data: {
+          'sectionId': $('#exportCsvSection').val()
+        },
+        xhrFields: {
+          responseType: 'blob'
+        },
+        success: function (data) {
+          var a = document.createElement('a');
+          var url = window.URL.createObjectURL(data);
+          a.href = url;
+          a.download = /*[[${exportFileName}]]*/;
+          document.body.append(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+          $('#export-button').prop('disabled', false);
+          $('#export-button').removeClass('spinner');
+        }
+      });
+    });
+
+    // Import CSV
+    Dropzone.options.fileDropzone = {
+      autoProcessQueue: false,
+      maxFiles: 1,
+      dictDefaultMessage: messages.instructor_import_modal_info,
+      acceptedMimeTypes: '.csv',
+      init: function () {
+        var myDropzone = this;
+        $('#submitCsv').click(function() {
+          myDropzone.processQueue();
+          $('#submitCsv').prop('disabled', true);
+          $('#submitCsv').addClass('spinner');
+        });
+        $('#importCsv').on('hidden.bs.modal', function (e) {
+          myDropzone.removeAllFiles(true);
+          $('#submitCsv').prop('disabled', true);
+        })
+        myDropzone.on('addedfile', function(file) {
+          $('#submitCsv').prop('disabled', false);
+        });
+        myDropzone.on('success', function(file, errors) {
+          window.location = [[@{/}]] + '?errors=' + errors;
+        });
+        myDropzone.on('error', function() {
+          myDropzone.removeAllFiles(true);
+          $('#import-error').removeClass('d-none');
+          $('#submitCsv').removeClass('spinner');
+          $('#submitCsv').prop('disabled', true);
+        });
+      }
+    };
+    $("#file-dropzone").dropzone();
+    /**** END OF IMPORT AND EXPORT ****/
+
+    /**** DROPDOWNS ****/
+    // Assignment header dropdowns creation
+    $('body').on('show.bs.dropdown', '.dropdown', function() {
+      $('body').append($(this).find('.dropdown-menu').css({
+        position: 'absolute',
+        left: $(this).offset().left,
+        top: $(this).offset().top
+      }).detach());
+    });
+
+    // Close dropdowns on scroll
+    $('.wtHolder').scroll(function() {
+      $('.header-cell-dropdown.show').dropdown('toggle');
+      $('body > .dropdown-menu.show').remove();
+    });
+
+    // Populate assignment details modal 
+    $('body').on('click', '.dropdown-assignment-details', function(e) {
+      e.preventDefault();
+      var col = $(this).parent().data('col');
+      var headerSettings = cellSettings[0][col];
+      var visualCol = GbGradeTable.instance.toVisualColumn(col);
+      var meanValue = GRADE_NOT_AVAILABLE;
+      var maxValue = GRADE_NOT_AVAILABLE;
+      var minValue = GRADE_NOT_AVAILABLE;
+      var totalGraded = 0;
+
+      try {
+        var updatedColData = _.difference(GbGradeTable.instance.getDataAtCol(visualCol), INVALID_VALUES_ARRAY);
+        var meanValue = math.round(math.mean(updatedColData), 1);
+        var maxValue = math.max(updatedColData);
+        var minValue = math.min(updatedColData);
+        totalGraded = updatedColData.length;
+        if (Number.isInteger(meanValue)) meanValue = meanValue + '.0';
+      } catch(error) {
+        //TODO: Set the mean value to invalid when the data is not valid
+      }
+
+      $('#assignmentDetails .modal-title').text(messages.instructor_details_modal_title.replace('{0}', headerSettings.assignmentName));
+      $('#assignmentDetails #meanValue').text(meanValue);
+      $('#assignmentDetails #minValue').text(minValue);
+      $('#assignmentDetails #maxValue').text(maxValue);
+      $('#assignmentDetails #totalGraded').text(messages.instructor_details_modal_total.replace('{0}', totalGraded));
+    });
+
+    // Put speed grader url
+    $('body').on('click', '.dropdown-speed-grader', function() {
+      var col = $(this).parent().data('col');
+      var headerSettings = cellSettings[0][col];
+      $(this).attr('href', headerSettings.speedGraderUrl)
+    });
+
+    // Set minimum possible score to all col cells
+    $('body').on('click', '.dropdown-minimum-score', function(e) {
+      e.preventDefault();
+      $('body > .dropdown-menu.show').remove();
+      var col = $(this).parent().data('col');
+      var visualCol = GbGradeTable.instance.toVisualColumn(col);
+      var newArr = [];
+      var columnData = GbGradeTable.instance.getDataAtCol(visualCol);
+      $(columnData).each(function(idx, cellValue) {
+        var cellProperties = cellSettings[idx+1][col];
+        if ((cellValue === GRADE_NOT_AVAILABLE || cellValue === '') && cellProperties.isVisibleForUser && !cellProperties.gradeTypeNotSupported) columnData[idx] = MIN_GRADE + '';
+      });
+      while(columnData.length) newArr.push(columnData.splice(0, 1));
+      GbGradeTable.instance.populateFromArray(0, visualCol, newArr);
+    });
+
+    // Populate group details modal 
+    $('body').on('click', '.dropdown-group-details', function(e) {
+      e.preventDefault();
+      var col = $(this).parent().data('col') - (TOTAL_COLUMNS - RIGHT_READ_ONLY_COLS);
+      var headerSettings = Object.values(assignmentGroupArray)[col];
+      var visualCol = $(this).parent().data('col');
+      var meanValue = GRADE_NOT_AVAILABLE;
+      var maxValue = GRADE_NOT_AVAILABLE;
+      var minValue = GRADE_NOT_AVAILABLE;
+      var totalGraded = 0;
+
+      try {
+        var updatedColData = _.difference(GbGradeTable.instance.getDataAtCol(visualCol), INVALID_VALUES_ARRAY);
+        var meanValue = math.round(math.mean(updatedColData), 1);
+        var maxValue = math.max(updatedColData);
+        var minValue = math.min(updatedColData);
+        totalGraded = updatedColData.length;
+        if (Number.isInteger(meanValue)) meanValue = meanValue + '.0';
+      } catch(error) {
+        //TODO: Set the mean value to invalid when the data is not valid
+      }
+
+      $('#groupDetails .modal-title').text(messages.instructor_group_details_modal_title.replace('{0}', headerSettings.assignmentGroupName));
+      $('#groupDetails #meanValue').text(meanValue);
+      $('#groupDetails #minValue').text(minValue);
+      $('#groupDetails #maxValue').text(maxValue);
+      $('#groupDetails #totalGraded').text(messages.instructor_details_modal_total.replace('{0}', totalGraded));
+    });
+    /**** END OF DROPDOWNS ****/
+
+    /**** GROUP AND FINAL GRADES ****/
+    function calcGroupGrade(groupId, userId, row, renderCell) {
+      return new Promise((resolve, reject) => {
+        var assignmentGroupColIndex = assignmentGroupArray[groupId].assignmentGroupColIndex;
+        var realCol = TOTAL_COLUMNS-RIGHT_READ_ONLY_COLS+assignmentGroupColIndex;
+        var realRow = GbGradeTable.instance.toVisualRow(row) + 1;
+        cellSettings[row+1][realCol].renderer = cellLoadingRenderer;
+
+        $.ajax({
+          url: [[@{/getStudentGroupGrade}]] + '?groupId=' + groupId + '&studentId=' + userId,
+          type: 'POST',
+          contentType: 'text/plain; charset=utf-8'
+
+        }).done(function(grade) {
+          var assignmentGroupColIndex = assignmentGroupArray[groupId].assignmentGroupColIndex;
+          var realCol = TOTAL_COLUMNS-RIGHT_READ_ONLY_COLS+assignmentGroupColIndex;
+          var realRow = GbGradeTable.instance.toVisualRow(row);
+          cellSettings[row+1][realCol].renderer = cellBlankRenderer;
+          if (renderCell) {
+            GbGradeTable.instance.setDataAtCell(realRow, realCol, grade)
+          } else {
+            // If cell is visible, avoid method 'setDataAtCell' to avoid table re-render on each cell value change
+            var cell = GbGradeTable.instance.getCell(realRow, realCol);
+            if (cell !== undefined) $(cell).find('.spinner').text(grade).removeClass('spinner');
+          }
+          resolve(grade);
+        });
+      });
+    }
+
+    function calcFinalGrade(userId, row, isCurrentGrade, renderCell) {
+      return new Promise((resolve, reject) => {
+        var realCol = TOTAL_COLUMNS - 1;
+        if (isCurrentGrade) realCol--;
+        var realRow = GbGradeTable.instance.toVisualRow(row);
+        cellSettings[row+1][realCol].renderer = cellLoadingRenderer;
+
+        $.ajax({
+          url: [[@{/getStudentFinalGrade}]] + '?studentId=' + userId + '&isCurrentGrade=' + isCurrentGrade,
+          type: 'POST',
+          contentType: 'text/plain; charset=utf-8'
+
+        }).done(function(grade) {
+          var realCol = TOTAL_COLUMNS - 1;
+          if (isCurrentGrade) realCol--;
+          var realRow = GbGradeTable.instance.toVisualRow(row);
+          cellSettings[row+1][realCol].renderer = cellBlankRenderer;
+          if (renderCell) {
+            GbGradeTable.instance.setDataAtCell(realRow, realCol, grade)
+          } else {
+            // If cell is visible, avoid method 'setDataAtCell' to avoid table re-render on each cell value change
+            var cell = GbGradeTable.instance.getCell(realRow, realCol);
+            if (cell !== undefined) $(cell).find('.spinner').text(grade).removeClass('spinner');
+          }
+          resolve(grade);
+        });
+      });
+    }
+
+    var ajaxRequests = [];
+    for (var i = 0; i < GbGradeTable.instance.getData().length; i++) {
+      var physicalRow = GbGradeTable.instance.toPhysicalRow(i);
+      var userId = cellSettings[physicalRow+1][0].userId;
+      Object.keys(assignmentGroupArray).forEach(function(assignmentGroupId) {
+        ajaxRequests.push(calcGroupGrade(assignmentGroupId, userId, i, false));
+      });
+      ajaxRequests.push(calcFinalGrade(userId, i, true, false));
+      ajaxRequests.push(calcFinalGrade(userId, i, false, false));
+    }
+    Promise.all(ajaxRequests).then((arr) => {
+      var newArr = [];
+      while(arr.length) newArr.push(arr.splice(0, Object.keys(assignmentGroupArray).length + 2));
+      GbGradeTable.instance.populateFromArray(0, TOTAL_COLUMNS - RIGHT_READ_ONLY_COLS, newArr);
+      var columnSorting = GbGradeTable.instance.getPlugin('columnSorting');
+      columnSorting.sort(columnSorting.getSortConfig()[0]);
+    });
+    /**** END OF GROUP AND FINAL GRADES ****/
+
+    /**** SELECT THE WHOLE TEXTAREA ON CELL EDIT ****/
+    $('body').on('select', '.handsontableInput', function() {
+      this.select();
+    });
+    /**** END OF SELECT THE WHOLE TEXTAREA ON CELL EDIT ****/
+
+    /**** CHANGE CONVERSION SCALE **/
+    $('#conversionScaleSelector').change(function() {
+        var newConversionScale = this.value;
+        console.debug('Setting course conversion scale to ' + newConversionScale);
+        $.ajax({
+            url: [[@{/saveCourseConversionScale}]]  + '?newConversionScale=' + newConversionScale,
+            type: 'POST',
+            contentType: 'text/plain; charset=utf-8'
+        }).done(function() {
+            console.debug('Conversion scale saved successfully.');
+            document.location.reload();
+        });
+    });
+    /**** END OF CHANGE CONVERSION SCALE **/
+
+    /*]]>*/
+</script>
+</body>
+</html>

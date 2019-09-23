@@ -1,0 +1,133 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <title th:text="${admin_dashboard_title}">Dashboard</title>
+  <div th:insert="fragments/head :: head"></div>
+</head>
+
+<body id="page-top" class="sidebar-toggled">
+
+  <!-- Page Wrapper -->
+  <div id="wrapper">
+
+    <!-- Sidebar -->
+    <div th:insert="fragments/sidebar :: sidebar"></div>
+    <!-- End of Sidebar -->
+
+    <!-- Content Wrapper -->
+    <div id="content-wrapper" class="d-flex flex-column">
+
+      <!-- Main Content -->
+      <div id="content">
+
+        <!-- Topbar -->
+        <div th:insert="fragments/topbar :: topbar"></div>
+        <!-- End of Topbar -->
+
+        <!-- Begin Page Content -->
+        <div class="container-fluid">
+
+          <!-- Content Row -->
+          <div class="row">
+
+            <!-- Earnings (Monthly) Card Example -->
+            <div class="col-xl-3 col-md-6 mb-4">
+              <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                      <div class="text-xs font-weight-bold text-primary text-uppercase mb-1" th:text="#{admin_dashboard_total_events}">Total events</div>
+                      <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${eventCount}">75268</div>
+                    </div>
+                    <div class="col-auto">
+                      <i class="fas fa-exclamation-circle fa-2x text-gray-300"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Earnings (Monthly) Card Example -->
+            <div class="col-xl-3 col-md-6 mb-4">
+              <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                      <div class="text-xs font-weight-bold text-success text-uppercase mb-1" th:text="#{admin_dashboard_total_courses}">Total courses</div>
+                      <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${courseCount}">52</div>
+                    </div>
+                    <div class="col-auto">
+                      <i class="fas fa-book-open fa-2x text-gray-300"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Earnings (Monthly) Card Example -->
+            <div class="col-xl-3 col-md-6 mb-4">
+              <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                      <div class="text-xs font-weight-bold text-success text-uppercase mb-1" th:text="#{admin_dashboard_total_grades}">Total Grades</div>
+                      <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${gradeCount}">354646</div>
+                    </div>
+                    <div class="col-auto">
+                      <i class="fas fa-pen-square fa-2x text-gray-300"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pending Requests Card Example -->
+            <div class="col-xl-3 col-md-6 mb-4">
+              <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                      <div class="text-xs font-weight-bold text-warning text-uppercase mb-1" th:text="#{admin_dashboard_total_users}">Total users graded</div>
+                      <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${gradedUserCount}">45</div>
+                    </div>
+                    <div class="col-auto">
+                      <i class="fas fa-users fa-2x text-gray-300"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <!-- /.container-fluid -->
+
+      </div>
+      <!-- End of Main Content -->
+
+      <!-- Footer -->
+      <div th:insert="fragments/footer :: footer"></div>
+      <!-- End of Footer -->
+
+    </div>
+    <!-- End of Content Wrapper -->
+
+  </div>
+  <!-- End of Page Wrapper -->
+
+  <!-- Scroll to Top Button -->
+  <div th:insert="fragments/scroll :: scroll"></div>
+  <!-- End Scroll to Top Button -->
+
+  <!-- Logout Modal -->
+  <div th:insert="fragments/logout :: logout"></div>
+  <!-- End Logout Modal -->
+  
+  <!-- Custom scripts for all pages -->
+  <div th:insert="fragments/custom :: custom"></div>
+  <!-- End of custom scripts for all pages -->
+
+</body>
+
+</html>

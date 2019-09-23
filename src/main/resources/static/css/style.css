@@ -1,0 +1,585 @@
+.loading-spinner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  border: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  z-index: 9999;
+  justify-content: center;
+  background: rgba(45,59,69,0.75);
+  border-top: 1px solid #c7cdd1;
+  flex-direction: column;
+}
+
+.loading-spinner .spinner-grow {
+  width: 70px;
+  height: 70px;
+  color: white;
+  margin-bottom: 10px;
+}
+
+.loading-spinner .loading-text {
+  color: white;
+}
+
+.loading-spinner .loading-text:after {
+  content: '.';
+  animation: dots 1s steps(5, end) infinite;
+}
+
+.header-cell-dropdown.dropdown {
+  position: absolute;
+  bottom: 13px;
+  right: 8px;
+}
+
+.header-cell-dropdown.dropdown .btn-secondary {
+  border-color: #eeeeee;
+  background-color: #fbfbfb;
+  color: #2D3B45;
+}
+
+.header-cell-dropdown .dropdown-toggle {
+  padding: 5px 7px;
+  line-height: 0;
+}
+
+.header-cell-dropdown .dropdown-toggle::after {
+  margin-left: 0;
+}
+
+@keyframes dots {
+  0%, 20% {
+    color: rgba(0,0,0,0);
+    text-shadow:
+      .25em 0 0 rgba(0,0,0,0),
+      .5em 0 0 rgba(0,0,0,0);}
+  40% {
+    color: white;
+    text-shadow:
+      .25em 0 0 rgba(0,0,0,0),
+      .5em 0 0 rgba(0,0,0,0);}
+  60% {
+    text-shadow:
+      .25em 0 0 white,
+      .5em 0 0 rgba(0,0,0,0);}
+  80%, 100% {
+    text-shadow:
+      .25em 0 0 white,
+      .5em 0 0 white;}
+}
+
+.alert {
+  margin-top: 16px !important;
+}
+
+.col-icon {
+  margin-right: 8px;
+}
+
+.instructorTable {
+  font-size: 12px;
+}
+
+.table-container {
+	background-color: #eeeeee;
+	overflow: hidden;
+	width: 100%;
+	margin-top: 24px;
+  border-right: 1px solid #eeeeee;
+}
+
+.table-container::before {
+	content: " ";
+	position: fixed;
+	top: 0px;
+	left: 0;
+	right: 0;
+	width: 100%;
+	height: 1px;
+	background-color: #c7cdd1;
+  z-index: 2;
+}
+
+#tableContainer .studentTable.handsontable {
+  height: initial !important;
+}
+
+#tableContainer .studentTable .ht_clone_top .wtHolder {
+  height: initial !important;
+  min-width: inherit !important;
+}
+
+#tableContainer .studentTable .ht_master .wtHolder {
+  height: initial !important;
+  width: initial !important;
+}
+
+#tableContainer .studentTable .handsontable thead th {
+  background-color: #F9F9F9;
+  border-bottom: 1px solid #bbbbbb;
+  height: 64px;
+}
+
+#tableContainer .studentTable .handsontable thead th.ht__active_highlight {
+  background-color: #8eb0e7;
+}
+
+#tableContainer .studentTable .ht_clone_top.handsontable {
+  min-width: 100% !important;
+  overflow: initial !important;
+}
+
+#tableContainer .studentTable .ht_clone_left.handsontable {
+  height: initial !important;
+}
+
+#tableContainer .studentTable .ht_clone_left.handsontable .wtHolder {
+  height: initial !important;
+}
+
+#tableContainer .studentTable .handsontable tbody tr:nth-child(even) td {
+  background-color: #F9F9F9;
+}
+
+#tableContainer .studentTable .handsontable tbody tr:nth-child(odd) td {
+  background-color: #FFFFFF;
+}
+
+#tableContainer .studentTable .handsontable td, #tableContainer .studentTable .handsontable th {
+  border-color: #eeeeee;
+  overflow: initial;
+  position: relative;
+}
+
+#tableContainer .studentTable .handsontable td .spinner::before {
+  content: " ";
+  position: absolute;
+  top: calc(50% - 10px);
+  left: calc(50% - 10px);
+  border: 0;
+  width: 20px;
+  height: 20px;
+  vertical-align: text-bottom;
+  border: .20em solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  -webkit-animation: spinner-border .75s linear infinite;
+  animation: spinner-border .75s linear infinite;
+  color: #a2a2a2;
+  z-index: 2;
+}
+
+#tableContainer .studentTable .handsontable td .spinner::after {
+  content: " ";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  background: #e0e0e0;
+}
+
+#tableContainer .studentTable .ht_clone_left.handsontable td:nth-child(2), #tableContainer .studentTable .ht_clone_top_left_corner.handsontable th:nth-child(2) {
+  border-right-color: #cccccc;
+}
+
+#tableContainer .studentTable .handsontable span.colHeader {
+  font-weight: 500;
+  padding: 2px 25px 2px 7px;
+  width: 100%;
+  text-decoration: none;
+}
+
+#tableContainer .studentTable .handsontable thead th .relative {
+  padding: 0;
+  width: 100%;
+  height: inherit;
+}
+#tableContainer .studentTable .handsontable span.colHeader.columnSorting::before {
+  display: none;
+}
+
+#tableContainer .studentTable .handsontable span.colHeader.columnSorting {
+  position: relative;
+  display: inline-flex;
+  flex-direction: row;
+  height: inherit;
+}
+
+#tableContainer .studentTable .handsontable span.colHeader.columnSorting::after {
+  position: absolute;
+  right: 8px;
+}
+
+#tableContainer .studentTable .handsontable span.colHeader.columnSorting.sortAction.descending::after {
+  content: '\f0de';
+  font-family: FontAwesome;
+}
+
+#tableContainer .studentTable .handsontable span.colHeader.columnSorting.sortAction.ascending::after {
+  content: '\f0dd';
+  font-family: FontAwesome;
+}
+
+#tableContainer .studentTable .handsontable th:nth-child(3) {
+  border-left: none;
+}
+
+#tableContainer .studentTable .handsontable td {
+  padding: 0;
+}
+
+#tableContainer .studentTable .handsontable td > div {
+  width: calc(100% - 14px);
+  height: 32px;
+  line-height: 32px;
+  padding: 2px 7px;
+}
+
+#tableContainer .studentTable .handsontable td .gb-save-success {
+  background-color: #DFF0D8;
+  position: relative;
+}
+
+#tableContainer .studentTable .handsontable td .gb-save-success::before {
+  content: '\f05d';
+  color: green;
+  position: absolute;
+  left: 8px;
+  font-family: 'FontAwesome';
+  opacity: 1;
+  background-color: transparent;
+  right: initial;
+}
+
+#tableContainer .studentTable .handsontable td .gb-save-error {
+  background-color: #FFBBBB;
+  position: relative;
+}
+
+#tableContainer .studentTable .handsontable td .gb-save-error::before {
+  content: '\f06a';
+  color: #cc0000;
+  position: absolute;
+  left: 8px;
+  font-family: 'FontAwesome';
+  opacity: 1;
+  background-color: transparent;
+  right: initial;
+}
+
+#tableContainer .studentTable .handsontable td .gb-save-info {
+  background-color: #DFF0D8;
+  position: relative;
+}
+
+#tableContainer .studentTable .handsontable td .gb-save-info::before {
+  content: '\f0fe';
+  color: green;
+  position: absolute;
+  left: 8px;
+  font-family: 'FontAwesome';
+  opacity: 1;
+  background-color: transparent;
+  right: initial;
+}
+
+#tableContainer .studentTable .handsontable td .gb-not-supported {
+  background-color: #FCF8E3;
+  position: relative;
+}
+
+#tableContainer .studentTable .handsontable td .gb-not-supported::before {
+  content: '\f06a';
+  color: #c89000;
+  position: absolute;
+  left: 8px;
+  font-family: 'FontAwesome';
+  opacity: 1;
+  background-color: transparent;
+  right: initial;
+}
+
+#tableContainer .studentTable .handsontable td .gb-cell-disabled {
+  background: #e0e0e0;
+  position: relative;
+}
+
+#tableContainer .studentTable .handsontable td .gb-cell-disabled::before {
+  content: '\f05e';
+  color: #888888;
+  position: absolute;
+  left: 8px;
+  font-family: 'FontAwesome';
+  opacity: 1;
+  background-color: transparent;
+  right: initial;
+}
+
+#tableContainer .studentTable table tr th {
+  text-align: left;
+}
+
+#tableContainer .studentTable .handsontable th, #tableContainer .studentTable .handsontable td {
+  height: 32px;
+  line-height: 32px;
+  color: #2D3B45;
+}
+
+#tableContainer .studentTable .ht_master.handsontable th:last-of-type, #tableContainer .studentTable .ht_master.handsontable td:last-of-type {
+	border-right: 0;
+}
+
+#tableContainer .studentTable .handsontable .htDimmed {
+  color: initial;
+}
+
+#tableContainer .studentTable .handsontable .wtBorder.corner {
+  display: none !important;
+}
+
+#tableContainer .studentTable table tr > td .align-left {
+  text-align: left;
+}
+
+.handsontable textarea {
+  text-align: center;
+  height: 37px !important;
+  line-height: 36px !important;
+}
+
+.wtHolder::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.wtHolder::-webkit-scrollbar-track {
+  background-color: #EEE;
+}
+.wtHolder::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  background-color: rgba(170,170,170,0.5);
+}
+.wtHolder::-webkit-scrollbar-thumb:hover {
+  background-color: #AAA;
+}
+
+.send-to-banner-container {
+  position: relative;
+}
+
+.send-to-banner-container::before {
+  content: " ";
+  position: fixed;
+  top: 0px;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 1px;
+  background-color: #c7cdd1;
+  z-index: 2;
+}
+
+table.table tr.error td {
+  background-color: #FCF8E3;
+  position: relative;
+}
+
+table.table tr.success td {
+  background-color: #DFF0D8;
+  position: relative;
+}
+
+.canvas-input {
+  transition: all 0.2s ease-out;
+  outline-color: transparent;
+  outline-offset: -12px;
+  background: #fff;
+  padding: 8px 12px;
+  -webkit-appearance: none;
+  border-color: #d8e0e6;
+  outline-style: solid;
+  outline-width: 12px;
+  border: 1px solid #ccc;
+  font-size: .875rem;
+  line-height: 20px;
+  border-radius: 3px;
+}
+
+.canvas-input:focus {
+  outline-width: 2px;
+  outline-offset: -2px;
+  border-color: #3d7edb;
+  outline-color: #5a91e0;
+}
+
+.btn-banner::before {
+  font-family: 'FontAwesome';
+  content: '\f064';
+}
+
+.btn-admin::before {
+  font-family: 'FontAwesome';
+  content: '\f013';
+}
+
+#assignmentTable .group {
+	background-color: #eee !important;
+}
+
+.top-bar {
+	padding: 5px;
+}
+
+.top-bar .top-bar-left .canvas-input {
+	width: 100%;
+}
+
+.top-bar .top-bar-right {
+	display: flex;
+}
+
+@media (max-width: 767px) {
+	.top-bar .top-bar-right {
+		margin-top: 5px;
+	}
+}
+
+.canvas-btn-group {
+	margin-right: 6px;
+	display: flex;
+}
+
+.canvas-btn-group:first-of-type {
+	margin-left: auto;
+}
+
+.canvas-btn-group:last-of-type {
+	margin-right: 0;
+}
+
+.canvas-btn-group .canvas-btn {
+	border-right-width: 0;
+}
+
+.canvas-btn-group .canvas-btn:last-of-type {
+	margin-right: 0;
+	border-right-width: 1px;
+}
+
+.canvas-btn {
+	background: #f5f5f5;
+	color: #2D3B45;
+	border: 1px solid;
+	border-color: #C7CDD1;
+	transition: background-color 0.2s ease-in-out;
+	display: inline-block;
+	position: relative;
+	padding: 8px 14px;
+	margin-bottom: 0;
+	font-size: 0.875rem;
+	line-height: 20px;
+	text-align: center;
+	vertical-align: middle;
+	cursor: pointer;
+	text-decoration: none;
+	overflow: hidden;
+	text-shadow: none;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	user-select: none;
+	font-weight: normal;
+}
+
+a.canvas-btn:hover {
+	text-decoration: none;
+}
+
+.canvas-btn:focus {
+    outline: none;
+    box-shadow: inset 0 0 0 1px #3d7edb;
+}
+
+.canvas-btn:hover {
+    background: #e8e8e8;
+    color: #2D3B45;
+}
+
+.canvas-btn:active {
+    background: #e1e1e1;
+}
+
+.canvas-btn[disabled] {
+	cursor: not-allowed;
+	pointer-events: none;
+	opacity: 0.5;
+}
+
+.canvas-btn .spinner-border {
+	display: none;
+}
+
+.canvas-btn.spinner .spinner-border {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	margin-left: auto;
+	margin-right: auto;
+	margin-top: auto;
+	margin-bottom: auto;
+	width: 20px;
+	height: 20px;
+	border-width: 3px;
+	display: block;
+}
+
+.canvas-btn.rounded-btn {
+	border-radius: 3px;
+}
+
+.canvas-btn.primary-btn {
+	background-color: #3a78d1;
+	border-color: #346cbb;
+	color: #ffffff;
+}
+
+.canvas-btn.primary-btn:hover, .canvas-btn.primary-btn:active {
+	background: #3a78d1;
+}
+
+.spinner-border.student-spinner {
+  width: 20px;
+  height: 20px;
+  border-width: 3px;
+  color: darkgrey;
+}
+
+body .modal-backdrop {
+	background: rgba(45,59,69,0.75);
+}
+
+body .modal-backdrop.show {
+	opacity: 1;
+}
+
+.modal .modal-footer {
+	background-color: #f2f2f2;
+}
+
+body .dropzone {
+	border: 2px dashed #aaaaaa;
+	border-radius: 5px;
+	background: white;
+}
+
+body .dropzone.dz-drag-hover {
+  border-style: dashed;
+  border-color: #cccccc;
+}

@@ -1,0 +1,116 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <link href="css/admin.css" rel="stylesheet"/>
+  <title th:text="${admin_banner_title}">Banner</title>
+  <div th:insert="fragments/head :: head"></div>
+</head>
+
+<body id="page-top" class="sidebar-toggled">
+
+  <!-- Page Wrapper -->
+  <div id="wrapper">
+
+    <!-- Sidebar -->
+    <div th:insert="fragments/sidebar :: sidebar"></div>
+    <!-- End of Sidebar -->
+
+    <!-- Content Wrapper -->
+    <div id="content-wrapper" class="d-flex flex-column">
+
+      <!-- Main Content -->
+      <div id="content">
+
+        <!-- Topbar -->
+        <div th:insert="fragments/topbar :: topbar"></div>
+        <!-- End of Topbar -->
+
+        <!-- Begin Page Content -->
+        <div class="container-fluid">
+        <div class="col-lg-4">
+            <div class="alert alert-success" role="alert" th:if="${successSavingPreferences != null && successSavingPreferences}" th:text="#{admin_banner_success_preferences}">
+              Success saving prefs!
+            </div>
+            <div class="alert alert-danger" role="alert" th:if="${errorSavingPreferences != null && errorSavingPreferences}" th:text="#{admin_banner_error_preferences}">
+              Error saving prefs!
+            </div>
+            <form th:action="@{/selectAccount}" method="post">
+                <div class="form-group">
+                    <label for="selectedAccount" th:text="#{admin_banner_select_subaccount}">Select subaccount from the list:</label>
+                    <select id="selectedAccount" name="selectedAccount" class="form-control" onchange="this.form.submit();">
+                        <option></option>
+                        <option th:each="account : ${accountList}" th:value="${account.id}" th:text="${account.name}" th:selected="${account.id.equals(selectedIntegerAccount)}"></option>
+                    </select>
+                </div>
+            </form>
+
+            <form id="bannerConfigurationForm" th:if="${selectedAccount != null}" th:object="${accountPreference}" th:action="@{/saveAccountPreferences}" method="post">
+                <input type="hidden" name="accountId" value="${selectedAccount}" th:field="*{accountId}"/>
+                <div class="form-group">
+                    <label for="startdate" th:text="#{admin_banner_from}">Banner enabled in this subaccount from:</label>
+                    <div class="input-group mb-3">
+                        <input class="form-control" id="startdate" type="text" name="startdate" th:field="*{bannerFromStringDate}">
+                        <div class="input-group-append">
+                            <span class="fa fa-calendar"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="enddate" th:text="#{admin_banner_until}">Banner enabled in this subaccount until:</label>
+                    <div class="input-group mb-3">
+                        <input class="form-control" id="enddate" type="text" name="enddate" th:field="*{bannerUntilStringDate}">
+                        <div class="input-group-append">
+                            <span class="fa fa-calendar"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group form-check">
+                    <input class="form-check-input" type="checkbox" name="enableBannerIntegration" id="enableBannerIntegration" th:field="*{bannerEnabled}">
+                    <label class="form-check-label" for="enableBannerIntegration" th:text="#{admin_banner_enable}">Enable banner integration:</label>
+                </div>
+                <button type="submit" class="btn btn-primary" th:text="#{admin_banner_save}">Submit</button>
+            </form>
+        </div>
+        </div>
+        <!-- /.container-fluid -->
+
+      </div>
+      <!-- End of Main Content -->
+
+      <!-- Footer -->
+      <div th:insert="fragments/footer :: footer"></div>
+      <!-- End of Footer -->
+
+    </div>
+    <!-- End of Content Wrapper -->
+
+  </div>
+  <!-- End of Page Wrapper -->
+
+  <!-- Scroll to Top Button -->
+  <div th:insert="fragments/scroll :: scroll"></div>
+  <!-- End Scroll to Top Button -->
+
+  <!-- Logout Modal-->
+  <div th:insert="fragments/logout :: logout"></div>
+  <!-- End Logout Modal -->
+
+  <!-- Custom scripts for all pages -->
+  <div th:insert="fragments/custom :: custom"></div>
+  <!-- End of custom scripts for all pages -->
+
+<script>
+$(document).ready(function() {
+  var format = "YYYY-MM-DD HH:mm";
+  $('#startdate').datetimepicker({
+      format: format
+  });
+  $('#enddate').datetimepicker({
+      format: format
+  });
+});
+</script>
+</body>
+
+</html>

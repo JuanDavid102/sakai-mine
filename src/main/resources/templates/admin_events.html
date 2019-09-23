@@ -1,0 +1,120 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <title th:text="${admin_events_title}">Events</title>
+  <div th:insert="fragments/head :: head"></div>
+</head>
+
+<body id="page-top" class="sidebar-toggled">
+
+  <!-- Page Wrapper -->
+  <div id="wrapper">
+
+    <!-- Sidebar -->
+    <div th:insert="fragments/sidebar :: sidebar"></div>
+    <!-- End of Sidebar -->
+
+    <!-- Content Wrapper -->
+    <div id="content-wrapper" class="d-flex flex-column">
+
+      <!-- Main Content -->
+      <div id="content">
+
+        <!-- Topbar -->
+        <div th:insert="fragments/topbar :: topbar"></div>
+
+        <!-- Begin Page Content -->
+        <div class="container-fluid">
+
+            <table id="eventTable" class="table table-bordered table-striped">
+              <thead>
+                <tr>
+                  <th th:text="#{admin_events_header_id}">Event id</th>
+                  <th th:text="#{admin_events_header_type}">Event Name</th>
+                  <th th:text="#{admin_events_header_user}">Event User</th>
+                  <th th:text="#{admin_events_header_course}">Event Course</th>
+                  <th th:text="#{admin_events_header_date}">Event Date</th>
+                  <th th:text="#{admin_events_header_details}">Event details</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr th:each="event: ${eventList}">
+                  <td th:text="${event.eventId}">an event id</td>
+                  <td th:text="${event.eventType}">an event type</td>
+                  <td th:text="${event.eventUser}">an event user</td>
+                  <td th:text="${event.eventCourse}">an event course</td>
+                  <td th:text="${event.eventDate}">an event date</td>
+                  <td th:text="${event.eventDetails}">an event details</td>
+                </tr>
+              </tbody>
+            </table>
+
+        </div>
+        <!-- /.container-fluid -->
+
+      </div>
+      <!-- End of Main Content -->
+
+      <!-- Footer -->
+      <div th:insert="fragments/footer :: footer"></div>
+      <!-- End of Footer -->
+
+    </div>
+    <!-- End of Content Wrapper -->
+
+  </div>
+  <!-- End of Page Wrapper -->
+
+  <!-- Scroll to Top Button -->
+  <div th:insert="fragments/scroll :: scroll"></div>
+  <!-- End Scroll to Top Button -->
+
+  <!-- Logout Modal-->
+  <div th:insert="fragments/logout :: logout"></div>
+  <!-- End Logout Modal -->
+
+  <!-- Custom scripts for all pages -->
+  <div th:insert="fragments/custom :: custom"></div>
+  <!-- End of custom scripts for all pages -->
+
+  <script th:inline="javascript">
+    $(document).ready( function () {
+        /*<![CDATA[*/
+        var search = /*[[#{admin_events_datatables_search}]]*/ 'search';
+        var lengthMenu = /*[[#{admin_events_datatables_lengthMenu}]]*/ 'lengthMenu';
+        var zeroRecords = /*[[#{admin_events_datatables_zeroRecords}]]*/ 'zeroRecords';
+        var info = /*[[#{datatables_info}]]*/ 'info';
+        var infoEmpty = /*[[#{admin_events_datatables_infoEmpty}]]*/ 'infoEmpty';
+        var infoFiltered = /*[[#{event_atatables_infoFiltered}]]*/ 'infoFiltered';
+        var emptyTable = /*[[#{datatables_emptyTable}]]*/ 'emptyTable';
+        var next = /*[[#{datatables_next}]]*/ 'next';
+        var previous = /*[[#{datatables_previous}]]*/ 'previous';
+        var sortAscending = /*[[#{datatables_sortAscending}]]*/ 'sortAscending';
+        var sortDescending = /*[[#{datatables_sortDescending}]]*/ 'sortDescending';
+      $("#eventTable").DataTable({
+                "pageLength": 50,
+        "language": {
+                    "search": search,
+                    "lengthMenu": lengthMenu,
+                    "zeroRecords": zeroRecords,
+                    "info": info,
+                    "infoEmpty": infoEmpty,
+                    "infoFiltered": infoFiltered,
+                    "emptyTable": emptyTable,
+                    "paginate": {
+                        "next": next,
+                        "previous": previous,
+                    },
+                    "aria": {
+                        "sortAscending": sortAscending,
+                        "sortDescending": sortDescending,
+                    }
+                }        
+      });
+          /*]]>*/
+    } );
+  </script>
+</body>
+
+</html>
