@@ -25,7 +25,7 @@
         <opencsv.version>5.0</opencsv.version>
         <commons-io.version>2.6</commons-io.version>
         <oracle.driver.version>19.3.0.0</oracle.driver.version>
-        <canvas.api.version>1.0.24</canvas.api.version><!--Unofficial tag-->
+        <canvas.api.version>1.0.24</canvas.api.version>
     </properties>
 
     <dependencies>
