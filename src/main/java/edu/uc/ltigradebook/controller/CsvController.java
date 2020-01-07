@@ -4,6 +4,7 @@ import edu.ksu.canvas.model.Enrollment;
 import edu.ksu.canvas.model.Section;
 import edu.ksu.canvas.model.User;
 import edu.ksu.canvas.model.assignment.Assignment;
+import edu.ksu.canvas.model.assignment.AssignmentGroup;
 import edu.ksu.canvas.model.assignment.Submission;
 import edu.ksu.lti.launch.model.LtiSession;
 import edu.ksu.lti.launch.oauth.LtiPrincipal;
@@ -21,6 +22,7 @@ import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.CSVWriter;
 import edu.uc.ltigradebook.entity.AssignmentPreference;
+import edu.uc.ltigradebook.exception.GradeException;
 import edu.uc.ltigradebook.service.AssignmentService;
 import edu.uc.ltigradebook.service.EventTrackingService;
 import edu.uc.ltigradebook.service.GradeService;
@@ -90,7 +92,7 @@ public class CsvController {
     private static final String GRADE_NOT_AVAILABLE = "-";
 
     @GetMapping("/export_csv")
-    public ResponseEntity<Resource> exportToCsv(LtiSession ltiSession, @RequestParam String sectionId) {
+    public ResponseEntity<Resource> exportToCsv(LtiSession ltiSession, @RequestParam String sectionId) throws GradeException {
         File tempFile;
         String courseId = ltiSession.getCanvasCourseId();
         CoursePreference coursePreference = courseService.getCoursePreference(courseId);
@@ -110,15 +112,25 @@ public class CsvController {
                 header.add(messageSource.getMessage("csv_header_id", null, LocaleContextHolder.getLocale()));
                 header.add(messageSource.getMessage("csv_header_sis_login_id", null, LocaleContextHolder.getLocale()));
                 header.add(messageSource.getMessage("csv_header_section", null, LocaleContextHolder.getLocale()));
+                header.add(messageSource.getMessage("csv_header_nrc", null, LocaleContextHolder.getLocale()));
 
                 // get list of assignments. this allows us to build the columns and then fetch the grades for each student for each assignment from the map
                 List<Assignment> assignmentList = canvasService.listCourseAssignments(courseId);
 
                 // get sections
                 List<Section> sectionList = canvasService.getSectionsInCourse(courseId);
-                Map<String, String> sectionMap = new HashMap<>();
+                Map<String, String> sectionNameMap = new HashMap<>();
+                Map<String, String> sectionNrcMap = new HashMap<>();
                 for(Section section : sectionList) {
-                    sectionMap.put(String.valueOf(section.getId()), section.getName());
+                    sectionNameMap.put(String.valueOf(section.getId()), section.getName());
+                    String sisSectionId = section.getSisSectionId();
+                    if (sisSectionId == null)  {
+                        sectionNrcMap.put(String.valueOf(section.getId()), "");
+                    } else {
+                        String[] splittedSectionId = sisSectionId.split("-");
+                        String nrcCode = splittedSectionId[1];
+                        sectionNrcMap.put(String.valueOf(section.getId()), nrcCode);
+                    }
                 }
 
                 // build column header
@@ -147,6 +159,13 @@ public class CsvController {
                     log.error("The submissions thread has been interrupted, aborting.", e);
                 }
 
+                List<AssignmentGroup> assignmentGroupList = canvasService.listAssignmentGroups(courseId);
+                for(AssignmentGroup assignmentGroup : assignmentGroupList) {
+                    header.add(assignmentGroup.getName());
+                }
+                header.add(messageSource.getMessage("shared_current_grade", new Object[]{}, LocaleContextHolder.getLocale()));
+                header.add(messageSource.getMessage("shared_final_grade", new Object[]{}, LocaleContextHolder.getLocale()));
+
                 csvWriter.writeNext(header.toArray(new String[] {}));
 
                 List<User> userList = canvasService.getUsersInCourse(courseId);
@@ -154,14 +173,18 @@ public class CsvController {
 
                     //Fill the section
                     String section = StringUtils.EMPTY;
+                    String nrc = StringUtils.EMPTY;
                     boolean exportSection = false;
                     if(user.getEnrollments() != null && !user.getEnrollments().isEmpty()) {
                         StringJoiner joiner = new StringJoiner(",");
+                        StringJoiner joinerNrc = new StringJoiner(",");
                         for(Enrollment enrollment : user.getEnrollments()) {
-                            joiner.add(sectionMap.get(enrollment.getCourseSectionId()));
+                            joiner.add(sectionNameMap.get(enrollment.getCourseSectionId()));
+                            joinerNrc.add(sectionNrcMap.get(enrollment.getCourseSectionId()));
                             if (sectionId.equals(enrollment.getCourseSectionId())) exportSection = true;
                         }
                         section = joiner.toString();
+                        nrc = joinerNrc.toString();
                     }
 
                     if (exportAllSection || exportSection) {
@@ -172,6 +195,7 @@ public class CsvController {
                         line.add(String.valueOf(user.getId()));
                         line.add(StringUtils.isNotBlank(sisUserId) ? sisUserId : userId);
                         line.add(section);
+                        line.add(nrc);
                         for (Assignment assignment : assignmentList) {
                             String assignmentId = String.valueOf(assignment.getId());
                             String grade;
@@ -209,6 +233,11 @@ public class CsvController {
                             }
                             line.add(grade);
                         }
+                        for(AssignmentGroup assignmentGroup : assignmentGroupList) {
+                            line.add(gradeService.getStudentGroupMean(ltiSession, Long.parseLong(assignmentGroup.getId().toString()), user.getId()));
+                        }
+                        line.add(gradeService.getStudentTotalMean(ltiSession, user.getId(), true));
+                        line.add(gradeService.getStudentTotalMean(ltiSession, user.getId(), false));
                         csvWriter.writeNext(line.toArray(new String[] {}));
                     }
                 }
@@ -274,7 +303,9 @@ public class CsvController {
 
             List<String[]> all = csvReader.readAll();
             String[] header = all.get(0);
-            for (int i = 4; i < header.length; i++) {
+            List<AssignmentGroup> assignmentGroupList = canvasService.listAssignmentGroups(courseId);
+            int rightColsIgnore = assignmentGroupList.size() + 2;
+            for (int i = 5; i < header.length - rightColsIgnore; i++) {
                 String assignmentId = StringUtils.substringBetween(header[i], "(", ")");
                 Assignment assignment = assignmentList.stream().filter(a -> assignmentId.equals(String.valueOf(a.getId()))).findFirst().get();
                 List<Submission> submissionsForAssignment = submissionsMap.get(assignmentId);
