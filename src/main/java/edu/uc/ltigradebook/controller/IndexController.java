@@ -564,6 +564,7 @@ public class IndexController {
         Map<String, String> bannerGrades = new HashMap<String, String>();
         String courseId = ltiSession.getCanvasCourseId();
         String canvasLoginId = ltiPrincipal.getUser();
+        boolean userIsCourseMainInstructor = false;
         try {
             List<User> courseUsers = canvasService.getUsersInCourse(courseId);
 
@@ -581,8 +582,11 @@ public class IndexController {
                     String academicPeriod = splittedSectionId[0];
                     String nrcCode = splittedSectionId[1];
                     /*String courseInitials = splittedSectionId[2];
-                    String sectionNumber = splittedSectionId[3];*/                
-                    bannerGrades.putAll(bannerServiceDao.getBannerUserListFromCourse(nrcCode, academicPeriod, canvasLoginId));
+                    String sectionNumber = splittedSectionId[3];*/
+                    userIsCourseMainInstructor = bannerServiceDao.isCourseMainInstructor(nrcCode, academicPeriod, canvasLoginId);
+                    if(userIsCourseMainInstructor) {
+                        bannerGrades.putAll(bannerServiceDao.getBannerUserListFromCourse(nrcCode, academicPeriod, canvasLoginId));
+                    }
                 } catch(Exception e) {
                     log.error("Cannot get the banner grades from the section {}.", section.getSisSectionId());
                 }
@@ -605,7 +609,8 @@ public class IndexController {
             model.addAttribute("courseUsers", courseUsers);
             model.addAttribute("userSections", userSections.toMap());
             model.addAttribute("bannerGrades", bannerGrades);
-            
+            model.addAttribute("userIsCourseMainInstructor", userIsCourseMainInstructor);
+
             return new ModelAndView("send_to_banner");
 
         } catch (IOException ex) {

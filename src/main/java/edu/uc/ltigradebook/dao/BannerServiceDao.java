@@ -6,6 +6,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -42,8 +45,10 @@ public class BannerServiceDao {
     private String bannerDatasourceUrl;
     
     private static HikariDataSource ds;
-
-    private JdbcTemplate getJdbcTemplate() {
+    private static JdbcTemplate jdbcTemplate;
+    
+    @PostConstruct
+    public void init(){
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl(bannerDatasourceUrl);
         config.setConnectionInitSql(bannerConnectionInitSql);
@@ -51,15 +56,47 @@ public class BannerServiceDao {
         config.setPassword(bannerPassword);
         config.setDriverClassName(bannerDriverClassName);
         if(ds == null) {
-        	ds = new HikariDataSource(config);
+            ds = new HikariDataSource(config);
         }
-        JdbcTemplate jdbcTemplate = new JdbcTemplate();
+        jdbcTemplate = new JdbcTemplate();
         jdbcTemplate.setDataSource(ds);
-        return jdbcTemplate;
+    }
+    
+    @PreDestroy
+    public void destroy() {
+        this.ds.close();
+        this.ds = null;
+    }
+
+    private JdbcTemplate getJdbcTemplate() {
+        return this.jdbcTemplate;
+    }
+    
+    // Checks if the user is the main instructor of the course.
+    public boolean isCourseMainInstructor(String ncrCode, String periodId, String teacherId) {
+        log.info("isCourseMainInstructor(ncrCode = {}, periodId = {}, teacherId = {})", ncrCode, periodId, teacherId);
+        try {
+            //Construct the store procedure call
+            String readCourseMainInstructor = String.format("select count(1) from sirasgn, ssbsect where sirasgn_term_code = ssbsect_term_code and sirasgn_crn = ssbsect_crn and "+
+                    "sirasgn_primary_ind = 'Y' and "+
+                    "SIRASGN_term_code = %s and "+
+                    "SIRASGN_PIDM = %s and "+
+                    "ssbsect_crn = %s", 
+                    periodId, teacherId, ncrCode);
+            log.info(readCourseMainInstructor);
+
+            //Call the procedure
+            Integer result = getJdbcTemplate().queryForObject(readCourseMainInstructor, Integer.class);
+
+            return result.equals(new Integer(1));
+        } catch (Exception e) {
+            log.error("Fatal error checking the course main instructor.", e);
+        }
+        return false;
     }
 
     // Gets the banner grades from the course, returns a map of RUT - GRADE.
-    public Map<String, String> getBannerUserListFromCourse(String ncrCode,String periodId, String teacherId){
+    public Map<String, String> getBannerUserListFromCourse(String ncrCode, String periodId, String teacherId){
         log.info("getBannerUserListFromCourse(ncrCode = {}, periodId = {}, teacherId = {})",ncrCode, periodId, teacherId);
         Map<String, String> bannerGrades = new HashMap<String, String>();
         try {
@@ -86,9 +123,6 @@ public class BannerServiceDao {
             }
         } catch (Exception e) {
            log.error("Fatal error getting users from banner. ", e);
-        } finally {
-        	ds.close();
-        	ds = null;
         }
         return bannerGrades;
     }
@@ -107,9 +141,6 @@ public class BannerServiceDao {
             return true;
         } catch (Exception e) {
             log.error("Fatal error sending grade to banner. ", e);
-        } finally {
-        	ds.close();
-        	ds = null;
         }
         return false;
     }

@@ -4,7 +4,11 @@
   <div th:insert="fragments/head :: head"></div>
 <body>
 
-<div class="alert alert-warning" th:if="${bannerGrades.isEmpty()}" th:text="#{banner_no_grades}">
+<div class="alert alert-danger" th:if="${!userIsCourseMainInstructor}" th:text="#{banner_permission_error}">
+  You are not the main instructor of this course, you are not allowed to send grades to banner.
+</div>
+
+<div class="alert alert-warning" th:if="${userIsCourseMainInstructor && bannerGrades.isEmpty()}" th:text="#{banner_no_grades}">
   The gradebook cannot load the grades from banner.
 </div>
 
@@ -15,7 +19,7 @@
       <span class="d-none d-sm-inline-block" th:text="#{instructor_back_gradebook}">Back to Gradebook</span>
     </a>
   </div>
-  <div th:if="${!bannerGrades.isEmpty()}">
+  <div th:if="${userIsCourseMainInstructor && !bannerGrades.isEmpty()}">
     <table class="table table-striped table-sm">
       <thead>
         <tr>
