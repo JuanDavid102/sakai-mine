@@ -55,6 +55,7 @@ public class AccountController {
         model.addAttribute("selectedAccount", selectedAccount);
         model.addAttribute("selectedIntegerAccount", Integer.valueOf(selectedAccount));      
         model.addAttribute("accountPreference", accountPreference);
+        model.addAttribute("adminBanner", true);
         return new ModelAndView("admin_banner");
     }
 
@@ -83,6 +84,7 @@ public class AccountController {
             model.addAttribute("accountList", canvasService.getSubaccounts());
         } catch(Exception ex) {
         }
+        model.addAttribute("adminBanner", true);
         return new ModelAndView("admin_banner");
     }
 
