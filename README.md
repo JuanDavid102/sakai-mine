@@ -25,7 +25,6 @@ La aplicación debe configurase utilizando el fichero de ejemplo "application.pr
 
 Las propiedades más importantes a configurar son:
 
-
 |Propiedad| Uso| Defecto |Ejemplo|
 |---|---|---|---|
 | lti-gradebook.instance | Usuario de LTI que se configura en Canvas, shared key. | canvas | canvas  | 
@@ -45,6 +44,12 @@ Las propiedades más importantes a configurar son:
 | server.ssl.key-alias | Alias del almacén de claves | - | keystore_alias |
 | lti-gradebook.canvas_api_token | Token de API compartido que utilizará la aplicación para realizar llamadas | - | - |
 | lti-gradebook.admins | Listado de usuarios de Canvas que son administradores de la aplicación, separados por comas. | - | mpellicer,jdoe,hsolo |
+| banner.enabled | Habilitar la integración con Banner. | false | false |
+| banner.datasource.username | Nombre de usuario de la conexión al esquema de Banner. | - | WEB_BANNER_LMS |
+| banner.datasource.password | Password del usuario de la conexión al esquema de Banner. | - | - |
+| banner.datasource.driver-class-name | Drivers de conexión al esquema de Banner. | oracle.jdbc.driver.OracleDriver | oracle.jdbc.driver.OracleDriver |
+| banner.datasource.url | URL de conexión al esquema de Banner. | - | jdbc:oracle:thin:@localhost:1521:ORCL |
+| banner.datasource.connectionInitSql | SQL de inicialización. | - | SET ROLE rol_banner_lms_carga_notas identified by rlms_carga1911 |
 
 ## Ejecución
 Para ejecutar el código necesitamos configurar correctamente la aplicación y lanzar el siguiente comando:

@@ -43,38 +43,56 @@ public class BannerServiceDao {
 
     @Value("${banner.datasource.url:banner}")
     private String bannerDatasourceUrl;
-    
+
+    @Value("${banner.enabled:false}")
+    private boolean bannerEnabled;
+
     private static HikariDataSource ds;
     private static JdbcTemplate jdbcTemplate;
-    
+
     @PostConstruct
-    public void init(){
+    public void init() {
         HikariConfig config = new HikariConfig();
+        if(!bannerEnabled) {
+            log.info("The banner integration is not enabled.");
+            return;
+        }
         config.setJdbcUrl(bannerDatasourceUrl);
         config.setConnectionInitSql(bannerConnectionInitSql);
         config.setUsername(bannerUsername);
         config.setPassword(bannerPassword);
         config.setDriverClassName(bannerDriverClassName);
-        if(ds == null) {
-            ds = new HikariDataSource(config);
+        try { 
+            if(ds == null) {
+                ds = new HikariDataSource(config);
+            }
+            jdbcTemplate = new JdbcTemplate();
+            jdbcTemplate.setDataSource(ds);
+        } catch(Exception e) {
+            log.error("Fatal error initializing Banner datasource.", e);
         }
-        jdbcTemplate = new JdbcTemplate();
-        jdbcTemplate.setDataSource(ds);
     }
-    
+
     @PreDestroy
     public void destroy() {
-        this.ds.close();
+        if(this.ds != null) {
+            this.ds.close();
+        }
         this.ds = null;
     }
 
     private JdbcTemplate getJdbcTemplate() {
         return this.jdbcTemplate;
     }
-    
+
     // Checks if the user is the main instructor of the course.
     public boolean isCourseMainInstructor(String ncrCode, String periodId, String teacherId) {
         log.info("isCourseMainInstructor(ncrCode = {}, periodId = {}, teacherId = {})", ncrCode, periodId, teacherId);
+
+        if(!bannerEnabled) {
+            return false;
+        }
+
         try {
             //Construct the store procedure call
             String readCourseMainInstructor = String.format("select count(1) from sirasgn, ssbsect where sirasgn_term_code = ssbsect_term_code and sirasgn_crn = ssbsect_crn and "+
@@ -99,6 +117,11 @@ public class BannerServiceDao {
     public Map<String, String> getBannerUserListFromCourse(String ncrCode, String periodId, String teacherId){
         log.info("getBannerUserListFromCourse(ncrCode = {}, periodId = {}, teacherId = {})",ncrCode, periodId, teacherId);
         Map<String, String> bannerGrades = new HashMap<String, String>();
+
+        if(!bannerEnabled) {
+            return bannerGrades;
+        }
+
         try {
             SimpleJdbcCall procedureParametersCall = new SimpleJdbcCall(getJdbcTemplate().getDataSource());
             procedureParametersCall.withFunctionName("pk_adap_15_carga_nota.f_alumnos_curso_web")
@@ -115,9 +138,9 @@ public class BannerServiceDao {
 
             if(!result.isEmpty()){
                 List<BannerUser> bannerUserList = (ArrayList<BannerUser>) result.get("bannerUserList");
-            	log.info("Found {} users associated to the course in banner.", bannerUserList.size());
+                log.info("Found {} users associated to the course in banner.", bannerUserList.size());
                 for(BannerUser bannerUser : bannerUserList) {
-                	log.info("Adding user {} to the map with grade {}.", bannerUser.getUserRut(), bannerUser.getSFRSTCR_GRDE_CODE());
+                    log.info("Adding user {} to the map with grade {}.", bannerUser.getUserRut(), bannerUser.getSFRSTCR_GRDE_CODE());
                     bannerGrades.put(bannerUser.getUserRut(), bannerUser.getSFRSTCR_GRDE_CODE());
                 }
             }
@@ -130,12 +153,16 @@ public class BannerServiceDao {
     //Sends a grade to banner
     public boolean sendGradeToBanner(String cod_ncr, String nota, String rut_alumno, String rut_profesor, String ano_periodo_banner) {
         log.info("sendGradesToBanner(cod_ncr={},nota={},rut_alumno={},rut_profesor={},ano_periodo_banner={})", cod_ncr, nota, rut_alumno, rut_profesor, ano_periodo_banner);
-        
+
+        if(!bannerEnabled) {
+            return false;
+        }
+
         try {
             //Construct the store procedure call
             String insertBannerString = String.format("call pk_adap_15_carga_nota.sp_ingresa_calificacion ('%s', '%s', '%s', '%s' , '%s' , '%s')", cod_ncr, nota, rut_alumno, rut_profesor, StringUtils.EMPTY, ano_periodo_banner);
             log.debug(insertBannerString);
-            
+
             //Call the procedure
             getJdbcTemplate().update(insertBannerString);
             return true;
