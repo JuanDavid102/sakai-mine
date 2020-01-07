@@ -20,6 +20,8 @@ import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.CSVWriter;
+import edu.uc.ltigradebook.entity.AssignmentPreference;
+import edu.uc.ltigradebook.service.AssignmentService;
 import edu.uc.ltigradebook.service.EventTrackingService;
 import edu.uc.ltigradebook.service.GradeService;
 import lombok.extern.slf4j.Slf4j;
@@ -75,6 +77,9 @@ public class CsvController {
 
     @Autowired
     private GradeService gradeService;
+
+    @Autowired
+    private AssignmentService assignmentService;
 
     @Autowired
     private MessageSource messageSource;
@@ -183,13 +188,19 @@ public class CsvController {
                                         .findAny();
                                 grade = optionalGrade.isPresent() ? optionalGrade.get().getGrade() : StringUtils.EMPTY;                                
 
+                                String assignmentConversionScale = coursePreference.getConversionScale();
+                                Optional<AssignmentPreference> assignmentPreference = assignmentService.getAssignmentPreference(assignmentId);
+                                if (assignmentPreference.isPresent() && StringUtils.isNotBlank(assignmentPreference.get().getConversionScale())) {
+                                    assignmentConversionScale = assignmentPreference.get().getConversionScale();
+                                }
+
                                 //Grade conversion logic
                                 switch (assignment.getGradingType()) {
                                     case GradeUtils.GRADE_TYPE_POINTS:
-                                        grade = GradeUtils.mapGradeToScale(coursePreference.getConversionScale(), grade, assignment.getPointsPossible().toString());
+                                        grade = GradeUtils.mapGradeToScale(assignmentConversionScale, grade, assignment.getPointsPossible().toString());
                                         break;
                                     case GradeUtils.GRADE_TYPE_PERCENT:
-                                        grade = GradeUtils.mapPercentageToScale(coursePreference.getConversionScale(), grade);
+                                        grade = GradeUtils.mapPercentageToScale(assignmentConversionScale, grade);
                                         break;
                                     default:
                                         grade = GRADE_NOT_AVAILABLE;
@@ -293,13 +304,20 @@ public class CsvController {
                                     .findAny();
                             if (optionalGrade.isPresent()) {
                                 String grade = optionalGrade.get().getGrade();
+
+                                String assignmentConversionScale = coursePreference.getConversionScale();
+                                Optional<AssignmentPreference> assignmentPreference = assignmentService.getAssignmentPreference(assignmentId);
+                                if (assignmentPreference.isPresent() && StringUtils.isNotBlank(assignmentPreference.get().getConversionScale())) {
+                                    assignmentConversionScale = assignmentPreference.get().getConversionScale();
+                                }
+
                                 //Grade conversion logic
                                 switch (assignment.getGradingType()) {
                                     case GradeUtils.GRADE_TYPE_POINTS:
-                                        grade = GradeUtils.mapGradeToScale(coursePreference.getConversionScale(), grade, assignment.getPointsPossible().toString());
+                                        grade = GradeUtils.mapGradeToScale(assignmentConversionScale, grade, assignment.getPointsPossible().toString());
                                         break;
                                     case GradeUtils.GRADE_TYPE_PERCENT:
-                                        grade = GradeUtils.mapPercentageToScale(coursePreference.getConversionScale(), grade);
+                                        grade = GradeUtils.mapPercentageToScale(assignmentConversionScale, grade);
                                         break;
                                     default:
                                         grade = GRADE_NOT_AVAILABLE;

@@ -77,7 +77,7 @@
           <form th:action="@{/import_csv}" class="dropzone" id="file-dropzone"></form>
         </div>
         <div class="modal-footer">
-          <button type="button" id="cancelSubmitCsv" class="canvas-btn rounded-btn" data-dismiss="modal" th:text="#{instructor_import_modal_cancel}">Cancel</button>
+          <button type="button" class="canvas-btn rounded-btn" data-dismiss="modal" th:text="#{instructor_import_modal_cancel}">Cancel</button>
           <button type="button" id="submitCsv" class="canvas-btn rounded-btn primary-btn" disabled="true">
             <span th:text="#{instructor_import_modal_import}">Import</span>
             <div class="spinner-border" role="status">
@@ -109,7 +109,7 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" id="cancelSubmitCsv" class="canvas-btn rounded-btn" data-dismiss="modal" th:text="#{instructor_export_modal_close}">Close</button>
+          <button type="button" class="canvas-btn rounded-btn" data-dismiss="modal" th:text="#{instructor_export_modal_close}">Close</button>
           <button type="button" id="export-button" class="canvas-btn rounded-btn primary-btn">
             <span th:text="#{instructor_export_modal_export}">Export</span>
             <div class="spinner-border" role="status">
@@ -184,6 +184,42 @@
       </div>
     </div>
   </div>
+
+  <!-- Modal Assignment Scale -->
+  <div class="modal fade" id="assignmentScale" tabindex="-1" role="dialog" aria-labelledby="assignmentScaleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"></h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="assignmentConversionScale" th:text="#{instructor_assignment_scale_modal_label}">Conversion scale</label>
+            <select class="form-control" name="assignmentConversionScale" id="assignmentConversionScale">
+              <option value="" th:text="#{instructor_assignment_scale_modal_none_option}">Use course conversion scale</option>
+              <option value="0.5"><span th:text="#{instructor_conversion_scale(' 50%')}"></span></option>
+              <option value="0.6"><span th:text="#{instructor_conversion_scale(' 60%')}"></span></option>
+              <option value="0.7"><span th:text="#{instructor_conversion_scale(' 70%')}"></span></option>
+              <option value="0.8"><span th:text="#{instructor_conversion_scale(' 80%')}"></span></option>
+              <option value="0.9"><span th:text="#{instructor_conversion_scale(' 90%')}"></span></option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="canvas-btn rounded-btn" data-dismiss="modal" th:text="#{instructor_export_modal_close}">Close</button>
+          <button type="button" id="save-assignment-scale-button" class="canvas-btn rounded-btn primary-btn">
+            <span th:text="#{save}">Save</span>
+            <div class="spinner-border" role="status">
+              <span class="sr-only" th:text="#{instructor_spinner_loading}">Loading</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div id="omitFromFinalGrade" class="d-none">
@@ -200,6 +236,7 @@
     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
       <a class="dropdown-item dropdown-assignment-details" href="#" data-toggle="modal" data-target="#assignmentDetails" th:text="#{instructor_dropdown_assignment_details}">Assignment Details</a>
       <a class="dropdown-item dropdown-speed-grader" target="_blank" href="#" th:text="#{instructor_dropdown_speed_grader}">Speed Grader</a>
+      <a class="dropdown-item dropdown-assignment-scale" target="_blank" href="#" data-toggle="modal" data-target="#assignmentScale"  th:text="#{instructor_dropdown_assignment_scale}">Change Assignment Scale</a>
       <a class="dropdown-item dropdown-minimum-score" href="#" th:text="#{instructor_dropdown_minimum_score}">Set Minimum Score for Empty Cells</a>
     </div>
   </div>
@@ -239,7 +276,8 @@
       instructor_details_modal_total: /*[[#{instructor_details_modal_total}]]*/,
       instructor_group_details_modal_title: /*[[#{instructor_group_details_modal_title}]]*/,
       instructor_grade_out_range: /*[[#{instructor_grade_out_range}]]*/,
-      instructor_no_points_possible: /*[[#{instructor_no_points_possible}]]*/
+      instructor_no_points_possible: /*[[#{instructor_no_points_possible}]]*/,
+      instructor_assignment_scale_modal_title: /*[[#{instructor_assignment_scale_modal_title}]]*/
     };
     var container = $('#studentTable' + [[${courseId}]])[0];
     var studentFilter = document.getElementById('studentFilter');
@@ -647,6 +685,27 @@
       var col = $(this).parent().data('col');
       var headerSettings = cellSettings[0][col];
       $(this).attr('href', headerSettings.speedGraderUrl)
+    });
+
+    // Populate assignment conversion scale modal 
+    $('body').on('click', '.dropdown-assignment-scale', function(e) {
+      e.preventDefault();
+      var col = $(this).parent().data('col');
+      var headerSettings = cellSettings[0][col];
+      var assignmentConversionScale = cellSettings[1][col].assignmentConversionScale;
+      $('#assignmentScale .modal-title').text(messages.instructor_assignment_scale_modal_title.replace('{0}', headerSettings.assignmentName));
+      $('#assignmentConversionScale').val(assignmentConversionScale);
+      $('#save-assignment-scale-button').off('click').click(function() {
+        $('#save-assignment-scale-button').prop('disabled', true);
+        $('#save-assignment-scale-button').addClass('spinner');
+        $.ajax({
+          url: [[@{/saveAssignmentConversionScale}]] + '?assignmentId=' + headerSettings.assignmentId + '&newConversionScale=' + $('#assignmentConversionScale').val(),
+          type: 'POST',
+          contentType: 'text/plain; charset=utf-8'
+        }).done(function (data) {
+          window.location = [[@{/}]];
+        });
+      });
     });
 
     // Set minimum possible score to all col cells

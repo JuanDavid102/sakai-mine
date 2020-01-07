@@ -10,9 +10,11 @@ import edu.ksu.lti.launch.oauth.LtiPrincipal;
 
 import edu.uc.ltigradebook.constants.EventConstant;
 import edu.uc.ltigradebook.dao.BannerServiceDao;
+import edu.uc.ltigradebook.entity.AssignmentPreference;
 import edu.uc.ltigradebook.entity.CoursePreference;
 import edu.uc.ltigradebook.entity.StudentGrade;
 import edu.uc.ltigradebook.exception.GradeException;
+import edu.uc.ltigradebook.service.AssignmentService;
 import edu.uc.ltigradebook.service.CanvasAPIServiceWrapper;
 import edu.uc.ltigradebook.service.CourseService;
 import edu.uc.ltigradebook.service.EventTrackingService;
@@ -58,7 +60,10 @@ public class GradeRestController {
 
     @Autowired
     private GradeService gradeService;
-    
+
+    @Autowired
+    private AssignmentService assignmentService;
+
     @Autowired
     private SecurityService securityService;
 
@@ -138,13 +143,19 @@ public class GradeRestController {
                             noPointsPossible = true;
                         }
 
+                        String assignmentConversionScale = coursePreference.getConversionScale();
+                        Optional<AssignmentPreference> assignmentPreference = assignmentService.getAssignmentPreference(assignmentId);
+                        if (assignmentPreference.isPresent() && StringUtils.isNotBlank(assignmentPreference.get().getConversionScale())) {
+                            assignmentConversionScale = assignmentPreference.get().getConversionScale();
+                        }
+
                         //Grade conversion logic
                         switch (assignment.getGradingType()) {
                             case GradeUtils.GRADE_TYPE_POINTS:
-                                grade = GradeUtils.mapGradeToScale(coursePreference.getConversionScale(), grade, assignment.getPointsPossible().toString());
+                                grade = GradeUtils.mapGradeToScale(assignmentConversionScale, grade, assignment.getPointsPossible().toString());
                                 break;
                             case GradeUtils.GRADE_TYPE_PERCENT:
-                                grade = GradeUtils.mapPercentageToScale(coursePreference.getConversionScale(), grade);
+                                grade = GradeUtils.mapPercentageToScale(assignmentConversionScale, grade);
                                 break;
                             default:
                                 grade = GRADE_NOT_AVAILABLE;
@@ -225,13 +236,19 @@ public class GradeRestController {
                             noPointsPossible = true;
                         }
 
+                        String assignmentConversionScale = coursePreference.getConversionScale();
+                        Optional<AssignmentPreference> assignmentPreference = assignmentService.getAssignmentPreference(assignmentId);
+                        if (assignmentPreference.isPresent() && StringUtils.isNotBlank(assignmentPreference.get().getConversionScale())) {
+                            assignmentConversionScale = assignmentPreference.get().getConversionScale();
+                        }
+
                         //Grade conversion logic
                         switch (assignment.getGradingType()) {
                             case GradeUtils.GRADE_TYPE_POINTS:
-                                grade = GradeUtils.mapGradeToScale(coursePreference.getConversionScale(), grade, assignment.getPointsPossible().toString());
+                                grade = GradeUtils.mapGradeToScale(assignmentConversionScale, grade, assignment.getPointsPossible().toString());
                                 break;
                             case GradeUtils.GRADE_TYPE_PERCENT:
-                                grade = GradeUtils.mapPercentageToScale(coursePreference.getConversionScale(), grade);
+                                grade = GradeUtils.mapPercentageToScale(assignmentConversionScale, grade);
                                 break;
                             default:
                                 grade = GRADE_NOT_AVAILABLE;

@@ -14,9 +14,11 @@ import edu.ksu.lti.launch.oauth.LtiPrincipal;
 
 import edu.uc.ltigradebook.constants.EventConstant;
 import edu.uc.ltigradebook.dao.BannerServiceDao;
+import edu.uc.ltigradebook.entity.AssignmentPreference;
 import edu.uc.ltigradebook.entity.CoursePreference;
 import edu.uc.ltigradebook.entity.Event;
 import edu.uc.ltigradebook.entity.StudentGrade;
+import edu.uc.ltigradebook.service.AssignmentService;
 import edu.uc.ltigradebook.service.CanvasAPIServiceWrapper;
 import edu.uc.ltigradebook.service.CourseService;
 import edu.uc.ltigradebook.service.EventTrackingService;
@@ -77,6 +79,9 @@ public class IndexController {
 
     @Autowired
     private SecurityService securityService;
+
+    @Autowired
+    private AssignmentService assignmentService;
 
     @Autowired
     private MessageSource messageSource;
@@ -203,6 +208,7 @@ public class IndexController {
                 cellSettings.put("omitFromFinalGrade", omitFromFinalGrade);
                 cellSettings.put("assignmentIsMuted", assignmentIsMuted);
                 cellSettings.put("assignmentName", assignment.getName());
+                cellSettings.put("assignmentId", assignment.getId());
                 cellSettings.put("speedGraderUrl", String.format(SPEED_GRADER_URL, canvasBaseUrl, courseId, assignmentId));
                 colSettings.add(cellSettings);
                 
@@ -294,6 +300,9 @@ public class IndexController {
                     boolean noPointsPossible = false;
 
                     List<Submission> submissionsForAssignment = submissionsMap.get(assignmentId);
+                    if (submissionsForAssignment == null) {
+                        submissionsForAssignment = canvasService.getCourseSubmissions(courseId, assignment.getId());
+                    }
                     Optional<Submission> optionalGrade = submissionsForAssignment.stream()
                             .filter(submission -> submission.getUserId() != null && userId.equals(submission.getUserId().toString()))
                             .findAny();
@@ -305,13 +314,22 @@ public class IndexController {
                         noPointsPossible = true;
                     }
 
+                    String assignmentConversionScale = coursePreference.getConversionScale();
+                    Optional<AssignmentPreference> assignmentPreference = assignmentService.getAssignmentPreference(assignmentId);
+                    if (assignmentPreference.isPresent() && StringUtils.isNotBlank(assignmentPreference.get().getConversionScale())) {
+                        assignmentConversionScale = assignmentPreference.get().getConversionScale();
+                        cellSettings.put("assignmentConversionScale", assignmentConversionScale);
+                    } else {
+                        cellSettings.put("assignmentConversionScale", "");
+                    }
+
                     //Grade conversion logic
                     switch (assignment.getGradingType()) {
                         case GradeUtils.GRADE_TYPE_POINTS:
-                            grade = GradeUtils.mapGradeToScale(coursePreference.getConversionScale(), grade, assignment.getPointsPossible().toString());
+                            grade = GradeUtils.mapGradeToScale(assignmentConversionScale, grade, assignment.getPointsPossible().toString());
                             break;
                         case GradeUtils.GRADE_TYPE_PERCENT:
-                            grade = GradeUtils.mapPercentageToScale(coursePreference.getConversionScale(), grade);
+                            grade = GradeUtils.mapPercentageToScale(assignmentConversionScale, grade);
                             break;
                         default:
                             grade = GRADE_NOT_AVAILABLE;
@@ -428,12 +446,18 @@ public class IndexController {
                                 log.error("Fatal error getting submission for the course {}, assignment {} and student {}.", courseId, assignmentId, canvasUserId);
                             }
                             grade = submission.isPresent() ? submission.get().getGrade() : StringUtils.EMPTY;
-        
+
+                            String assignmentConversionScale = coursePreference.getConversionScale();
+                            Optional<AssignmentPreference> assignmentPreference = assignmentService.getAssignmentPreference(assignmentId);
+                            if (assignmentPreference.isPresent() && StringUtils.isNotBlank(assignmentPreference.get().getConversionScale())) {
+                                assignmentConversionScale = assignmentPreference.get().getConversionScale();
+                            }
+
                             //Grade conversion logic
                             if(GradeUtils.GRADE_TYPE_POINTS.equals(assignment.getGradingType())) {
-                                grade = GradeUtils.mapGradeToScale(coursePreference.getConversionScale(), grade, assignment.getPointsPossible().toString());
+                                grade = GradeUtils.mapGradeToScale(assignmentConversionScale, grade, assignment.getPointsPossible().toString());
                             } else if(GradeUtils.GRADE_TYPE_PERCENT.equals(assignment.getGradingType())) { 
-                                grade = GradeUtils.mapPercentageToScale(coursePreference.getConversionScale(), grade);
+                                grade = GradeUtils.mapPercentageToScale(assignmentConversionScale, grade);
                             }
                         }
         
