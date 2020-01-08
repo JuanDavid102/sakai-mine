@@ -7,10 +7,12 @@
 </head>
 
 <body>
-  <div class="container">
+  <div class="admin-container">
     <!-- Topbar -->
     <div th:insert="fragments/topbar :: topbar"></div>
     <!-- End of Topbar -->
+
+    <h2 class="canvas-h2" th:text="#{admin_sidebar_events}">Events</h2>
 
     <table id="eventTable" class="table table-bordered table-striped">
       <thead>

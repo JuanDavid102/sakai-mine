@@ -1,0 +1,111 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <title th:text="${admin_events_title}">Events</title>
+    <div th:insert="fragments/head :: head"></div>
+  </head>
+  <body>
+    <div class="admin-container">
+      <!-- Topbar -->
+      <div th:insert="fragments/topbar :: topbar"></div>
+      <!-- End of Topbar -->
+
+      <h2 class="canvas-h2" th:text="#{admin_sidebar_grades}">Grades of Courses</h2>
+
+      <form th:action="@{/admin_grades_courses}" method="post">
+          <div class="form-group">
+              <label for="selectedCourse" th:text="#{admin_banner_select_course}">Select the course to see the final student grades:</label>
+              <select id="selectedCourse" name="selectedCourse" class="form-control" onchange="this.form.submit();">
+                  <option></option>
+                  <option th:each="course : ${courses}" th:value="${course.id}" th:text="${course.name}" th:selected="${course.id.equals(selectedIntegerCourse)}"></option>
+              </select>
+          </div>
+      </form>
+      <table th:if="${userList != null}" id="course-report-table">
+        <thead>
+          <tr>
+            <th th:text="#{instructor_header_login}">RUT</th>
+            <th th:text="#{instructor_header_student_name}">Student Name</th>
+            <th th:text="#{instructor_header_section}">Section</th>
+            <th th:text="#{shared_final_grade}">Final Grade</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="user : ${userList}">
+            <td><span th:text="${user.sisUserId}"></span></td>
+            <td><span th:text="${user.sortableName}"></span></td>
+            <td><span th:text="${userSectionMap.get(user.id.toString())}"></span></td>
+            <td th:id="${'finalGrade' + user.id}">
+              <div th:id="${'spinnerCanvas' + user.id}" class="spinner-total spinner-border student-spinner" role="status">
+                <span class="sr-only" th:text="#{instructor_spinner_loading}">Loading</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <script th:inline="javascript">
+      /*<![CDATA[*/
+        $(document).ready(function() {
+          var courseId = /*[[${selectedIntegerCourse}]]*/;
+          var courseUsers = /*[[${userList}]]*/;
+          var table;
+
+          function calcFinalGrade(user) {
+            $.ajax({
+              url: [[@{/getStudentFinalGrade}]] + '?studentId=' + user.id + '&isCurrentGrade=false&courseId=' + courseId,
+              type: 'POST',
+              contentType: 'text/plain; charset=utf-8'
+
+            }).done(function(grade) {
+              $('#spinnerCanvas' + user.id).addClass('d-none');
+              var cell = table.cell($('#finalGrade' + user.id)[0]);
+              cell.data(grade).draw();
+            });
+          }
+
+          if (courseUsers != null) {
+            var search = /*[[#{admin_grades_courses_datatables_search}]]*/ 'search';
+            var lengthMenu = /*[[#{admin_grades_courses_datatables_lengthMenu}]]*/ 'lengthMenu';
+            var zeroRecords = /*[[#{admin_grades_courses_datatables_zeroRecords}]]*/ 'zeroRecords';
+            var info = /*[[#{datatables_info}]]*/ 'info';
+            var infoEmpty = /*[[#{admin_grades_courses_datatables_infoEmpty}]]*/ 'infoEmpty';
+            var infoFiltered = /*[[#{admin_grades_courses_datatables_infoFiltered}]]*/ 'infoFiltered';
+            var emptyTable = /*[[#{datatables_emptyTable}]]*/ 'emptyTable';
+            var next = /*[[#{datatables_next}]]*/ 'next';
+            var previous = /*[[#{datatables_previous}]]*/ 'previous';
+            var sortAscending = /*[[#{datatables_sortAscending}]]*/ 'sortAscending';
+            var sortDescending = /*[[#{datatables_sortDescending}]]*/ 'sortDescending';
+            var groupColumn = 1;
+            table = $('#course-report-table').DataTable({
+              'order': [ [ groupColumn, 'asc' ] ],
+              'pageLength': 50,
+              'language': {
+                'search': search,
+                'lengthMenu': lengthMenu,
+                'zeroRecords': zeroRecords,
+                'info': info,
+                'infoEmpty': infoEmpty,
+                'infoFiltered': infoFiltered,
+                'emptyTable': emptyTable,
+                'paginate': {
+                  'next': next,
+                  'previous': previous,
+                },
+                'aria': {
+                  'sortAscending': sortAscending,
+                  'sortDescending': sortDescending,
+                }
+              }
+            });
+
+            for (var i = 0; i < courseUsers.length; i++) {
+              calcFinalGrade(courseUsers[i]);
+            }
+          }
+        });
+      /*]]>*/
+    </script>
+  </body>
+</html>

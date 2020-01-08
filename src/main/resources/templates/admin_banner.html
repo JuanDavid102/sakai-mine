@@ -7,10 +7,13 @@
 </head>
 
 <body>
-  <div class="container">
+  <div class="admin-container">
     <!-- Topbar -->
     <div th:insert="fragments/topbar :: topbar"></div>
     <!-- End of Topbar -->
+
+    <h2 class="canvas-h2" th:text="#{admin_sidebar_banner_integration}">Banner integration</h2>
+
      <div class="alert alert-success" role="alert" th:if="${successSavingPreferences != null && successSavingPreferences}" th:text="#{admin_banner_success_preferences}">
        Success saving prefs!
      </div>

@@ -395,6 +395,41 @@ table.table tr.success td {
   position: relative;
 }
 
+.admin-container {
+  overflow: hidden;
+  width: 100%;
+  margin-top: 24px;
+  margin-bottom: 24px;
+}
+
+.admin-container::before {
+  content: " ";
+  position: fixed;
+  top: 0px;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 1px;
+  background-color: #c7cdd1;
+  z-index: 2;
+}
+
+.nav-tabs.canvas-nav-tabs {
+  margin-bottom: 14px;
+}
+
+.nav-tabs.canvas-nav-tabs .nav-link {
+  font-size: .875rem;
+}
+
+h2.canvas-h2 {
+  font-size: 25.4px;
+  line-height: 1.5;
+  font-weight: normal;
+  margin: 6px 0 15px 0;
+  font-family: "Lato","Helvetica Neue",Helvetica,Arial,sans-serif;
+}
+
 .canvas-input {
   transition: all 0.2s ease-out;
   outline-color: transparent;

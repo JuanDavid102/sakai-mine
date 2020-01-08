@@ -39,6 +39,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.i18n.SessionLocaleResolver;
@@ -557,6 +559,55 @@ public class IndexController {
             log.error("Error getting subaccounts from Canvas.", ex);
         }
         return new ModelAndView("admin_banner");
+    }
+
+    @RequestMapping(value = "/admin_grades_courses")
+    public ModelAndView adminGradesCourses(@ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, @RequestParam(required = false) String selectedCourse, Model model)  {
+        LtiLaunchData lld = ltiSession.getLtiLaunchData();
+        localeResolver.setDefaultLocale(new Locale(lld.getLaunchPresentationLocale()));
+
+        String canvasLoginId = ltiPrincipal.getUser();
+        if (!(checkAdminPermissions(canvasLoginId) || lld.getRolesList().contains(InstitutionRole.Administrator))) {
+            return new ModelAndView("error");
+        }
+
+        try {
+            model.addAttribute("courses", courseService.getAllCourses());
+            model.addAttribute("adminGradesCourses", true);
+            new Long(selectedCourse);
+        } catch(Exception ex) {
+            return new ModelAndView("admin_grades_courses");
+        }
+        try {
+            List<User> userList = canvasService.getUsersInCourse(selectedCourse);
+
+            List<Section> sectionList = canvasService.getSectionsInCourse(selectedCourse);
+            Map<String, String> sectionMap = new HashMap<>();
+            Map<String, String> userSectionMap = new HashMap<>();
+            for(Section section : sectionList) {
+                sectionMap.put(String.valueOf(section.getId()), section.getName());
+            }
+            for (User user : userList) {
+                String section = StringUtils.EMPTY;
+                if(user.getEnrollments() != null && !user.getEnrollments().isEmpty()) {
+                    StringJoiner joiner = new StringJoiner(",");
+                    for(Enrollment enrollment : user.getEnrollments()) {
+                        joiner.add(sectionMap.get(enrollment.getCourseSectionId()));
+                    }
+                    section = joiner.toString();
+                }
+                userSectionMap.put(Integer.toString(user.getId()), section);
+            }
+
+            model.addAttribute("selectedIntegerCourse", Integer.valueOf(selectedCourse));
+            model.addAttribute("userList", userList);
+            model.addAttribute("userSectionMap", userSectionMap);
+
+        } catch (IOException ex) {
+            //log.error("Cannot get users in course {}", courseId);
+            return null;
+        }
+        return new ModelAndView("admin_grades_courses");
     }
 
     @GetMapping("/send_to_banner")

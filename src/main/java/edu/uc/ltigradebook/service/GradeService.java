@@ -171,10 +171,12 @@ public class GradeService {
         }
     }
 
-    public String getStudentTotalMean(LtiSession ltiSession, Integer studentId, boolean isCurrentGrade) throws GradeException {
+    public String getStudentTotalMean(LtiSession ltiSession, Integer studentId, boolean isCurrentGrade, String courseId) throws GradeException {
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
         String canvasUserId = lld.getCustom().get("canvas_user_id");
-        String courseId = ltiSession.getCanvasCourseId();
+        if (StringUtils.isBlank(courseId)) {
+            courseId = ltiSession.getCanvasCourseId();
+        }
         CoursePreference coursePreference = courseService.getCoursePreference(courseId);
         if (canvasUserId.equals(studentId.toString()) || securityService.isFaculty(lld.getRolesList())) {
             boolean calculateFinalGrade = true;

@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @RestController
@@ -95,14 +96,14 @@ public class GradeRestController {
         }
     }
 
-    @RequestMapping(value = "/getStudentGroupGrade", method = { RequestMethod.GET, RequestMethod.POST })
+    @RequestMapping(value = "/getStudentGroupGrade", method = RequestMethod.POST)
     public String getStudentGroupMean(@ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, @RequestParam Long groupId, @RequestParam Integer studentId) throws GradeException {
         return gradeService.getStudentGroupMean(ltiSession, groupId, studentId);
     }
 
     @RequestMapping(value = "/getStudentFinalGrade", method = RequestMethod.POST)
-    public String getStudentTotalMean(@ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, @RequestParam Integer studentId, @RequestParam boolean isCurrentGrade) throws GradeException {
-        return gradeService.getStudentTotalMean(ltiSession, studentId, isCurrentGrade);
+    public String getStudentTotalMean(@ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, @RequestParam Integer studentId, @RequestParam boolean isCurrentGrade, @RequestParam(required = false) String courseId) throws GradeException {
+        return gradeService.getStudentTotalMean(ltiSession, studentId, isCurrentGrade, courseId);
     }
 
     @RequestMapping(value = "/sendGradesToBanner", method = RequestMethod.POST)

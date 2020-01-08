@@ -3,7 +3,7 @@
 <head>
 </head>
 <body>
-  <ul th:fragment="topbar" class="nav nav-tabs">
+  <ul th:fragment="topbar" class="nav nav-tabs canvas-nav-tabs">
     <li class="nav-item">
       <a class="nav-link" th:href="@{/admin_main}" th:classappend="${adminMain != null && adminMain} ? active : '' ">
         <span th:text="#{admin_sidebar_dashboard}">Dashboard</span>
@@ -12,6 +12,11 @@
     <li class="nav-item">
       <a class="nav-link" th:href="@{/admin_events}" th:classappend="${adminEvents != null && adminEvents} ? active : '' ">
         <span th:text="#{admin_sidebar_events}">Events</span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" th:href="@{/admin_grades_courses}" th:classappend="${adminGradesCourses != null && adminGradesCourses} ? active : '' ">
+        <span th:text="#{admin_sidebar_grades}">Course Grades</span>
       </a>
     </li>
     <li class="nav-item">

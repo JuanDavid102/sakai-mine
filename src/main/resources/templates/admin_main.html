@@ -7,17 +7,19 @@
 </head>
 
 <body>
-  <div class="container">
+  <div class="admin-container">
     <!-- Topbar -->
     <div th:insert="fragments/topbar :: topbar"></div>
     <!-- End of Topbar -->
+
+    <h2 class="canvas-h2" th:text="#{admin_sidebar_dashboard}">Dashboard</h2>
 
     <!-- Content Row -->
     <div class="row">
 
       <!-- Earnings (Monthly) Card Example -->
       <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-primary shadow h-100 py-2">
+        <div class="card shadow h-100 py-2">
           <div class="card-body">
             <div class="row no-gutters align-items-center">
               <div class="col mr-2">
@@ -25,7 +27,7 @@
                 <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${eventCount}">75268</div>
               </div>
               <div class="col-auto">
-                <i class="fas fa-exclamation-circle fa-2x text-gray-300"></i>
+                <i class="fas fa-exclamation-circle fa-2x"></i>
               </div>
             </div>
           </div>
@@ -34,7 +36,7 @@
 
       <!-- Earnings (Monthly) Card Example -->
       <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-success shadow h-100 py-2">
+        <div class="card shadow h-100 py-2">
           <div class="card-body">
             <div class="row no-gutters align-items-center">
               <div class="col mr-2">
@@ -42,7 +44,7 @@
                 <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${courseCount}">52</div>
               </div>
               <div class="col-auto">
-                <i class="fas fa-book-open fa-2x text-gray-300"></i>
+                <i class="fas fa-book-open fa-2x"></i>
               </div>
             </div>
           </div>
@@ -51,7 +53,7 @@
 
       <!-- Earnings (Monthly) Card Example -->
       <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-success shadow h-100 py-2">
+        <div class="card shadow h-100 py-2">
           <div class="card-body">
             <div class="row no-gutters align-items-center">
               <div class="col mr-2">
@@ -59,7 +61,7 @@
                 <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${gradeCount}">354646</div>
               </div>
               <div class="col-auto">
-                <i class="fas fa-pen-square fa-2x text-gray-300"></i>
+                <i class="fas fa-pen-square fa-2x"></i>
               </div>
             </div>
           </div>
@@ -68,7 +70,7 @@
 
       <!-- Pending Requests Card Example -->
       <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-warning shadow h-100 py-2">
+        <div class="card shadow h-100 py-2">
           <div class="card-body">
             <div class="row no-gutters align-items-center">
               <div class="col mr-2">
@@ -76,7 +78,7 @@
                 <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${gradedUserCount}">45</div>
               </div>
               <div class="col-auto">
-                <i class="fas fa-users fa-2x text-gray-300"></i>
+                <i class="fas fa-users fa-2x"></i>
               </div>
             </div>
           </div>
