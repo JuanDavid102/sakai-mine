@@ -1,0 +1,184 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <title th:text="${admin_events_title}">Events</title>
+    <div th:insert="fragments/head :: head"></div>
+  </head>
+  <body>
+    <div class="admin-container">
+      <!-- Topbar -->
+      <div th:insert="fragments/topbar :: topbar"></div>
+      <!-- End of Topbar -->
+
+      <h2 class="canvas-h2" th:text="#{admin_sidebar_grades}">Grades of Courses</h2>
+
+      <form th:action="@{/admin_grades_students}" method="post">
+          <div class="form-group">
+              <label for="selectedCourse" th:text="#{admin_banner_select_course_student}">Select the course to see its students:</label>
+              <select id="selectedCourse" name="selectedCourse" class="form-control" onchange="this.form.submit();">
+                  <option></option>
+                  <option th:each="course : ${courses}" th:value="${course.id}" th:text="${course.name}" th:selected="${course.id.equals(selectedIntegerCourse)}"></option>
+              </select>
+          </div>
+          <div class="form-group" th:if="${userList != null}">
+              <label for="selectedStudent" th:text="#{admin_banner_select_student}">Select a student to see his grades:</label>
+              <select id="selectedStudent" name="selectedStudent" class="form-control" onchange="this.form.submit();">
+                  <option></option>
+                  <option th:each="user : ${userList}" th:value="${user.id}" th:text="${user.sortableName}" th:selected="${user.id.equals(selectedIntegerStudent)}"></option>
+              </select>
+          </div>
+      </form>
+
+      <div class="alert alert-info" th:if="${assignmentList != null && assignmentList.isEmpty()}" th:text="#{shared_no_assignments}">
+      </div>
+      <table id="assignmentTable" class="table table-hover" th:if="${assignmentList != null && !assignmentList.isEmpty()}">
+        <thead>
+        <tr>
+          <th th:text="#{student_header_assignment}">Assignment</th>
+          <th th:text="#{student_header_grade}">Grade</th>
+          <th>CATEGORY</th>
+          <th class="d-none"></th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="assignment : ${assignmentList}">
+          <td th:text="${assignment.name}">an assignment name</td>
+          <td>
+            <span th:if="${assignment.omitFromFinalGrade}" class="fas fa-exclamation-circle" th:title="#{instructor_header_omit_final_grade}"></span>
+            <span th:if="${assignment.muted == 'true'}" class="fas fa-bell-slash" th:title="#{instructor_header_muted_assignment}"></span>
+            <span th:unless="${assignment.muted == 'true' && assignment.omitFromFinalGrade}" th:text="${gradeMap.get(assignment.id)}"></span>
+          </td>
+          <td>
+            <span th:text="${assignmentGroupNameMap.get(#strings.toString(assignment.assignmentGroupId))}"></span>
+          </td>
+          <td class="d-none">
+            <div th:attr="data-spinner=${'spinner' + assignment.assignmentGroupId}" class="spinner-border student-spinner" role="status">
+              <span class="sr-only" th:text="#{instructor_spinner_loading}">Loading</span>
+            </div>
+            <span th:attr="data-id=${'grade' + assignment.assignmentGroupId}"></span>
+          </td>
+        </tr>
+        <tr>
+          <td th:text="#{shared_total}">TOTAL</td>
+          <td>
+            <div id="spinnerFinal" class="spinner-border student-spinner" role="status">
+              <span class="sr-only" th:text="#{instructor_spinner_loading}">Loading</span>
+            </div>
+            <span id="finalGrade"></span>
+          </td>
+          <td th:text="#{shared_total}">TOTALCATEGORY</td>
+          <td class="d-none"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <script th:inline="javascript">
+      $(document).ready( function () {
+        /*<![CDATA[*/
+        var assignmentGroupList = /*[[${assignmentGroupList}]]*/;
+        var userId = /*[[${selectedIntegerStudent}]]*/;
+        var messages = {
+          student_grade_not_available: /*[[#{student_grade_not_available}]]*/,
+        };
+
+        var search = /*[[#{student_datatables_search}]]*/ 'search';
+        var lengthMenu = /*[[#{student_datatables_lengthMenu}]]*/ 'lengthMenu';
+        var zeroRecords = /*[[#{student_datatables_zeroRecords}]]*/ 'zeroRecords';
+        var info = /*[[#{datatables_info}]]*/ 'info';
+        var infoEmpty = /*[[#{student_datatables_infoEmpty}]]*/ 'infoEmpty';
+        var infoFiltered = /*[[#{student_datatables_infoFiltered}]]*/ 'infoFiltered';
+        var emptyTable = /*[[#{datatables_emptyTable}]]*/ 'emptyTable';
+        var next = /*[[#{datatables_next}]]*/ 'next';
+        var previous = /*[[#{datatables_previous}]]*/ 'previous';
+        var sortAscending = /*[[#{datatables_sortAscending}]]*/ 'sortAscending';
+        var sortDescending = /*[[#{datatables_sortDescending}]]*/ 'sortDescending';
+        var groupColumn = 2;
+        var table = $('#assignmentTable').DataTable({
+          'columnDefs': [{ 'visible': false, 'targets': groupColumn }],
+          'order': [ [ groupColumn, 'asc' ] ],
+          'drawCallback': function ( settings ) {
+            var api = this.api();
+            var rows = api.rows( {page:'current'} ).nodes();
+            var last=null;
+
+            api.column(groupColumn, {page:'current'} ).data().each( function ( group, i ) {
+              if ( last !== group ) {
+                $(rows).eq( i ).before(function() {
+                  return '<tr class="group"><td>'+group+'</td><td>' + api.column(groupColumn+1, {page:'current'} ).data()[i] + '</td></tr>';
+                });
+                last = group;
+              }
+            });
+          },
+          'pageLength': 50,
+          'language': {
+            'search': search,
+            'lengthMenu': lengthMenu,
+            'zeroRecords': zeroRecords,
+            'info': info,
+            'infoEmpty': infoEmpty,
+            'infoFiltered': infoFiltered,
+            'emptyTable': emptyTable,
+            'paginate': {
+              'next': next,
+              'previous': previous,
+            },
+            'aria': {
+              'sortAscending': sortAscending,
+              'sortDescending': sortDescending,
+            }
+          }
+        });
+        $('#assignmentTable').on('draw.dt', function () {
+          $(assignmentGroupList).each(function(idx, obj) {
+            var groupId = obj.id;
+            calcGroupGrade(groupId, userId, 0, 0);
+          });
+          calcFinalGrade(userId, false);
+        });
+
+        /**** GROUP AND FINAL GRADES ****/
+        function calcGroupGrade(groupId, userId) {
+          $.ajax({
+            url: [[@{/getStudentGroupGrade}]] + '?groupId=' + groupId + '&studentId=' + userId,
+            type: 'POST',
+            contentType: 'text/plain; charset=utf-8'
+
+          }).done(function(grade) {
+            if (grade === '-') grade = messages.student_grade_not_available;
+            $('[data-spinner="spinner' + groupId + '"]').each(function() {
+              $(this).addClass('d-none');
+            });
+            $('[data-id="grade' + groupId + '"]').each(function() {
+              $(this).text(grade);
+            });
+          });
+        }
+
+        function calcFinalGrade(userId, isCurrentGrade) {
+          $.ajax({
+            url: [[@{/getStudentFinalGrade}]] + '?studentId=' + userId + '&isCurrentGrade=' + isCurrentGrade,
+            type: 'POST',
+            contentType: 'text/plain; charset=utf-8'
+
+          }).done(function(grade) {
+            if (grade === '-') grade = messages.student_grade_not_available;
+            $('#spinnerFinal').addClass('d-none');
+            $('#finalGrade').text(grade);
+          });
+        }
+
+        $(assignmentGroupList).each(function(idx, obj) {
+          var groupId = obj.id;
+          calcGroupGrade(groupId, userId, 0, 0);
+        });
+        if (userId != null) {
+          calcFinalGrade(userId, false);
+        }
+        /**** END OF GROUP AND FINAL GRADES ****/
+        /*]]>*/
+      });
+    </script>
+  </body>
+</html>

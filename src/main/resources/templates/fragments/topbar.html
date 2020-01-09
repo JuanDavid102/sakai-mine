@@ -16,7 +16,12 @@
     </li>
     <li class="nav-item">
       <a class="nav-link" th:href="@{/admin_grades_courses}" th:classappend="${adminGradesCourses != null && adminGradesCourses} ? active : '' ">
-        <span th:text="#{admin_sidebar_grades}">Course Grades</span>
+        <span th:text="#{admin_sidebar_grades}">Grades of Courses</span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" th:href="@{/admin_grades_students}" th:classappend="${adminGradesStudents != null && adminGradesStudents} ? active : '' ">
+        <span th:text="#{admin_sidebar_grades_students}">Grades of Students in Courses</span>
       </a>
     </li>
     <li class="nav-item">

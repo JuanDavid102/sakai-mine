@@ -610,6 +610,108 @@ public class IndexController {
         return new ModelAndView("admin_grades_courses");
     }
 
+    @RequestMapping(value = "/admin_grades_students")
+    public ModelAndView adminGradesStudents(@ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, @RequestParam(required = false) String selectedCourse, @RequestParam(required = false) String selectedStudent, Model model)  {
+        LtiLaunchData lld = ltiSession.getLtiLaunchData();
+        localeResolver.setDefaultLocale(new Locale(lld.getLaunchPresentationLocale()));
+
+        String canvasLoginId = ltiPrincipal.getUser();
+        if (!(checkAdminPermissions(canvasLoginId) || lld.getRolesList().contains(InstitutionRole.Administrator))) {
+            return new ModelAndView("error");
+        }
+
+        try {
+            model.addAttribute("courses", courseService.getAllCourses());
+            model.addAttribute("adminGradesStudents", true);
+            new Long(selectedCourse);
+
+            List<User> userList = canvasService.getUsersInCourse(selectedCourse);
+            model.addAttribute("selectedIntegerCourse", Integer.valueOf(selectedCourse));
+            model.addAttribute("userList", userList);
+            new Long(selectedStudent);
+
+            model.addAttribute("selectedIntegerStudent", Integer.valueOf(selectedStudent));
+            Optional<User> user = userList.stream().filter(u -> u.getId() == Integer.valueOf(selectedStudent)).findFirst();
+            if (!user.isPresent()) {
+                return new ModelAndView("admin_grades_students");
+            }
+
+            List<Assignment> assignmentList = canvasService.listCourseAssignments(selectedCourse);
+            List<AssignmentGroup> assignmentGroupList = canvasService.listAssignmentGroups(selectedCourse);
+            CoursePreference coursePreference = courseService.getCoursePreference(selectedCourse);
+
+            Map<Integer, String> gradeMap = new HashMap<Integer, String>();
+            ExecutorService executorService = Executors.newCachedThreadPool();
+            for (Assignment assignment : assignmentList) {
+                String assignmentId = String.valueOf(assignment.getId());
+                /*boolean assignmentIsMuted = "true".equals(assignment.getMuted());
+                boolean omitFromFinalGrade = assignment.isOmitFromFinalGrade();*/
+
+                //Get the assigment submissions in a separated thread.
+                executorService.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        String grade = StringUtils.EMPTY;
+                        //Get the grade from persistence, get the grade from the API otherwise.
+                        Optional<StudentGrade> overwrittenStudentGrade = gradeService.getGradeByAssignmentAndUser(assignmentId, selectedStudent);
+                        if (overwrittenStudentGrade.isPresent()) {
+                            grade = overwrittenStudentGrade.get().getGrade();
+                        } else {
+                            Optional<Submission> submission = Optional.empty();
+                            try {
+                                submission = canvasService.getSingleCourseSubmission(selectedCourse, assignment.getId(), selectedStudent);
+                            } catch (IOException e) {
+                                log.error("Fatal error getting submission for the course {}, assignment {} and student {}.", selectedCourse, assignmentId, selectedStudent);
+                            }
+                            grade = submission.isPresent() ? submission.get().getGrade() : StringUtils.EMPTY;
+
+                            String assignmentConversionScale = coursePreference.getConversionScale();
+                            Optional<AssignmentPreference> assignmentPreference = assignmentService.getAssignmentPreference(assignmentId);
+                            if (assignmentPreference.isPresent() && StringUtils.isNotBlank(assignmentPreference.get().getConversionScale())) {
+                                assignmentConversionScale = assignmentPreference.get().getConversionScale();
+                            }
+
+                            //Grade conversion logic
+                            if(GradeUtils.GRADE_TYPE_POINTS.equals(assignment.getGradingType())) {
+                                grade = GradeUtils.mapGradeToScale(assignmentConversionScale, grade, assignment.getPointsPossible().toString());
+                            } else if(GradeUtils.GRADE_TYPE_PERCENT.equals(assignment.getGradingType())) { 
+                                grade = GradeUtils.mapPercentageToScale(assignmentConversionScale, grade);
+                            }
+                        }
+        
+                        String finalGrade = StringUtils.isNotBlank(grade) ? grade : GRADE_NOT_AVAILABLE;
+        
+                        gradeMap.put(assignment.getId(), finalGrade);
+                    }
+                });
+            }
+            executorService.shutdown();
+            //Wait until all the submission requests end.
+            try {
+            	executorService.awaitTermination(2, TimeUnit.MINUTES);
+            } catch (InterruptedException e) {
+                log.error("The submissions thread has been interrupted, aborting.", e);
+            }
+
+            Map<String, String> assignmentGroupNameMap = new HashMap<String, String>();
+            for(AssignmentGroup assignmentGroup : assignmentGroupList) {
+                //If there is an empty grade, we don't need to calculate the mean of the group.
+                //messageSource.getMessage("student_grade_not_available", null, LocaleContextHolder.getLocale())
+                String groupName = String.format("%s (%s%%)", assignmentGroup.getName(), assignmentGroup.getGroupWeight());
+                assignmentGroupNameMap.put(String.valueOf(assignmentGroup.getId()), groupName);
+            }
+
+            model.addAttribute("assignmentList", assignmentList);
+            model.addAttribute("assignmentGroupList", assignmentGroupList);
+            model.addAttribute("gradeMap", gradeMap);
+            model.addAttribute("assignmentGroupNameMap", assignmentGroupNameMap);
+            
+        } catch(Exception ex) {
+            //return new ModelAndView("admin_grades_students");
+        }
+        return new ModelAndView("admin_grades_students");
+    }
+
     @GetMapping("/send_to_banner")
     public ModelAndView sendToBanner(@ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, Model model) {
         Map<String, String> bannerGrades = new HashMap<String, String>();
