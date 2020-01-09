@@ -120,6 +120,15 @@ public class IndexController {
                 throw new Exception(String.format("The user %s doesn't have any valid role.", canvasLoginId));       
             }
             
+            //Assume that the contextId should be a Long value, if not the tool is being executed in a special context.
+            try {
+                Long.parseLong(courseId);
+            } catch(Exception e) {
+                if(securityService.isAdminUser(canvasLoginId) || lld.getRolesList().contains(InstitutionRole.Administrator)) {
+                    return adminMain(ltiPrincipal, ltiSession, model);
+                }
+            }
+            
             if(securityService.isStudent(lld.getRolesList())) {
                 return handleStudentView(ltiPrincipal, ltiSession, model);
             }
@@ -383,7 +392,9 @@ public class IndexController {
             model.addAttribute("RIGHT_READ_ONLY_COLS", RIGHT_READ_ONLY_COLS);
             model.addAttribute("TOTAL_COLUMNS", tableHeaderList.size());
             //Display the admin link if the user is admin
-            model.addAttribute("isAdminUser", securityService.isAdminUser(canvasLoginId) || lld.getRolesList().contains(InstitutionRole.Administrator));
+            //The admin button was hidden after the epsilon version, now the administration view is displayed inside the special admin context.
+            //model.addAttribute("isAdminUser", securityService.isAdminUser(canvasLoginId) || lld.getRolesList().contains(InstitutionRole.Administrator));
+            model.addAttribute("isAdminUser", false);
             //Display the banner options
             model.addAttribute("isBannerEnabled", securityService.isBannerEnabled(canvasService.getSingleCourse(courseId).get().getAccountId()));
             //Add the course preferences
