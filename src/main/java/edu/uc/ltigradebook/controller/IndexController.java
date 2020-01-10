@@ -307,7 +307,6 @@ public class IndexController {
                     String grade = StringUtils.EMPTY;
                     Map<String, Object> cellSettings = new HashMap<>();
                     boolean gradeTypeNotSupported = false;
-                    boolean noPointsPossible = false;
 
                     List<Submission> submissionsForAssignment = submissionsMap.get(assignmentId);
                     if (submissionsForAssignment == null) {
@@ -318,11 +317,6 @@ public class IndexController {
                             .findAny();
 
                     grade = optionalGrade.isPresent() ? optionalGrade.get().getGrade() : StringUtils.EMPTY;
-
-                    //Display an alert if the grade is not mappable
-                    if (assignment.getPointsPossible() == null || new Double("0").compareTo(assignment.getPointsPossible()) == 0) {
-                        noPointsPossible = true;
-                    }
 
                     String assignmentConversionScale = coursePreference.getConversionScale();
                     Optional<AssignmentPreference> assignmentPreference = assignmentService.getAssignmentPreference(assignmentId);
@@ -347,7 +341,7 @@ public class IndexController {
                             break;
                     }
 
-                    cellSettings.put("gradedPreviously", optionalGrade.isPresent() && StringUtils.isNotBlank(optionalGrade.get().getGrade()) && !(gradeTypeNotSupported || noPointsPossible));
+                    cellSettings.put("gradedPreviously", optionalGrade.isPresent() && StringUtils.isNotBlank(optionalGrade.get().getGrade()) && !(gradeTypeNotSupported || isZeroPoints));
 
                     //Get the grade from persistence, get the grade from the API otherwise.
                     Optional<StudentGrade> overwrittenStudentGrade = gradeService.getGradeByAssignmentAndUser(assignmentId, userId);
@@ -365,7 +359,6 @@ public class IndexController {
                     cellSettings.put("assignmentId", assignmentId);
                     cellSettings.put("userId", userId);
                     cellSettings.put("gradeTypeNotSupported", gradeTypeNotSupported);
-                    cellSettings.put("noPointsPossible", noPointsPossible);
                     userSettings.add(cellSettings);
                     userGrades.add(StringUtils.isNotBlank(grade) ? grade : GRADE_NOT_AVAILABLE);
                 }
