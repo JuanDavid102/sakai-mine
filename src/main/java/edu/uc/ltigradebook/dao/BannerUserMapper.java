@@ -8,10 +8,10 @@ import org.springframework.jdbc.core.RowMapper;
 
 import edu.uc.ltigradebook.model.BannerUser;
 
-public class BannerUserMapper implements RowMapper {
+public class BannerUserMapper implements RowMapper<BannerUser> {
 
     @Override
-    public edu.uc.ltigradebook.model.BannerUser mapRow(ResultSet rs, int rowNum) throws SQLException {
+    public BannerUser mapRow(ResultSet rs, int rowNum) throws SQLException {
         
         BannerUser t = new BannerUser();
         t.setSPRIDEN_LAST_NAME(rs.getString("SPRIDEN_LAST_NAME"));

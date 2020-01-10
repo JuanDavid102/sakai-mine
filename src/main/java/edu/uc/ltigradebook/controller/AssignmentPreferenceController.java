@@ -5,7 +5,6 @@ import edu.ksu.lti.launch.oauth.LtiPrincipal;
 
 import edu.uc.ltigradebook.constants.ScaleConstant;
 import edu.uc.ltigradebook.entity.AssignmentPreference;
-import edu.uc.ltigradebook.entity.CoursePreference;
 import edu.uc.ltigradebook.service.AssignmentService;
 
 import java.util.Optional;

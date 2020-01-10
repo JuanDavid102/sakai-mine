@@ -1,7 +1,6 @@
 package edu.uc.ltigradebook.dao;
 
 import java.sql.Types;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,8 +46,8 @@ public class BannerServiceDao {
     @Value("${banner.enabled:false}")
     private boolean bannerEnabled;
 
-    private static HikariDataSource ds;
-    private static JdbcTemplate jdbcTemplate;
+    private static HikariDataSource hikariDataSource = null;
+    private static JdbcTemplate jdbcTemplate = null;
 
     @PostConstruct
     public void init() {
@@ -63,11 +62,11 @@ public class BannerServiceDao {
         config.setPassword(bannerPassword);
         config.setDriverClassName(bannerDriverClassName);
         try { 
-            if(ds == null) {
-                ds = new HikariDataSource(config);
+            if(hikariDataSource == null) {
+            	hikariDataSource = new HikariDataSource(config);
             }
             jdbcTemplate = new JdbcTemplate();
-            jdbcTemplate.setDataSource(ds);
+            jdbcTemplate.setDataSource(hikariDataSource);
         } catch(Exception e) {
             log.error("Fatal error initializing Banner datasource.", e);
         }
@@ -75,14 +74,14 @@ public class BannerServiceDao {
 
     @PreDestroy
     public void destroy() {
-        if(this.ds != null) {
-            this.ds.close();
+        if(hikariDataSource != null) {
+        	hikariDataSource.close();
         }
-        this.ds = null;
+        hikariDataSource = null;
     }
 
     private JdbcTemplate getJdbcTemplate() {
-        return this.jdbcTemplate;
+        return jdbcTemplate;
     }
 
     // Checks if the user is the main instructor of the course.
@@ -116,6 +115,10 @@ public class BannerServiceDao {
     // Gets the banner grades from the course, returns a map of RUT - GRADE.
     public Map<String, String> getBannerUserListFromCourse(String ncrCode, String periodId, String teacherId){
         log.info("getBannerUserListFromCourse(ncrCode = {}, periodId = {}, teacherId = {})",ncrCode, periodId, teacherId);
+        final String OUT_BANNER_USER_LIST_PARAMETER = "bannerUserList";
+        final String IN_NCR_CODE_PARAMETER = "ncrCode";
+        final String IN_PERIOD_ID_PARAMETER = "periodId";
+        final String IN_TEACHER_ID_PARAMETER = "teacherId";
         Map<String, String> bannerGrades = new HashMap<String, String>();
 
         if(!bannerEnabled) {
@@ -126,18 +129,19 @@ public class BannerServiceDao {
             SimpleJdbcCall procedureParametersCall = new SimpleJdbcCall(getJdbcTemplate().getDataSource());
             procedureParametersCall.withFunctionName("pk_adap_15_carga_nota.f_alumnos_curso_web")
                 .withoutProcedureColumnMetaDataAccess()
-                .declareParameters(new SqlOutParameter("bannerUserList", OracleTypes.CURSOR, new BannerUserMapper()),
-                                   new SqlParameter("ncrCode", Types.VARCHAR),
-                                   new SqlParameter("periodId", Types.VARCHAR),
-                                   new SqlParameter("teacherId", Types.VARCHAR));
+                .declareParameters(new SqlOutParameter(OUT_BANNER_USER_LIST_PARAMETER, OracleTypes.CURSOR, new BannerUserMapper()),
+                                   new SqlParameter(IN_NCR_CODE_PARAMETER, Types.VARCHAR),
+                                   new SqlParameter(IN_PERIOD_ID_PARAMETER, Types.VARCHAR),
+                                   new SqlParameter(IN_TEACHER_ID_PARAMETER, Types.VARCHAR));
 
             Map<String, Object> result = procedureParametersCall.execute(new MapSqlParameterSource()
-                    .addValue("ncrCode", ncrCode)
-                    .addValue("periodId", periodId)
-                    .addValue("teacherId", teacherId));
+                    .addValue(IN_NCR_CODE_PARAMETER, ncrCode)
+                    .addValue(IN_PERIOD_ID_PARAMETER, periodId)
+                    .addValue(IN_TEACHER_ID_PARAMETER, teacherId));
 
             if(!result.isEmpty()){
-                List<BannerUser> bannerUserList = (ArrayList<BannerUser>) result.get("bannerUserList");
+                @SuppressWarnings("unchecked")
+				List<BannerUser> bannerUserList = (List<BannerUser>) result.get(OUT_BANNER_USER_LIST_PARAMETER);
                 log.info("Found {} users associated to the course in banner.", bannerUserList.size());
                 for(BannerUser bannerUser : bannerUserList) {
                     log.info("Adding user {} to the map with grade {}.", bannerUser.getUserRut(), bannerUser.getSFRSTCR_GRDE_CODE());

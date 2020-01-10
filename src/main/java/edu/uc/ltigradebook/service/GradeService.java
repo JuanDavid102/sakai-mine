@@ -96,6 +96,7 @@ public class GradeService {
                 Optional<AssignmentGroup> assignmentGroupOptional = assignmentGroupList.stream().filter(ag -> groupId.equals(Long.valueOf(ag.getId().toString()))).findAny();
                 GradingRules gradingRules = assignmentGroupOptional.isPresent() ? (assignmentGroupOptional.get().getGradingRules() != null ? assignmentGroupOptional.get().getGradingRules() : null) : null;
                 for (Assignment assignment : assignmentList) {
+                    String assignmentId = String.valueOf(assignment.getId());
                     boolean assignmentIsMuted = "true".equals(assignment.getMuted());
                     boolean omitFromFinalGrade = assignment.isOmitFromFinalGrade();
                     boolean isZeroPoints = assignment.getPointsPossible() == null || assignment.getPointsPossible().equals(new Double(0));
@@ -109,17 +110,8 @@ public class GradeService {
                         // Skip if is not submitted by the requested student
                         if (!submission.getUserId().equals(studentId)) continue;
 
-                        String assignmentId = String.valueOf(assignment.getId());
-                        String grade;
+                        String grade = submission.getGrade();
                         boolean gradeTypeNotSupported = false;
-                        boolean noPointsPossible = false;
-
-                        grade = submission.getGrade();
-
-                        //Display an alert if the grade is not mappable
-                        if (assignment.getPointsPossible() == null || new Double("0").compareTo(assignment.getPointsPossible()) == 0) {
-                            noPointsPossible = true;
-                        }
 
                         String assignmentConversionScale = coursePreference.getConversionScale();
                         Optional<AssignmentPreference> assignmentPreference = assignmentService.getAssignmentPreference(assignmentId);
@@ -190,6 +182,7 @@ public class GradeService {
 
                 List<Assignment> assignmentList = canvasService.listCourseAssignments(courseId);
                 for (Assignment assignment : assignmentList) {
+                    String assignmentId = String.valueOf(assignment.getId());
                     boolean assignmentIsMuted = "true".equals(assignment.getMuted());
                     boolean omitFromFinalGrade = assignment.isOmitFromFinalGrade();
                     boolean isZeroPoints = assignment.getPointsPossible() == null || assignment.getPointsPossible().equals(new Double(0));
@@ -203,17 +196,8 @@ public class GradeService {
                         // Skip if is not submitted by the requested student
                         if (!submission.getUserId().equals(studentId)) continue;
 
-                        String assignmentId = String.valueOf(assignment.getId());
-                        String grade;
+                        String grade = submission.getGrade();
                         boolean gradeTypeNotSupported = false;
-                        boolean noPointsPossible = false;
-
-                        grade = submission.getGrade();
-
-                        //Display an alert if the grade is not mappable
-                        if (assignment.getPointsPossible() == null || new Double("0").compareTo(assignment.getPointsPossible()) == 0) {
-                            noPointsPossible = true;
-                        }
 
                         String assignmentConversionScale = coursePreference.getConversionScale();
                         Optional<AssignmentPreference> assignmentPreference = assignmentService.getAssignmentPreference(assignmentId);

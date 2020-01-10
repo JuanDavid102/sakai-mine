@@ -9,9 +9,7 @@ import edu.uc.ltigradebook.constants.EventConstant;
 import edu.uc.ltigradebook.dao.BannerServiceDao;
 import edu.uc.ltigradebook.entity.StudentGrade;
 import edu.uc.ltigradebook.exception.GradeException;
-import edu.uc.ltigradebook.service.AssignmentService;
 import edu.uc.ltigradebook.service.CanvasAPIServiceWrapper;
-import edu.uc.ltigradebook.service.CourseService;
 import edu.uc.ltigradebook.service.EventTrackingService;
 import edu.uc.ltigradebook.service.GradeService;
 import edu.uc.ltigradebook.service.SecurityService;
@@ -32,7 +30,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Slf4j
 @RestController
@@ -43,9 +40,6 @@ public class GradeRestController {
     
     @Autowired
     private CanvasAPIServiceWrapper canvasService;
-    
-    @Autowired
-    private CourseService courseService;
 
     @Autowired
     private EventTrackingService eventTrackingService;
@@ -54,12 +48,7 @@ public class GradeRestController {
     private GradeService gradeService;
 
     @Autowired
-    private AssignmentService assignmentService;
-
-    @Autowired
     private SecurityService securityService;
-
-    private static final String GRADE_NOT_AVAILABLE = "-";
 
     @RequestMapping(value = "/postGrade", method = RequestMethod.POST)
     public boolean postGrade(@RequestBody StudentGrade studentGrade, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) throws GradeException {

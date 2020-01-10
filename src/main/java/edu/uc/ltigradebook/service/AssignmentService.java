@@ -1,8 +1,6 @@
 package edu.uc.ltigradebook.service;
 
-import edu.uc.ltigradebook.constants.ScaleConstant;
 import edu.uc.ltigradebook.entity.AssignmentPreference;
-import edu.uc.ltigradebook.entity.CoursePreference;
 import edu.uc.ltigradebook.repository.AssignmentRepository;
 
 import lombok.extern.slf4j.Slf4j;
