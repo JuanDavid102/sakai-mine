@@ -2,6 +2,7 @@ package edu.uc.ltigradebook.service;
 
 import edu.ksu.canvas.model.assignment.Assignment;
 import edu.ksu.canvas.model.assignment.AssignmentGroup;
+import edu.ksu.canvas.model.assignment.GradingRules;
 import edu.ksu.canvas.model.assignment.Submission;
 import edu.ksu.lti.launch.model.LtiLaunchData;
 import edu.ksu.lti.launch.model.LtiSession;
@@ -91,6 +92,9 @@ public class GradeService {
 
             try {
                 List<Assignment> assignmentList = canvasService.listCourseAssignments(courseId);
+                List<AssignmentGroup> assignmentGroupList = canvasService.listAssignmentGroups(courseId);
+                Optional<AssignmentGroup> assignmentGroupOptional = assignmentGroupList.stream().filter(ag -> groupId.equals(Long.valueOf(ag.getId().toString()))).findAny();
+                GradingRules gradingRules = assignmentGroupOptional.isPresent() ? (assignmentGroupOptional.get().getGradingRules() != null ? assignmentGroupOptional.get().getGradingRules() : null) : null;
                 for (Assignment assignment : assignmentList) {
                     boolean assignmentIsMuted = "true".equals(assignment.getMuted());
                     boolean omitFromFinalGrade = assignment.isOmitFromFinalGrade();
@@ -256,6 +260,7 @@ public class GradeService {
                     BigDecimal assignmentWeightSum = BigDecimal.ZERO;
                     List<AssignmentGroup> assignmentGroupList = canvasService.listAssignmentGroups(courseId);
                     for (AssignmentGroup assignmentGroup : assignmentGroupList) {
+                        GradingRules gradingRules = assignmentGroup.getGradingRules();
                         List<BigDecimal> values = groupGrades.get(new Long(assignmentGroup.getId()));
 
                         if (values != null && !values.isEmpty()) {
