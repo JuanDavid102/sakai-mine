@@ -15,6 +15,7 @@ import edu.ksu.canvas.CanvasApiFactory;
 import edu.ksu.canvas.interfaces.AccountReader;
 import edu.ksu.canvas.interfaces.AssignmentGroupReader;
 import edu.ksu.canvas.interfaces.AssignmentReader;
+import edu.ksu.canvas.interfaces.ConversationWriter;
 import edu.ksu.canvas.interfaces.CourseReader;
 import edu.ksu.canvas.interfaces.SectionReader;
 import edu.ksu.canvas.interfaces.SubmissionReader;
@@ -28,6 +29,7 @@ import edu.ksu.canvas.model.assignment.AssignmentGroup;
 import edu.ksu.canvas.model.assignment.Submission;
 import edu.ksu.canvas.oauth.NonRefreshableOauthToken;
 import edu.ksu.canvas.oauth.OauthToken;
+import edu.ksu.canvas.requestOptions.CreateConversationOptions;
 import edu.ksu.canvas.requestOptions.GetSingleAssignmentOptions;
 import edu.ksu.canvas.requestOptions.GetSingleCourseOptions;
 import edu.ksu.canvas.requestOptions.GetSubAccountsOptions;
@@ -134,6 +136,14 @@ public class CanvasAPIServiceWrapper {
         }
 
         return allAccountList;
+    }
+
+    public void createConversation(List<String> userIds, String subject, String bodyMessage) throws IOException {
+        OauthToken oauthToken = new NonRefreshableOauthToken(canvasApiToken);
+        ConversationWriter conversationWriter = canvasApiFactory.getWriter(ConversationWriter.class, oauthToken);
+        CreateConversationOptions createConversationOptions = new CreateConversationOptions(userIds, bodyMessage).subject(subject);
+        conversationWriter.createConversation(createConversationOptions);
+        return;
     }
 
 }
