@@ -141,7 +141,7 @@ public class CanvasAPIServiceWrapper {
     public void createConversation(List<String> userIds, String subject, String bodyMessage) throws IOException {
         OauthToken oauthToken = new NonRefreshableOauthToken(canvasApiToken);
         ConversationWriter conversationWriter = canvasApiFactory.getWriter(ConversationWriter.class, oauthToken);
-        CreateConversationOptions createConversationOptions = new CreateConversationOptions(userIds, bodyMessage).subject(subject);
+        CreateConversationOptions createConversationOptions = new CreateConversationOptions(userIds, bodyMessage).subject(subject).forceNew(true);
         conversationWriter.createConversation(createConversationOptions);
         return;
     }
