@@ -232,12 +232,13 @@
 <!-- Header cell dropdown -->
 <div id="header-cell-dropdown" class="d-none">
   <div class="header-cell-dropdown dropdown">
-    <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></button>
+    <button class="btn btn-secondary dropdown-toggle assignment-dropdown" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></button>
     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
       <a class="dropdown-item dropdown-assignment-details" href="#" data-toggle="modal" data-target="#assignmentDetails" th:text="#{instructor_dropdown_assignment_details}">Assignment Details</a>
       <a class="dropdown-item dropdown-speed-grader" target="_blank" href="#" th:text="#{instructor_dropdown_speed_grader}">Speed Grader</a>
       <a class="dropdown-item dropdown-assignment-scale" target="_blank" href="#" data-toggle="modal" data-target="#assignmentScale"  th:text="#{instructor_dropdown_assignment_scale}">Change Assignment Scale</a>
       <a class="dropdown-item dropdown-minimum-score" href="#" th:text="#{instructor_dropdown_minimum_score}">Set Minimum Score for Empty Cells</a>
+      <a class="dropdown-item dropdown-mute-assignment" href="#"></a>
     </div>
   </div>
 </div>
@@ -277,7 +278,9 @@
       instructor_group_details_modal_title: /*[[#{instructor_group_details_modal_title}]]*/,
       instructor_grade_out_range: /*[[#{instructor_grade_out_range}]]*/,
       instructor_no_points_possible: /*[[#{instructor_no_points_possible}]]*/,
-      instructor_assignment_scale_modal_title: /*[[#{instructor_assignment_scale_modal_title}]]*/
+      instructor_assignment_scale_modal_title: /*[[#{instructor_assignment_scale_modal_title}]]*/,
+      instructor_dropdown_mute_assignment: /*[[#{instructor_dropdown_mute_assignment}]]*/,
+      instructor_dropdown_unmute_assignment: /*[[#{instructor_dropdown_unmute_assignment}]]*/,
     };
     var container = $('#studentTable' + [[${courseId}]])[0];
     var studentFilter = document.getElementById('studentFilter');
@@ -751,6 +754,29 @@
       $('#groupDetails #minValue').text(minValue);
       $('#groupDetails #maxValue').text(maxValue);
       $('#groupDetails #totalGraded').text(messages.instructor_details_modal_total.replace('{0}', totalGraded));
+    });
+
+    // Mute assignment
+    $('body').on('click', '.dropdown-mute-assignment', function(e) {
+      e.preventDefault();
+      $('body > .dropdown-menu.show').remove();
+      var col = $(this).parent().data('col');
+      var headerSettings = cellSettings[0][col];
+      $.ajax({
+        url: [[@{/saveAssignmentMuted}]] + '?assignmentId=' + headerSettings.assignmentId + '&muted=' + !headerSettings.assignmentIsMuted,
+        type: 'POST',
+        contentType: 'text/plain; charset=utf-8'
+      }).done(function (data) {
+        window.location = [[@{/}]];
+      });
+    });
+    $('body').on('click', '.assignment-dropdown', function() {
+      var col = $(this).next().data('col');
+      var headerSettings = cellSettings[0][col];
+      if (headerSettings.assignmentIsMuted)
+        $('.dropdown-menu[data-col=' + col + '] .dropdown-mute-assignment').text(messages.instructor_dropdown_unmute_assignment);
+      else
+        $('.dropdown-menu[data-col=' + col + '] .dropdown-mute-assignment').text(messages.instructor_dropdown_mute_assignment);
     });
     /**** END OF DROPDOWNS ****/
 

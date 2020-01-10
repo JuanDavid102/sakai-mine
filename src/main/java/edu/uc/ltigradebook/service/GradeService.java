@@ -46,9 +46,6 @@ public class GradeService {
     private SecurityService securityService;
 
     @Autowired
-    private GradeService gradeService;
-
-    @Autowired
     private AssignmentService assignmentService;
 
     private static final String GRADE_NOT_AVAILABLE = "-";
@@ -97,7 +94,16 @@ public class GradeService {
                 GradingRules gradingRules = assignmentGroupOptional.isPresent() ? (assignmentGroupOptional.get().getGradingRules() != null ? assignmentGroupOptional.get().getGradingRules() : null) : null;
                 for (Assignment assignment : assignmentList) {
                     String assignmentId = String.valueOf(assignment.getId());
-                    boolean assignmentIsMuted = "true".equals(assignment.getMuted());
+                    Optional<AssignmentPreference> assignmentPref = assignmentService.getAssignmentPreference(assignment.getId().toString());
+
+                    boolean assignmentIsMuted = false;
+                    if (StringUtils.isNotBlank(assignment.getMuted())) {
+                        assignmentIsMuted = Boolean.valueOf(assignment.getMuted());
+                    }
+                    if (assignmentPref.isPresent() && assignmentPref.get().getMuted() != null) {
+                        assignmentIsMuted = assignmentPref.get().getMuted();
+                    }
+
                     boolean omitFromFinalGrade = assignment.isOmitFromFinalGrade();
                     boolean isZeroPoints = assignment.getPointsPossible() == null || assignment.getPointsPossible().equals(new Double(0));
                     boolean isVisibleForUser = assignment.getAssignmentVisibility().stream().anyMatch(studentId.toString()::equals);
@@ -134,7 +140,7 @@ public class GradeService {
                         }
 
                         //Get the grade from persistence, get the grade from the API otherwise.
-                        Optional<StudentGrade> overwrittenStudentGrade = gradeService.getGradeByAssignmentAndUser(assignmentId, String.valueOf(studentId));
+                        Optional<StudentGrade> overwrittenStudentGrade = this.getGradeByAssignmentAndUser(assignmentId, String.valueOf(studentId));
                         if (overwrittenStudentGrade.isPresent()) {
                             grade = overwrittenStudentGrade.get().getGrade();
                             gradeTypeNotSupported = false;
@@ -183,7 +189,16 @@ public class GradeService {
                 List<Assignment> assignmentList = canvasService.listCourseAssignments(courseId);
                 for (Assignment assignment : assignmentList) {
                     String assignmentId = String.valueOf(assignment.getId());
-                    boolean assignmentIsMuted = "true".equals(assignment.getMuted());
+                    Optional<AssignmentPreference> assignmentPref = assignmentService.getAssignmentPreference(assignment.getId().toString());
+
+                    boolean assignmentIsMuted = false;
+                    if (StringUtils.isNotBlank(assignment.getMuted())) {
+                        assignmentIsMuted = Boolean.valueOf(assignment.getMuted());
+                    }
+                    if (assignmentPref.isPresent() && assignmentPref.get().getMuted() != null) {
+                        assignmentIsMuted = assignmentPref.get().getMuted();
+                    }
+
                     boolean omitFromFinalGrade = assignment.isOmitFromFinalGrade();
                     boolean isZeroPoints = assignment.getPointsPossible() == null || assignment.getPointsPossible().equals(new Double(0));
                     boolean isVisibleForUser = assignment.getAssignmentVisibility().stream().anyMatch(studentId.toString()::equals);
@@ -220,7 +235,7 @@ public class GradeService {
                         }
 
                         //Get the grade from persistence, get the grade from the API otherwise.
-                        Optional<StudentGrade> overwrittenStudentGrade = gradeService.getGradeByAssignmentAndUser(assignmentId, String.valueOf(studentId));
+                        Optional<StudentGrade> overwrittenStudentGrade = this.getGradeByAssignmentAndUser(assignmentId, String.valueOf(studentId));
                         if (overwrittenStudentGrade.isPresent()) {
                             grade = overwrittenStudentGrade.get().getGrade();
                             gradeTypeNotSupported = false;

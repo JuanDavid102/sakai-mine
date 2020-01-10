@@ -20,7 +20,10 @@ public class AssignmentPreference {
     @Column(name = "assignment_id", nullable = false)
     private long assignmentId;
 
-    @Column(name = "assignment_scale", nullable = false)
+    @Column(name = "assignment_scale", nullable = true)
     private String conversionScale;
+
+    @Column(name = "assignment_muted", nullable = true)
+    private Boolean muted;
 
 }

@@ -60,4 +60,19 @@ public class AssignmentPreferenceController {
         return true;
     }
 
+    @RequestMapping(value = "/saveAssignmentMuted", method = RequestMethod.POST)
+    public boolean saveAssignmentConversionScale(@RequestParam long assignmentId, @RequestParam boolean muted, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession)  {
+        AssignmentPreference assignmentPreference;
+        Optional<AssignmentPreference> optionalAssignmentPref = assignmentService.getAssignmentPreference(Long.toString(assignmentId));
+        if (optionalAssignmentPref.isPresent()) {
+            assignmentPreference = optionalAssignmentPref.get();
+        } else {
+            assignmentPreference = new AssignmentPreference();
+            assignmentPreference.setAssignmentId(assignmentId);
+        }
+        assignmentPreference.setMuted(muted);;
+        assignmentService.saveAssignmentPreference(assignmentPreference);
+        return true;
+    }
+
 }

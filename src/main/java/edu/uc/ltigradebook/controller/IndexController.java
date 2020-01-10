@@ -208,12 +208,23 @@ public class IndexController {
             colSettings.add(new HashMap<>());
             colSettings.add(new HashMap<>());
             colSettings.add(new HashMap<>());
+            Map<Integer, Boolean> assignmentMutedMap = new HashMap<>();
             ExecutorService executorService = Executors.newCachedThreadPool();
             for (Assignment assignment : assignmentList) {
                 Map<String, Object> cellSettings = new HashMap<>();
                 String assignmentId = String.valueOf(assignment.getId());
+                Optional<AssignmentPreference> assignmentPref = assignmentService.getAssignmentPreference(assignmentId);
                 tableHeaderList.add(assignment.getName());
-                boolean assignmentIsMuted = "true".equals(assignment.getMuted());
+
+                boolean assignmentIsMuted = false;
+                if (StringUtils.isNotBlank(assignment.getMuted())) {
+                    assignmentIsMuted = Boolean.valueOf(assignment.getMuted());
+                }
+                if (assignmentPref.isPresent() && assignmentPref.get().getMuted() != null) {
+                    assignmentIsMuted = assignmentPref.get().getMuted();
+                }
+                assignmentMutedMap.put(assignment.getId(), assignmentIsMuted);
+
                 boolean omitFromFinalGrade = assignment.isOmitFromFinalGrade();
                 cellSettings.put("omitFromFinalGrade", omitFromFinalGrade);
                 cellSettings.put("assignmentIsMuted", assignmentIsMuted);
@@ -301,7 +312,7 @@ public class IndexController {
                     String assignmentId = String.valueOf(assignment.getId());
                     String assignmentGroupId = String.valueOf(assignment.getAssignmentGroupId());
                     boolean isVisibleForUser = assignment.getAssignmentVisibility().stream().anyMatch(userId::equals);
-                    boolean assignmentIsMuted = "true".equals(assignment.getMuted());
+                    boolean assignmentIsMuted = assignmentMutedMap.get(assignment.getId());
                     boolean omitFromFinalGrade = assignment.isOmitFromFinalGrade();
                     boolean isZeroPoints = assignment.getPointsPossible() == null || assignment.getPointsPossible().equals(new Double(0));
                     String grade = StringUtils.EMPTY;
@@ -431,6 +442,7 @@ public class IndexController {
             ExecutorService executorService = Executors.newCachedThreadPool();
             for (Assignment assignment : assignmentList) {
                 String assignmentId = String.valueOf(assignment.getId());
+                Optional<AssignmentPreference> assignmentPref = assignmentService.getAssignmentPreference(assignmentId);
                 /*boolean assignmentIsMuted = "true".equals(assignment.getMuted());
                 boolean omitFromFinalGrade = assignment.isOmitFromFinalGrade();*/
 
@@ -466,6 +478,10 @@ public class IndexController {
                             }
                         }
         
+                        if (assignmentPref.isPresent() && assignmentPref.get().getMuted() != null) {
+                            assignment.setMuted(assignmentPref.get().getMuted().toString());
+                        }
+
                         String finalGrade = StringUtils.isNotBlank(grade) ? grade : GRADE_NOT_AVAILABLE;
         
                         gradeMap.put(assignment.getId(), finalGrade);
@@ -647,6 +663,7 @@ public class IndexController {
             ExecutorService executorService = Executors.newCachedThreadPool();
             for (Assignment assignment : assignmentList) {
                 String assignmentId = String.valueOf(assignment.getId());
+                Optional<AssignmentPreference> assignmentPref = assignmentService.getAssignmentPreference(assignmentId);
                 /*boolean assignmentIsMuted = "true".equals(assignment.getMuted());
                 boolean omitFromFinalGrade = assignment.isOmitFromFinalGrade();*/
 
@@ -681,7 +698,11 @@ public class IndexController {
                                 grade = GradeUtils.mapPercentageToScale(assignmentConversionScale, grade);
                             }
                         }
-        
+
+                        if (assignmentPref.isPresent() && assignmentPref.get().getMuted() != null) {
+                            assignment.setMuted(assignmentPref.get().getMuted().toString());
+                        }
+
                         String finalGrade = StringUtils.isNotBlank(grade) ? grade : GRADE_NOT_AVAILABLE;
         
                         gradeMap.put(assignment.getId(), finalGrade);
