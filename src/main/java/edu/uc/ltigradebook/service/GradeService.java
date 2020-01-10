@@ -25,6 +25,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -89,10 +90,15 @@ public class GradeService {
 
             try {
                 List<Assignment> assignmentList = canvasService.listCourseAssignments(courseId);
+                List<Assignment> assignmentsInGroup = assignmentList.stream().filter(asn -> groupId.equals(asn.getAssignmentGroupId())).collect(Collectors.toList());
+                Map<Integer, Submission> studentSubmissionMap = getAssignmentSubmissionsForStudent(assignmentsInGroup, studentId);
                 List<AssignmentGroup> assignmentGroupList = canvasService.listAssignmentGroups(courseId);
                 Optional<AssignmentGroup> assignmentGroupOptional = assignmentGroupList.stream().filter(ag -> groupId.equals(Long.valueOf(ag.getId().toString()))).findAny();
                 GradingRules gradingRules = assignmentGroupOptional.isPresent() ? (assignmentGroupOptional.get().getGradingRules() != null ? assignmentGroupOptional.get().getGradingRules() : null) : null;
-                for (Assignment assignment : assignmentList) {
+                
+                for (Assignment assignment : assignmentsInGroup) {
+                    Submission submission = studentSubmissionMap.get(assignment.getId());
+                    if(submission == null) continue;
                     String assignmentId = String.valueOf(assignment.getId());
                     Optional<AssignmentPreference> assignmentPref = assignmentService.getAssignmentPreference(assignment.getId().toString());
 
@@ -108,52 +114,47 @@ public class GradeService {
                     boolean isZeroPoints = assignment.getPointsPossible() == null || assignment.getPointsPossible().equals(new Double(0));
                     boolean isVisibleForUser = assignment.getAssignmentVisibility().stream().anyMatch(studentId.toString()::equals);
 
-                    // Skip if assignment is not in the group, assignment is muted, grade is omitted from final grade or assignment possible points is zero
-                    if (!assignment.getAssignmentGroupId().equals(groupId) || assignmentIsMuted || omitFromFinalGrade || isZeroPoints || !isVisibleForUser) continue;
+                    // Skip if assignment is muted, grade is omitted from final grade or assignment possible points is zero
+                    if (assignmentIsMuted || omitFromFinalGrade || isZeroPoints || !isVisibleForUser) continue;
 
-                    List<Submission> assignmentSubmissions = canvasService.getCourseSubmissions(courseId, assignment.getId());
-                    for (Submission submission : assignmentSubmissions) {
-                        // Skip if is not submitted by the requested student
-                        if (!submission.getUserId().equals(studentId)) continue;
+                    String grade = submission.getGrade();
+                    boolean gradeTypeNotSupported = false;
 
-                        String grade = submission.getGrade();
-                        boolean gradeTypeNotSupported = false;
+                    String assignmentConversionScale = coursePreference.getConversionScale();
+                    Optional<AssignmentPreference> assignmentPreference = assignmentService.getAssignmentPreference(assignmentId);
+                    if (assignmentPreference.isPresent() && StringUtils.isNotBlank(assignmentPreference.get().getConversionScale())) {
+                        assignmentConversionScale = assignmentPreference.get().getConversionScale();
+                    }
 
-                        String assignmentConversionScale = coursePreference.getConversionScale();
-                        Optional<AssignmentPreference> assignmentPreference = assignmentService.getAssignmentPreference(assignmentId);
-                        if (assignmentPreference.isPresent() && StringUtils.isNotBlank(assignmentPreference.get().getConversionScale())) {
-                            assignmentConversionScale = assignmentPreference.get().getConversionScale();
-                        }
+                    //Grade conversion logic
+                    switch (assignment.getGradingType()) {
+                        case GradeUtils.GRADE_TYPE_POINTS:
+                            grade = GradeUtils.mapGradeToScale(assignmentConversionScale, grade, assignment.getPointsPossible().toString());
+                            break;
+                        case GradeUtils.GRADE_TYPE_PERCENT:
+                            grade = GradeUtils.mapPercentageToScale(assignmentConversionScale, grade);
+                            break;
+                        default:
+                            grade = GRADE_NOT_AVAILABLE;
+                            gradeTypeNotSupported = true;
+                            break;
+                    }
 
-                        //Grade conversion logic
-                        switch (assignment.getGradingType()) {
-                            case GradeUtils.GRADE_TYPE_POINTS:
-                                grade = GradeUtils.mapGradeToScale(assignmentConversionScale, grade, assignment.getPointsPossible().toString());
-                                break;
-                            case GradeUtils.GRADE_TYPE_PERCENT:
-                                grade = GradeUtils.mapPercentageToScale(assignmentConversionScale, grade);
-                                break;
-                            default:
-                                grade = GRADE_NOT_AVAILABLE;
-                                gradeTypeNotSupported = true;
-                                break;
-                        }
+                    //Get the grade from persistence, get the grade from the API otherwise.
+                    Optional<StudentGrade> overwrittenStudentGrade = this.getGradeByAssignmentAndUser(assignmentId, String.valueOf(studentId));
+                    if (overwrittenStudentGrade.isPresent()) {
+                        grade = overwrittenStudentGrade.get().getGrade();
+                        gradeTypeNotSupported = false;
+                    }
 
-                        //Get the grade from persistence, get the grade from the API otherwise.
-                        Optional<StudentGrade> overwrittenStudentGrade = this.getGradeByAssignmentAndUser(assignmentId, String.valueOf(studentId));
-                        if (overwrittenStudentGrade.isPresent()) {
-                            grade = overwrittenStudentGrade.get().getGrade();
-                            gradeTypeNotSupported = false;
-                        }
-
-                        if (!gradeTypeNotSupported) {
-                            if (StringUtils.isBlank(grade)) {
-                                calculateFinalGrade = false;
-                                break;
-                            } else {
-                                groupMeanSum = groupMeanSum.add(new BigDecimal(grade));
-                                gradesLength = gradesLength.add(BigDecimal.ONE);
-                            }
+                    if (!gradeTypeNotSupported) {
+                        if (StringUtils.isBlank(grade)) {
+                            calculateFinalGrade = false;
+                            break;
+                        } else {
+                            BigDecimal assignmentGrade = new BigDecimal(grade);
+                            groupMeanSum = groupMeanSum.add(assignmentGrade);
+                            gradesLength = gradesLength.add(BigDecimal.ONE);
                         }
                     }
                 }
@@ -187,7 +188,10 @@ public class GradeService {
             try {
 
                 List<Assignment> assignmentList = canvasService.listCourseAssignments(courseId);
+                Map<Integer, Submission> studentSubmissionMap = getAssignmentSubmissionsForStudent(assignmentList, studentId);
                 for (Assignment assignment : assignmentList) {
+                    Submission submission = studentSubmissionMap.get(assignment.getId());
+                    if(submission == null) continue;
                     String assignmentId = String.valueOf(assignment.getId());
                     Optional<AssignmentPreference> assignmentPref = assignmentService.getAssignmentPreference(assignment.getId().toString());
 
@@ -206,50 +210,44 @@ public class GradeService {
                     // Skip if assignment is not in the group, assignment is muted, grade is omitted from final grade or assignment possible points is zero
                     if (assignmentIsMuted || omitFromFinalGrade || isZeroPoints || !isVisibleForUser) continue;
 
-                    List<Submission> assignmentSubmissions = canvasService.getCourseSubmissions(courseId, assignment.getId());
-                    for (Submission submission : assignmentSubmissions) {
-                        // Skip if is not submitted by the requested student
-                        if (!submission.getUserId().equals(studentId)) continue;
+                    String grade = submission.getGrade();
+                    boolean gradeTypeNotSupported = false;
 
-                        String grade = submission.getGrade();
-                        boolean gradeTypeNotSupported = false;
+                    String assignmentConversionScale = coursePreference.getConversionScale();
+                    Optional<AssignmentPreference> assignmentPreference = assignmentService.getAssignmentPreference(assignmentId);
+                    if (assignmentPreference.isPresent() && StringUtils.isNotBlank(assignmentPreference.get().getConversionScale())) {
+                        assignmentConversionScale = assignmentPreference.get().getConversionScale();
+                    }
 
-                        String assignmentConversionScale = coursePreference.getConversionScale();
-                        Optional<AssignmentPreference> assignmentPreference = assignmentService.getAssignmentPreference(assignmentId);
-                        if (assignmentPreference.isPresent() && StringUtils.isNotBlank(assignmentPreference.get().getConversionScale())) {
-                            assignmentConversionScale = assignmentPreference.get().getConversionScale();
-                        }
+                    //Grade conversion logic
+                    switch (assignment.getGradingType()) {
+                        case GradeUtils.GRADE_TYPE_POINTS:
+                            grade = GradeUtils.mapGradeToScale(assignmentConversionScale, grade, assignment.getPointsPossible().toString());
+                            break;
+                        case GradeUtils.GRADE_TYPE_PERCENT:
+                            grade = GradeUtils.mapPercentageToScale(assignmentConversionScale, grade);
+                            break;
+                        default:
+                            grade = GRADE_NOT_AVAILABLE;
+                            gradeTypeNotSupported = true;
+                            break;
+                    }
 
-                        //Grade conversion logic
-                        switch (assignment.getGradingType()) {
-                            case GradeUtils.GRADE_TYPE_POINTS:
-                                grade = GradeUtils.mapGradeToScale(assignmentConversionScale, grade, assignment.getPointsPossible().toString());
-                                break;
-                            case GradeUtils.GRADE_TYPE_PERCENT:
-                                grade = GradeUtils.mapPercentageToScale(assignmentConversionScale, grade);
-                                break;
-                            default:
-                                grade = GRADE_NOT_AVAILABLE;
-                                gradeTypeNotSupported = true;
-                                break;
-                        }
+                    //Get the grade from persistence, get the grade from the API otherwise.
+                    Optional<StudentGrade> overwrittenStudentGrade = this.getGradeByAssignmentAndUser(assignmentId, String.valueOf(studentId));
+                    if (overwrittenStudentGrade.isPresent()) {
+                        grade = overwrittenStudentGrade.get().getGrade();
+                        gradeTypeNotSupported = false;
+                    }
 
-                        //Get the grade from persistence, get the grade from the API otherwise.
-                        Optional<StudentGrade> overwrittenStudentGrade = this.getGradeByAssignmentAndUser(assignmentId, String.valueOf(studentId));
-                        if (overwrittenStudentGrade.isPresent()) {
-                            grade = overwrittenStudentGrade.get().getGrade();
-                            gradeTypeNotSupported = false;
-                        }
-
-                        if (!gradeTypeNotSupported) {
-                            if (StringUtils.isBlank(grade)) {
-                                if (!isCurrentGrade) calculateFinalGrade = false;
-                                break;
-                            } else {
-                                List<BigDecimal> values = groupGrades.getOrDefault(assignment.getAssignmentGroupId(), new ArrayList<>());
-                                values.add(new BigDecimal(grade));
-                                groupGrades.put(assignment.getAssignmentGroupId(), values);
-                            }
+                    if (!gradeTypeNotSupported) {
+                        if (StringUtils.isBlank(grade)) {
+                            if (!isCurrentGrade) calculateFinalGrade = false;
+                            break;
+                        } else {
+                            List<BigDecimal> values = groupGrades.getOrDefault(assignment.getAssignmentGroupId(), new ArrayList<>());
+                            values.add(new BigDecimal(grade));
+                            groupGrades.put(assignment.getAssignmentGroupId(), values);
                         }
                     }
                 }
@@ -285,6 +283,16 @@ public class GradeService {
             log.error("This user is not allowed to see the total mean of the student with id {}", studentId);
             throw new GradeException();
         }
+    }
+
+    private Map<Integer, Submission> getAssignmentSubmissionsForStudent(List<Assignment> assignmentList, Integer studentId) throws IOException{
+        Map<Integer, Submission> studentSubmissionMap = new HashMap<Integer, Submission>();
+        for (Assignment assignment : assignmentList) {
+            List<Submission> assignmentSubmissions = canvasService.getCourseSubmissions(assignment.getCourseId(), assignment.getId());
+            Optional<Submission> submissionOptional = assignmentSubmissions.stream().filter(submission -> submission.getUserId().equals(studentId)).findAny();
+            studentSubmissionMap.put(assignment.getId(), submissionOptional.isPresent() ? submissionOptional.get() : null);                	
+        }
+        return studentSubmissionMap;
     }
 
 }
