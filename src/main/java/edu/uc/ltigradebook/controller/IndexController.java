@@ -369,6 +369,7 @@ public class IndexController {
                     cellSettings.put("isZeroPoints", isZeroPoints);
                     cellSettings.put("assignmentId", assignmentId);
                     cellSettings.put("userId", userId);
+                    cellSettings.put("sortableName", user.getSortableName());
                     cellSettings.put("gradeTypeNotSupported", gradeTypeNotSupported);
                     userSettings.add(cellSettings);
                     userGrades.add(StringUtils.isNotBlank(grade) ? grade : GRADE_NOT_AVAILABLE);

@@ -220,6 +220,63 @@
       </div>
     </div>
   </div>
+
+  <!-- Modal Send Message -->
+  <div class="modal fade" id="sendMessage" tabindex="-1" role="dialog" aria-labelledby="sendMessageModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="sendMessageModalLabel"></h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="messageTypes" th:text="#{instructor_dropdown_send_message}">Message students who...</label>
+            <select class="form-control" name="messageTypes" id="messageTypes">
+              <!--option value="0" th:text="#{instructor_send_message_type_0}">Haven't submitted yet</option-->
+              <option value="1" th:text="#{instructor_send_message_type_1}">Haven't been graded</option>
+              <option value="2" th:text="#{instructor_send_message_type_2}">Scored less than</option>
+              <option value="3" th:text="#{instructor_send_message_type_3}">Scored more than</option>
+            </select>
+          </div>
+          <div class="cutoff_score_container form-group row d-none">
+            <div class="input-group col-sm-4">
+              <input type="text" class="form-control" name="cutoff_score" id="cutoff_score" />
+              <div class="input-group-append">
+                <span class="input-group-text total-points" th:text="#{instructor_send_message_modal_out_of_7}">out of 7</span>
+              </div>
+            </div>
+          </div>
+          <ul id="send-message-users" class="list-group list-group-flush mb-3">
+            
+          </ul>
+          <div class="form-group">
+            <label for="subject" th:text="#{instructor_send_message_modal_subject}">Subject</label>
+            <input type="text" class="form-control" name="sendMessageSubject" id="sendMessageSubject" />
+          </div>
+          <div>
+            <label for="message" th:text="#{instructor_send_message_modal_message}">Message</label>
+            <textarea class="form-control" name="sendMessageTextarea" id="sendMessageTextarea" rows="3"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="canvas-btn rounded-btn" data-dismiss="modal" th:text="#{instructor_export_modal_close}">Close</button>
+          <button type="button" id="send-message-button" class="canvas-btn rounded-btn primary-btn" disabled="disabled">
+            <span th:text="#{send_message}">Send message</span>
+            <div class="spinner-border" role="status">
+              <span class="sr-only" th:text="#{instructor_spinner_loading}">Loading</span>
+            </div>
+          </button>
+        </div>
+        <input type="hidden" id="send-message-assignment-name" />
+        <input type="hidden" id="send-message-assignment-id" />
+        <input type="hidden" id="send-message-user-ids" />
+        <input type="hidden" id="selected-column" />
+      </div>
+    </div>
+  </div>
 </div>
 
 <div id="omitFromFinalGrade" class="d-none">
@@ -236,6 +293,7 @@
     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
       <a class="dropdown-item dropdown-assignment-details" href="#" data-toggle="modal" data-target="#assignmentDetails" th:text="#{instructor_dropdown_assignment_details}">Assignment Details</a>
       <a class="dropdown-item dropdown-speed-grader" target="_blank" href="#" th:text="#{instructor_dropdown_speed_grader}">Speed Grader</a>
+      <a class="dropdown-item dropdown-send-message" href="#" data-toggle="modal" data-target="#sendMessage" th:text="#{instructor_dropdown_send_message}">Message students who...</a>
       <a class="dropdown-item dropdown-assignment-scale" target="_blank" href="#" data-toggle="modal" data-target="#assignmentScale"  th:text="#{instructor_dropdown_assignment_scale}">Change Assignment Scale</a>
       <a class="dropdown-item dropdown-minimum-score" href="#" th:text="#{instructor_dropdown_minimum_score}">Set Minimum Score for Empty Cells</a>
       <a class="dropdown-item dropdown-mute-assignment" href="#"></a>
@@ -263,6 +321,11 @@
     const MAX_GRADE = 7;
     const GRADE_NOT_AVAILABLE = '-';
 
+    //const MSG_TYPE_NOT_SUBMITTED = 0;
+    const MSG_TYPE_NOT_GRADED = 1;
+    const MSG_TYPE_LESS_THAN = 2;
+    const MSG_TYPE_MORE_THAN = 3;
+
     window.GbGradeTable = { _onReadyCallbacks: [] };
     var assignmentGroupArray = /*[[${assignmentGroupArray}]]*/;
     var columns = /*[[${tableHeaderList}]]*/;
@@ -281,6 +344,11 @@
       instructor_assignment_scale_modal_title: /*[[#{instructor_assignment_scale_modal_title}]]*/,
       instructor_dropdown_mute_assignment: /*[[#{instructor_dropdown_mute_assignment}]]*/,
       instructor_dropdown_unmute_assignment: /*[[#{instructor_dropdown_unmute_assignment}]]*/,
+      instructor_send_message_modal_title: /*[[#{instructor_send_message_modal_title}]]*/,
+      instructor_send_message_modal_subject_0: /*[[#{instructor_send_message_modal_subject_0}]]*/,
+      instructor_send_message_modal_subject_1: /*[[#{instructor_send_message_modal_subject_1}]]*/,
+      instructor_send_message_modal_subject_2: /*[[#{instructor_send_message_modal_subject_2}]]*/,
+      instructor_send_message_modal_subject_3: /*[[#{instructor_send_message_modal_subject_3}]]*/
     };
     var container = $('#studentTable' + [[${courseId}]])[0];
     var studentFilter = document.getElementById('studentFilter');
@@ -688,6 +756,172 @@
       var col = $(this).parent().data('col');
       var headerSettings = cellSettings[0][col];
       $(this).attr('href', headerSettings.speedGraderUrl)
+    });
+
+    // Populate send message modal
+    $('body').on('click', '.dropdown-send-message', function(e) {
+      e.preventDefault();
+      var col = $(this).parent().data('col');
+      var headerSettings = cellSettings[0][col];
+      var visualCol = GbGradeTable.instance.toVisualColumn(col);
+      $('#sendMessage .modal-title').text(messages.instructor_send_message_modal_title.replace('{0}', headerSettings.assignmentName));
+      $('#send-message-assignment-name').val(headerSettings.assignmentName);
+      $('#send-message-assignment-id').val(headerSettings.id);
+      $('#sendMessageSubject').val(messages.instructor_send_message_modal_subject_0.replace('{0}', headerSettings.assignmentName));
+      $('#selected-column').val(visualCol);
+      updateSendMessageUsers();
+    });
+
+    $('#messageTypes').change(function() {
+      var value = parseInt($(this).val());
+      var assignmentName = $('#send-message-assignment-name').val();
+      var cutoff_score = Number($('#cutoff_score').val().replace(',','.'));
+      if (isNaN(cutoff_score)) cutoff_score = 0;
+      switch(value) {
+        case MSG_TYPE_NOT_GRADED:
+          $('#sendMessageSubject').val(messages.instructor_send_message_modal_subject_1.replace('{0}', assignmentName));
+          $('.cutoff_score_container').addClass('d-none');
+          break;
+        case MSG_TYPE_LESS_THAN:
+          $('#sendMessageSubject').val(messages.instructor_send_message_modal_subject_2.replace('{0}', cutoff_score)
+                                                                                       .replace('{1}', assignmentName));
+          $('.cutoff_score_container').removeClass('d-none');
+          break;
+        case MSG_TYPE_MORE_THAN:
+          $('#sendMessageSubject').val(messages.instructor_send_message_modal_subject_3.replace('{0}', cutoff_score)
+                                                                                       .replace('{1}', assignmentName));
+          $('.cutoff_score_container').removeClass('d-none');
+          break;
+      }
+      validateSendMessageForm();
+      updateSendMessageUsers();
+    });
+
+    $('#cutoff_score').change(function() {
+      var value = Number($(this).val().replace(',', '.'));
+      var assignmentName = $('#send-message-assignment-name').val();
+      if (isNaN(value)) {
+        $(this).val('');
+        value = 0;
+      }
+      var messageTypesValue = parseInt($('#messageTypes').val());
+      switch(messageTypesValue) {
+        case MSG_TYPE_LESS_THAN:
+          $('#sendMessageSubject').val(messages.instructor_send_message_modal_subject_2.replace('{0}', value)
+                                                                                       .replace('{1}', assignmentName));
+          $('.cutoff_score_container').removeClass('d-none');
+          break;
+        case MSG_TYPE_MORE_THAN:
+          $('#sendMessageSubject').val(messages.instructor_send_message_modal_subject_3.replace('{0}', value)
+                                                                                       .replace('{1}', assignmentName));
+          $('.cutoff_score_container').removeClass('d-none');
+          break;
+      }
+      validateSendMessageForm();
+    });
+
+    $('#cutoff_score, #sendMessageSubject, #sendMessageTextarea').on('keypress keydown keyup', function() {
+      validateSendMessageForm();
+      updateSendMessageUsers()
+    });
+
+    $('#sendMessage').on('hidden.bs.modal', function (e) {
+      $('#messageTypes').val(1).change();
+      $('#cutoff_score').val('');
+      $('#sendMessageTextarea').val('');
+      $('#send-message-button').prop('disabled', true);
+    });
+
+    function validateSendMessageForm() {
+      var cutoff_score = $('#cutoff_score').val();
+      var sendMessageSubject = $('#sendMessageSubject').val();
+      var sendMessageTextarea = $('#sendMessageTextarea').val();
+      var messageTypesValue = parseInt($('#messageTypes').val());
+      var visualCol = $('#selected-column').val();
+      var dataAtCol = GbGradeTable.instance.getDataAtCol(visualCol);
+      var userIds = [];
+      var usernames = [];
+      $(dataAtCol).each(function(idx, val) {
+        var cellMeta = GbGradeTable.instance.getCellMeta(idx, visualCol);
+        switch(messageTypesValue) {
+          case MSG_TYPE_NOT_GRADED:
+            if (val == GRADE_NOT_AVAILABLE) {
+              userIds.push(cellMeta.userId);
+            }
+            break;
+          case MSG_TYPE_LESS_THAN:
+            if (!isNaN(cutoff_score) && $('#cutoff_score').val() != '' && parseFloat(val) < cutoff_score) {
+              userIds.push(cellMeta.userId);
+            }
+            break;
+          case MSG_TYPE_MORE_THAN:
+            if (!isNaN(cutoff_score) && $('#cutoff_score').val() != '' && parseFloat(val) > cutoff_score) {
+              userIds.push(cellMeta.userId);
+            }
+            break;
+        }
+      });
+      if (userIds.length > 0 && sendMessageSubject != '' && sendMessageTextarea != '' &&
+        (((cutoff_score != '' && (messageTypesValue == MSG_TYPE_LESS_THAN || messageTypesValue == MSG_TYPE_MORE_THAN))) ||
+        (messageTypesValue == MSG_TYPE_NOT_GRADED))) {
+        $('#send-message-button').prop('disabled', false);
+      } else {
+        $('#send-message-button').prop('disabled', true);
+      }
+    }
+
+    function updateSendMessageUsers() {
+      var visualCol = $('#selected-column').val();
+      var dataAtCol = GbGradeTable.instance.getDataAtCol(visualCol);
+      var messageTypesValue = parseInt($('#messageTypes').val());
+      var cutoff_score = Number($('#cutoff_score').val().replace(',','.'));
+      var userIds = [];
+      var usernames = [];
+      $(dataAtCol).each(function(idx, val) {
+        var cellMeta = GbGradeTable.instance.getCellMeta(idx, visualCol);
+        switch(messageTypesValue) {
+          case MSG_TYPE_NOT_GRADED:
+            if (val == GRADE_NOT_AVAILABLE) {
+              userIds.push(cellMeta.userId);
+              usernames.push(cellMeta.sortableName);
+            }
+            break;
+          case MSG_TYPE_LESS_THAN:
+            if (!isNaN(cutoff_score) && $('#cutoff_score').val() != '' && parseFloat(val) < cutoff_score) {
+              userIds.push(cellMeta.userId);
+              usernames.push(cellMeta.sortableName);
+            }
+            break;
+          case MSG_TYPE_MORE_THAN:
+            if (!isNaN(cutoff_score) && $('#cutoff_score').val() != '' && parseFloat(val) > cutoff_score) {
+              userIds.push(cellMeta.userId);
+              usernames.push(cellMeta.sortableName);
+            }
+            break;
+        }
+      });
+      $('#send-message-users').empty();
+      $('#send-message-users').hide();
+      if(usernames.length > 0) {
+        $(usernames).each(function(idx, val) {
+          $('#send-message-users').append('<li class="list-group-item">' + val + '</li>');
+        });
+        $('#send-message-users').show();
+      }
+      $('#send-message-user-ids').val(userIds);
+    }
+
+    $('#send-message-button').click(function() {
+      $(this).addClass('spinner').prop('disabled', true);
+      $.ajax({
+        url: /*[[@{/sendMessageToUsers}]]*/,
+        data: '{"userIds": [' + $('#send-message-user-ids').val() + '], "sendMessageSubject": "' + $("#sendMessageSubject").val() + '", "sendMessageTextarea": "' + $("#sendMessageTextarea").val() + '"}',
+        type: 'POST',
+        contentType: 'application/json; charset=utf-8'
+
+      }).done(function(success) {
+        window.location = [[@{/}]];
+      });
     });
 
     // Populate assignment conversion scale modal 

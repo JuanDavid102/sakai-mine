@@ -17,6 +17,7 @@ import edu.uc.ltigradebook.util.GradeUtils;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -130,6 +132,33 @@ public class GradeRestController {
             } catch(Exception e) {
                 log.error("Cannot send the grade {} to the student {}.", userId, grade, e);
             }
+        }
+        return true;
+    }
+
+    @RequestMapping(value = "/sendMessageToUsers", method = RequestMethod.POST)
+    public boolean sendMessageToUsers(@RequestBody String jsonData, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) throws GradeException {
+        LtiLaunchData lld = ltiSession.getLtiLaunchData();
+        if (securityService.isFaculty(lld.getRolesList())) {
+            try {
+                JSONObject jsonObj = new JSONObject(jsonData);
+                JSONArray userIdsArr = jsonObj.getJSONArray("userIds");
+                List<String> userIds = new ArrayList<>();
+                String subject = jsonObj.getString("sendMessageSubject");
+                String message = jsonObj.getString("sendMessageTextarea");
+                for (int i = 0; i < userIdsArr.length(); i++) {
+                    userIds.add(Integer.toString(userIdsArr.getInt(i)));
+                }
+                canvasService.createConversation(userIds, subject, message);
+
+            } catch (IOException ex) {
+                log.warn("Conversation cannot be created");
+                throw new GradeException();
+            }
+
+        } else {
+            log.warn("User role is not valid");
+            throw new GradeException();
         }
         return true;
     }
