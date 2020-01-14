@@ -234,7 +234,7 @@ public class CsvController {
                             line.add(grade);
                         }
                         for(AssignmentGroup assignmentGroup : assignmentGroupList) {
-                            line.add(gradeService.getStudentGroupMean(ltiSession, Long.parseLong(assignmentGroup.getId().toString()), user.getId()));
+                            line.add(gradeService.getStudentGroupMean(ltiSession, Long.parseLong(assignmentGroup.getId().toString()), user.getId(), null));
                         }
                         line.add(gradeService.getStudentTotalMean(ltiSession, user.getId(), true, null));
                         line.add(gradeService.getStudentTotalMean(ltiSession, user.getId(), false, null));

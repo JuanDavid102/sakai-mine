@@ -78,10 +78,12 @@ public class GradeService {
         return gradeRepository.getGradedUserCount();
     }
 
-    public String getStudentGroupMean(LtiSession ltiSession, Long groupId, Integer studentId) throws GradeException {
+    public String getStudentGroupMean(LtiSession ltiSession, Long groupId, Integer studentId, String courseId) throws GradeException {
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
         String canvasUserId = lld.getCustom().get("canvas_user_id");
-        String courseId = ltiSession.getCanvasCourseId();
+        if (StringUtils.isBlank(courseId)) {
+            courseId = ltiSession.getCanvasCourseId();
+        }
         CoursePreference coursePreference = courseService.getCoursePreference(courseId);
         if (canvasUserId.equals(studentId.toString()) || securityService.isFaculty(lld.getRolesList())) {
             BigDecimal groupMeanSum = BigDecimal.ZERO;
