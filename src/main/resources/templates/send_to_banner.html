@@ -73,10 +73,10 @@
             type: 'POST',
             contentType: 'text/plain; charset=utf-8'
 
-          }).done(function(grade) {
+          }).done(function(response) {
             $('#spinnerCanvas' + user.id).addClass('d-none');
-            $('#finalGrade' + user.id).text(grade);
-            resolve(grade);
+            $('#finalGrade' + user.id).text(response.grade);
+            resolve(response.grade);
           });
         });
       }

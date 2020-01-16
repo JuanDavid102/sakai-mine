@@ -414,6 +414,38 @@ table.table tr.success td {
   z-index: 2;
 }
 
+.cursor-pointer{
+  cursor: pointer;
+}
+
+.w-content {
+  min-width: 16px;
+  max-width: 16px;
+}
+
+.qtip.qtip-content-info {
+  font-size: 12.5px;
+  line-height: 16.5px;
+  max-width: 228px;
+  background: white;
+  border-radius: 4px;
+  box-shadow: #0000001f 0px 2px 2px 1px;
+  margin-top: -9px;
+  margin-left: -1px;
+}
+
+.qtip.qtip-content-info .qtip-content {
+  padding: 9px 11px;
+}
+
+span.qtip-info-icon {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .nav-tabs.canvas-nav-tabs {
   margin-bottom: 14px;
 }

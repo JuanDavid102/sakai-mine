@@ -88,13 +88,13 @@ public class GradeRestController {
     }
 
     @RequestMapping(value = "/getStudentGroupGrade", method = RequestMethod.POST)
-    public String getStudentGroupMean(@ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, @RequestParam Long groupId, @RequestParam Integer studentId, @RequestParam(required = false) String courseId) throws GradeException {
-        return gradeService.getStudentGroupMean(ltiSession, groupId, studentId, courseId);
+    public Map<String, Object> getStudentGroupMean(@ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, @RequestParam Long groupId, @RequestParam Integer studentId, @RequestParam(required = false) String courseId) throws GradeException {
+        return gradeService.getStudentGroupMean(ltiSession, groupId, studentId, courseId).toMap();
     }
 
     @RequestMapping(value = "/getStudentFinalGrade", method = RequestMethod.POST)
-    public String getStudentTotalMean(@ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, @RequestParam Integer studentId, @RequestParam boolean isCurrentGrade, @RequestParam(required = false) String courseId) throws GradeException {
-        return gradeService.getStudentTotalMean(ltiSession, studentId, isCurrentGrade, courseId);
+    public Map<String, Object> getStudentTotalMean(@ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, @RequestParam Integer studentId, @RequestParam boolean isCurrentGrade, @RequestParam(required = false) String courseId) throws GradeException {
+        return gradeService.getStudentTotalMean(ltiSession, studentId, isCurrentGrade, courseId).toMap();
     }
 
     @RequestMapping(value = "/sendGradesToBanner", method = RequestMethod.POST)

@@ -58,10 +58,10 @@
               type: 'POST',
               contentType: 'text/plain; charset=utf-8'
 
-            }).done(function(grade) {
+            }).done(function(response) {
               $('#spinnerCanvas' + user.id).addClass('d-none');
               var cell = table.cell($('#finalGrade' + user.id)[0]);
-              cell.data(grade).draw();
+              cell.data(response.grade).draw();
             });
           }
 

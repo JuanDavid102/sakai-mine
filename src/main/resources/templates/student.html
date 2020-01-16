@@ -54,6 +54,11 @@
     var userId = /*[[${userId}]]*/;
     var messages = {
       student_grade_not_available: /*[[#{student_grade_not_available}]]*/,
+      instructor_header_omit_final_grade: /*[[#{instructor_header_omit_final_grade}]]*/,
+      instructor_header_muted_assignment: /*[[#{instructor_header_muted_assignment}]]*/,
+      instructor_ignore_highest_grade: /*[[#{instructor_ignore_highest_grade}]]*/,
+      instructor_ignore_lowest_grade: /*[[#{instructor_ignore_lowest_grade}]]*/,
+      shared_ignored_assignments_message: /*[[#{shared_ignored_assignments_message}]]*/
     };
 
     var search = /*[[#{student_datatables_search}]]*/ 'search';
@@ -119,13 +124,13 @@
         type: 'POST',
         contentType: 'text/plain; charset=utf-8'
 
-      }).done(function(grade) {
-        if (grade === '-') grade = messages.student_grade_not_available;
+      }).done(function(response) {
+        if (response.grade === '-') response.grade = messages.student_grade_not_available;
         $('[data-spinner="spinner' + groupId + '"]').each(function() {
           $(this).addClass('d-none');
         });
         $('[data-id="grade' + groupId + '"]').each(function() {
-          $(this).text(grade);
+          createQtip(this, response);
         });
       });
     }
@@ -136,11 +141,70 @@
         type: 'POST',
         contentType: 'text/plain; charset=utf-8'
 
-      }).done(function(grade) {
-        if (grade === '-') grade = messages.student_grade_not_available;
+      }).done(function(response) {
+        if (response.grade === '-') response.grade = messages.student_grade_not_available;
         $('#spinnerFinal').addClass('d-none');
-        $('#finalGrade').text(grade);
+        createQtip($('#finalGrade')[0], response);
       });
+    }
+
+    function createQtip(elem, response) {
+      var html = '<div>';
+      html += response.grade;
+      var createQtip = false;
+      if ((response.omittedAssignments && response.omittedAssignments.length > 0) ||
+          (response.mutedAssignments && response.mutedAssignments.length > 0) ||
+          (response.dropHighestAssignments && response.dropHighestAssignments.length > 0) ||
+          (response.dropLowestAssignments && response.dropLowestAssignments.length > 0)) {
+        html += '<span class="qtip-info fa fa-info-circle ml-1" aria-hidden="true"></span>';
+        html += '<div class="qtip-content d-none">';
+        html +=   '<p class="mb-2">' + messages.shared_ignored_assignments_message + '</p>';
+        html +=   '<table class="table table-sm mb-0"><tbody>';
+        $(response.omittedAssignments).each(function(idx, obj) {
+          html +=   '<tr title="' + messages.instructor_header_omit_final_grade + '"><td>' + obj.name + '</td><td class="w-content"><span class="qtip-info-icon fas fa-exclamation-circle" aria-hidden="true"></span></td></tr>';
+        });
+        $(response.mutedAssignments).each(function(idx, obj) {
+          html +=   '<tr title="' + messages.instructor_header_muted_assignment + '"><td>' + obj.name + '</td><td class="w-content"><span class="qtip-info-icon fas fa-bell-slash" aria-hidden="true"></span></td></tr>';
+        });
+        $(response.dropHighestAssignments).each(function(idx, obj) {
+          html +=   '<tr title="' + messages.instructor_ignore_highest_grade + '"><td>' + obj.name + '</td><td class="w-content"><span class="qtip-info-icon fas fa-arrow-up" aria-hidden="true"></span></td></tr>';
+        });
+        $(response.dropLowestAssignments).each(function(idx, obj) {
+          html +=   '<tr title="' + messages.instructor_ignore_lowest_grade + '"><td>' + obj.name + '</td><td class="w-content"><span class="qtip-info-icon fas fa-arrow-down" aria-hidden="true"></span></td></tr>';
+        });
+        html +=   '</tbody></table';
+        html += '</div>';
+        createQtip = true;
+      }
+      html += '</div>';
+      $(elem).html(html);
+
+      if (createQtip){
+        $(elem).find('.qtip-info').addClass('cursor-pointer');
+        $(elem).find('.qtip-info').qtip({
+          position: {
+            my : 'top center',
+            at: 'bottom center',
+            method: 'none'
+          },
+          show: {
+            event: 'click',
+            delay: 0,
+          },
+          style: {
+            classes: 'qtip-content-info qtip-shadow qtip-light'
+          },
+          hide: {
+            event: 'click',
+          },
+          content: $(elem).find('.qtip-content').clone().removeClass('d-none').html(),
+          events: {
+            show: function(event, api) {
+              $('.qtip:visible').qtip('hide');
+            }
+          }
+        });
+      }
     }
 
     $(assignmentGroupList).each(function(idx, obj) {

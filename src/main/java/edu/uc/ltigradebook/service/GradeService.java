@@ -30,6 +30,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 @Service
 @Slf4j
@@ -79,7 +81,13 @@ public class GradeService {
         return gradeRepository.getGradedUserCount();
     }
 
-    public String getStudentGroupMean(LtiSession ltiSession, Long groupId, Integer studentId, String courseId) throws GradeException {
+    public JSONObject getStudentGroupMean(LtiSession ltiSession, Long groupId, Integer studentId, String courseId) throws GradeException {
+        JSONObject json = new JSONObject();
+        JSONArray omittedAssignments = new JSONArray();
+        JSONArray mutedAssignments = new JSONArray();
+        JSONArray dropHighestAssignments = new JSONArray();
+        JSONArray dropLowestAssignments = new JSONArray();
+
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
         String canvasUserId = lld.getCustom().get("canvas_user_id");
         if (StringUtils.isBlank(courseId)) {
@@ -112,11 +120,17 @@ public class GradeService {
                         assignmentIsMuted = assignmentPref.get().getMuted();
                     }
 
+                    JSONObject assignmentJson = new JSONObject();
+                    assignmentJson.put("id", assignmentId);
+                    assignmentJson.put("name", assignment.getName());
+
                     boolean omitFromFinalGrade = assignment.isOmitFromFinalGrade();
                     boolean isZeroPoints = assignment.getPointsPossible() == null || assignment.getPointsPossible().equals(new Double(0));
                     boolean isVisibleForUser = assignment.getAssignmentVisibility().stream().anyMatch(studentId.toString()::equals);
 
                     // Skip if assignment is muted, grade is omitted from final grade or assignment possible points is zero
+                    if (assignmentIsMuted) mutedAssignments.put(assignmentJson);
+                    else if (omitFromFinalGrade) omittedAssignments.put(assignmentJson);
                     if (assignmentIsMuted || omitFromFinalGrade || isZeroPoints || !isVisibleForUser) continue;
 
                     String grade = submission.getGrade();
@@ -184,9 +198,19 @@ public class GradeService {
                         Map<Integer, BigDecimal> removeGrades = new HashMap<>();
                         removeGrades.putAll(lowestGrades);
                         removeGrades.putAll(highestGrades);
+                        int removed = 0;
                         for (Map.Entry<Integer, BigDecimal> entry : removeGrades.entrySet()) {
+                            removed++;
                             groupMeanSum = groupMeanSum.subtract(entry.getValue());
                             gradesLength = gradesLength.subtract(BigDecimal.ONE);
+                            Optional<Assignment> assignment = assignmentList.stream().filter(asn -> entry.getKey().equals(asn.getId())).findFirst();
+                            if (assignment.isPresent()) {
+                                JSONObject assignmentJson = new JSONObject();
+                                assignmentJson.put("id", assignment.get().getId());
+                                assignmentJson.put("name", assignment.get().getName());
+                                if (removed <= gradingRules.getDropLowest()) dropLowestAssignments.put(assignmentJson);
+                                else dropHighestAssignments.put(assignmentJson);
+                            }
                         }
                     }
                 }
@@ -197,8 +221,15 @@ public class GradeService {
 
             if (calculateFinalGrade && !gradesLength.equals(BigDecimal.ZERO)) {
                 BigDecimal groupMean = groupMeanSum.divide(gradesLength, 3, RoundingMode.HALF_UP);
-                return new BigDecimal(GradeUtils.roundGrade(groupMean.toString())).toString();
-            } else return GRADE_NOT_AVAILABLE;
+                json.put("mutedAssignments", mutedAssignments);
+                json.put("omittedAssignments", omittedAssignments);
+                json.put("dropHighestAssignments", dropHighestAssignments);
+                json.put("dropLowestAssignments", dropLowestAssignments);
+                json.put("grade", new BigDecimal(GradeUtils.roundGrade(groupMean.toString())).toString());
+            } else {
+                json.put("grade", GRADE_NOT_AVAILABLE);
+            }
+            return json;
 
         } else {
             log.error("This user is not allowed to see student {} group {} mean", studentId, groupId);
@@ -206,7 +237,13 @@ public class GradeService {
         }
     }
 
-    public String getStudentTotalMean(LtiSession ltiSession, Integer studentId, boolean isCurrentGrade, String courseId) throws GradeException {
+    public JSONObject getStudentTotalMean(LtiSession ltiSession, Integer studentId, boolean isCurrentGrade, String courseId) throws GradeException {
+        JSONObject json = new JSONObject();
+        JSONArray omittedAssignments = new JSONArray();
+        JSONArray mutedAssignments = new JSONArray();
+        JSONArray dropHighestAssignments = new JSONArray();
+        JSONArray dropLowestAssignments = new JSONArray();
+
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
         String canvasUserId = lld.getCustom().get("canvas_user_id");
         if (StringUtils.isBlank(courseId)) {
@@ -236,11 +273,17 @@ public class GradeService {
                         assignmentIsMuted = assignmentPref.get().getMuted();
                     }
 
+                    JSONObject assignmentJson = new JSONObject();
+                    assignmentJson.put("id", assignmentId);
+                    assignmentJson.put("name", assignment.getName());
+
                     boolean omitFromFinalGrade = assignment.isOmitFromFinalGrade();
                     boolean isZeroPoints = assignment.getPointsPossible() == null || assignment.getPointsPossible().equals(new Double(0));
                     boolean isVisibleForUser = assignment.getAssignmentVisibility().stream().anyMatch(studentId.toString()::equals);
 
                     // Skip if assignment is not in the group, assignment is muted, grade is omitted from final grade or assignment possible points is zero
+                    if (assignmentIsMuted) mutedAssignments.put(assignmentJson);
+                    else if (omitFromFinalGrade) omittedAssignments.put(assignmentJson);
                     if (assignmentIsMuted || omitFromFinalGrade || isZeroPoints || !isVisibleForUser) continue;
 
                     String grade = submission.getGrade();
@@ -323,8 +366,18 @@ public class GradeService {
                                 Map<Integer, BigDecimal> removeGrades = new HashMap<>();
                                 removeGrades.putAll(lowestGrades);
                                 removeGrades.putAll(highestGrades);
+                                int removed = 0;
                                 for (Map.Entry<Integer, BigDecimal> entry : removeGrades.entrySet()) {
+                                    removed++;
                                     values.remove(entry.getValue());
+                                    Optional<Assignment> assignment = assignmentList.stream().filter(asn -> entry.getKey().equals(asn.getId())).findFirst();
+                                    if (assignment.isPresent()) {
+                                        JSONObject assignmentJson = new JSONObject();
+                                        assignmentJson.put("id", assignment.get().getId());
+                                        assignmentJson.put("name", assignment.get().getName());
+                                        if (removed <= gradingRules.getDropLowest()) dropLowestAssignments.put(assignmentJson);
+                                        else dropHighestAssignments.put(assignmentJson);
+                                    }
                                 }
                             }
                         }
@@ -337,16 +390,24 @@ public class GradeService {
                             assignmentWeightSum = assignmentWeightSum.add(new BigDecimal(assignmentGroup.getGroupWeight()));
                         }
                     }
-                    if (assignmentWeightSum.equals(BigDecimal.ZERO)) return GRADE_NOT_AVAILABLE;
-                    return new BigDecimal(GradeUtils.roundGrade(finalValue.multiply(new BigDecimal(100)).divide(assignmentWeightSum, 3, RoundingMode.HALF_UP).toString())).toString();
+                    if (assignmentWeightSum.equals(BigDecimal.ZERO)) {
+                        json.put("grade", GRADE_NOT_AVAILABLE);
+                        return json;
+                    }
+                    json.put("mutedAssignments", mutedAssignments);
+                    json.put("omittedAssignments", omittedAssignments);
+                    json.put("dropHighestAssignments", dropHighestAssignments);
+                    json.put("dropLowestAssignments", dropLowestAssignments);
+                    json.put("grade", new BigDecimal(GradeUtils.roundGrade(finalValue.multiply(new BigDecimal(100)).divide(assignmentWeightSum, 3, RoundingMode.HALF_UP).toString())).toString());
                 } else {
-                    return GRADE_NOT_AVAILABLE;
+                    json.put("grade", GRADE_NOT_AVAILABLE);
                 }
 
             } catch (IOException ex) {
                 log.error("Error getting student {} total mean", studentId);
-                return GRADE_NOT_AVAILABLE;
+                json.put("grade", GRADE_NOT_AVAILABLE);
             }
+            return json;
 
         } else {
             log.error("This user is not allowed to see the total mean of the student with id {}", studentId);

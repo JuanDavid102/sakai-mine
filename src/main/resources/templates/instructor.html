@@ -348,7 +348,12 @@
       instructor_send_message_modal_subject_0: /*[[#{instructor_send_message_modal_subject_0}]]*/,
       instructor_send_message_modal_subject_1: /*[[#{instructor_send_message_modal_subject_1}]]*/,
       instructor_send_message_modal_subject_2: /*[[#{instructor_send_message_modal_subject_2}]]*/,
-      instructor_send_message_modal_subject_3: /*[[#{instructor_send_message_modal_subject_3}]]*/
+      instructor_send_message_modal_subject_3: /*[[#{instructor_send_message_modal_subject_3}]]*/,
+      instructor_header_omit_final_grade: /*[[#{instructor_header_omit_final_grade}]]*/,
+      instructor_header_muted_assignment: /*[[#{instructor_header_muted_assignment}]]*/,
+      instructor_ignore_highest_grade: /*[[#{instructor_ignore_highest_grade}]]*/,
+      instructor_ignore_lowest_grade: /*[[#{instructor_ignore_lowest_grade}]]*/,
+      shared_ignored_assignments_message: /*[[#{shared_ignored_assignments_message}]]*/
     };
     var container = $('#studentTable' + [[${courseId}]])[0];
     var studentFilter = document.getElementById('studentFilter');
@@ -564,6 +569,70 @@
       $(td).html('<div>' + td.innerHTML + '</div>');
     }
 
+    function cellGroupGradeRenderer(instance, td, row, col, prop, value, cellProperties) {
+      Handsontable.renderers.TextRenderer.apply(this, arguments);
+      var physicalRow = GbGradeTable.instance.toPhysicalRow(row);
+      var physicalCol = GbGradeTable.instance.toPhysicalColumn(col);
+      var cellMeta = cellSettings[physicalRow+1][physicalCol];
+
+      var html = '<div>';
+      html += td.innerHTML;
+      var createQtip = false;
+      if ((cellMeta.omittedAssignments && cellMeta.omittedAssignments.length > 0) ||
+          (cellMeta.mutedAssignments && cellMeta.mutedAssignments.length > 0) ||
+          (cellMeta.dropHighestAssignments && cellMeta.dropHighestAssignments.length > 0) ||
+          (cellMeta.dropLowestAssignments && cellMeta.dropLowestAssignments.length > 0)) {
+        html += '<span class="qtip-info fa fa-info-circle ml-1" aria-hidden="true"></span>';
+        html += '<div class="qtip-content d-none">';
+        html +=   '<p class="mb-2">' + messages.shared_ignored_assignments_message + '</p>';
+        html +=   '<table class="table table-sm mb-0"><tbody>';
+        $(cellMeta.omittedAssignments).each(function(idx, obj) {
+          html +=   '<tr title="' + messages.instructor_header_omit_final_grade + '"><td>' + obj.name + '</td><td class="w-content"><span class="qtip-info-icon fas fa-exclamation-circle" aria-hidden="true"></span></td></tr>';
+        });
+        $(cellMeta.mutedAssignments).each(function(idx, obj) {
+          html +=   '<tr title="' + messages.instructor_header_muted_assignment + '"><td>' + obj.name + '</td><td class="w-content"><span class="qtip-info-icon fas fa-bell-slash" aria-hidden="true"></span></td></tr>';
+        });
+        $(cellMeta.dropHighestAssignments).each(function(idx, obj) {
+          html +=   '<tr title="' + messages.instructor_ignore_highest_grade + '"><td>' + obj.name + '</td><td class="w-content"><span class="qtip-info-icon fas fa-arrow-up" aria-hidden="true"></span></td></tr>';
+        });
+        $(cellMeta.dropLowestAssignments).each(function(idx, obj) {
+          html +=   '<tr title="' + messages.instructor_ignore_lowest_grade + '"><td>' + obj.name + '</td><td class="w-content"><span class="qtip-info-icon fas fa-arrow-down" aria-hidden="true"></span></td></tr>';
+        });
+        html +=   '</tbody></table';
+        html += '</div>';
+        createQtip = true;
+      }
+      html += '</div>';
+      $(td).html(html);
+
+      if (createQtip){
+        $(td).addClass('cursor-pointer');
+        $(td).qtip({
+          position: {
+            my : 'top center',
+            at: 'bottom center',
+            method: 'none'
+          },
+          show: {
+            event: 'click',
+            delay: 0,
+          },
+          style: {
+            classes: 'qtip-content-info qtip-shadow qtip-light'
+          },
+          hide: {
+            event: 'click',
+          },
+          content: $(td).find('.qtip-content').clone().removeClass('d-none').html(),
+          events: {
+            show: function(event, api) {
+              $('.qtip:visible').qtip('hide');
+            }
+          }
+        });
+      }
+    }
+
     function cellRatingRenderer(instance, td, row, col, prop, value, cellProperties) {
       Handsontable.renderers.TextRenderer.apply(this, arguments);
       $(td).html('<div class="gb-save-info">' + td.innerHTML + '</div>');
@@ -720,6 +789,7 @@
     $('.wtHolder').scroll(function() {
       $('.header-cell-dropdown.show').dropdown('toggle');
       $('body > .dropdown-menu.show').remove();
+      $('.qtip:visible').qtip('hide');
     });
 
     // Populate assignment details modal 
@@ -1031,19 +1101,23 @@
           type: 'POST',
           contentType: 'text/plain; charset=utf-8'
 
-        }).done(function(grade) {
+        }).done(function(response) {
           var assignmentGroupColIndex = assignmentGroupArray[groupId].assignmentGroupColIndex;
           var realCol = TOTAL_COLUMNS-RIGHT_READ_ONLY_COLS+assignmentGroupColIndex;
           var realRow = GbGradeTable.instance.toVisualRow(row);
-          cellSettings[row+1][realCol].renderer = cellBlankRenderer;
+          cellSettings[row+1][realCol].omittedAssignments = response.omittedAssignments;
+          cellSettings[row+1][realCol].mutedAssignments = response.mutedAssignments;
+          cellSettings[row+1][realCol].dropHighestAssignments = response.dropHighestAssignments;
+          cellSettings[row+1][realCol].dropLowestAssignments = response.dropLowestAssignments;
+          cellSettings[row+1][realCol].renderer = cellGroupGradeRenderer;
           if (renderCell) {
-            GbGradeTable.instance.setDataAtCell(realRow, realCol, grade)
+            GbGradeTable.instance.setDataAtCell(realRow, realCol, response.grade)
           } else {
             // If cell is visible, avoid method 'setDataAtCell' to avoid table re-render on each cell value change
             var cell = GbGradeTable.instance.getCell(realRow, realCol);
-            if (cell !== undefined) $(cell).find('.spinner').text(grade).removeClass('spinner');
+            if (cell !== undefined) $(cell).find('.spinner').text(response.grade).removeClass('spinner');
           }
-          resolve(grade);
+          resolve(response.grade);
         });
       });
     }
@@ -1060,19 +1134,23 @@
           type: 'POST',
           contentType: 'text/plain; charset=utf-8'
 
-        }).done(function(grade) {
+        }).done(function(response) {
           var realCol = TOTAL_COLUMNS - 1;
           if (isCurrentGrade) realCol--;
           var realRow = GbGradeTable.instance.toVisualRow(row);
-          cellSettings[row+1][realCol].renderer = cellBlankRenderer;
+          cellSettings[row+1][realCol].omittedAssignments = response.omittedAssignments;
+          cellSettings[row+1][realCol].mutedAssignments = response.mutedAssignments;
+          cellSettings[row+1][realCol].dropHighestAssignments = response.dropHighestAssignments;
+          cellSettings[row+1][realCol].dropLowestAssignments = response.dropLowestAssignments;
+          cellSettings[row+1][realCol].renderer = cellGroupGradeRenderer;
           if (renderCell) {
-            GbGradeTable.instance.setDataAtCell(realRow, realCol, grade)
+            GbGradeTable.instance.setDataAtCell(realRow, realCol, response.grade)
           } else {
             // If cell is visible, avoid method 'setDataAtCell' to avoid table re-render on each cell value change
             var cell = GbGradeTable.instance.getCell(realRow, realCol);
-            if (cell !== undefined) $(cell).find('.spinner').text(grade).removeClass('spinner');
+            if (cell !== undefined) $(cell).find('.spinner').text(response.grade).removeClass('spinner');
           }
-          resolve(grade);
+          resolve(response.grade);
         });
       });
     }
