@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -93,17 +94,16 @@ public class GradeService {
             try {
                 List<Assignment> assignmentList = canvasService.listCourseAssignments(courseId);
                 List<Assignment> assignmentsInGroup = assignmentList.stream().filter(asn -> groupId.equals(asn.getAssignmentGroupId())).collect(Collectors.toList());
+                Map<Integer, BigDecimal> assignmentGradesMap = new HashMap<>();
                 Map<Integer, Submission> studentSubmissionMap = getAssignmentSubmissionsForStudent(assignmentsInGroup, studentId);
                 List<AssignmentGroup> assignmentGroupList = canvasService.listAssignmentGroups(courseId);
                 Optional<AssignmentGroup> assignmentGroupOptional = assignmentGroupList.stream().filter(ag -> groupId.equals(Long.valueOf(ag.getId().toString()))).findAny();
                 GradingRules gradingRules = assignmentGroupOptional.isPresent() ? (assignmentGroupOptional.get().getGradingRules() != null ? assignmentGroupOptional.get().getGradingRules() : null) : null;
-                
                 for (Assignment assignment : assignmentsInGroup) {
                     Submission submission = studentSubmissionMap.get(assignment.getId());
                     if(submission == null) continue;
                     String assignmentId = String.valueOf(assignment.getId());
                     Optional<AssignmentPreference> assignmentPref = assignmentService.getAssignmentPreference(assignment.getId().toString());
-
                     boolean assignmentIsMuted = false;
                     if (StringUtils.isNotBlank(assignment.getMuted())) {
                         assignmentIsMuted = Boolean.valueOf(assignment.getMuted());
@@ -157,6 +157,36 @@ public class GradeService {
                             BigDecimal assignmentGrade = new BigDecimal(grade);
                             groupMeanSum = groupMeanSum.add(assignmentGrade);
                             gradesLength = gradesLength.add(BigDecimal.ONE);
+                            assignmentGradesMap.put(assignment.getId(), assignmentGrade);
+                        }
+                    }
+                }
+
+                if (gradingRules != null) {
+                    if (gradingRules.getDropLowest() == null) gradingRules.setDropLowest(0);
+                    if (gradingRules.getDropHighest() == null) gradingRules.setDropHighest(0);
+                    if (gradingRules.getNeverDrop() == null) gradingRules.setNeverDrop(new ArrayList<>());
+                    if (gradingRules.getDropLowest() > 0 || gradingRules.getDropHighest() > 0) {
+                        Map<Integer, BigDecimal> lowestGrades = assignmentGradesMap
+                                .entrySet().stream()
+                                .filter(a -> !(gradingRules.getNeverDrop().contains(a.getKey())))
+                                .sorted((a1, a2) -> a1.getValue().compareTo(a2.getValue()))
+                                .limit(gradingRules.getDropLowest())
+                                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,  
+                                (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+                        Map<Integer, BigDecimal> highestGrades = assignmentGradesMap
+                                .entrySet().stream()
+                                .filter(a -> !(gradingRules.getNeverDrop().contains(a.getKey())))
+                                .sorted((a1, a2) -> -a1.getValue().compareTo(a2.getValue()))
+                                .limit(gradingRules.getDropHighest())
+                                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,  
+                                (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+                        Map<Integer, BigDecimal> removeGrades = new HashMap<>();
+                        removeGrades.putAll(lowestGrades);
+                        removeGrades.putAll(highestGrades);
+                        for (Map.Entry<Integer, BigDecimal> entry : removeGrades.entrySet()) {
+                            groupMeanSum = groupMeanSum.subtract(entry.getValue());
+                            gradesLength = gradesLength.subtract(BigDecimal.ONE);
                         }
                     }
                 }
@@ -185,7 +215,8 @@ public class GradeService {
         CoursePreference coursePreference = courseService.getCoursePreference(courseId);
         if (canvasUserId.equals(studentId.toString()) || securityService.isFaculty(lld.getRolesList())) {
             boolean calculateFinalGrade = true;
-            Map<Long, List<BigDecimal>> groupGrades = new HashMap<Long, List<BigDecimal>>();
+            Map<Long, List<BigDecimal>> groupGrades = new HashMap<>();
+            Map<Long, Map<Integer, BigDecimal>> groupAssignmentGrades = new HashMap<>();
 
             try {
 
@@ -244,12 +275,19 @@ public class GradeService {
 
                     if (!gradeTypeNotSupported) {
                         if (StringUtils.isBlank(grade)) {
-                            if (!isCurrentGrade) calculateFinalGrade = false;
-                            break;
+                            if (!isCurrentGrade) {
+                                calculateFinalGrade = false;
+                                break;
+                            }
                         } else {
+                            BigDecimal gradeBigDecimal = new BigDecimal(grade);
                             List<BigDecimal> values = groupGrades.getOrDefault(assignment.getAssignmentGroupId(), new ArrayList<>());
-                            values.add(new BigDecimal(grade));
+                            values.add(gradeBigDecimal);
                             groupGrades.put(assignment.getAssignmentGroupId(), values);
+
+                            Map<Integer, BigDecimal> valuesGrades = groupAssignmentGrades.getOrDefault(assignment.getAssignmentGroupId(), new HashMap<>());
+                            valuesGrades.put(assignment.getId(), gradeBigDecimal);
+                            groupAssignmentGrades.put(assignment.getAssignmentGroupId(), valuesGrades);
                         }
                     }
                 }
@@ -261,6 +299,35 @@ public class GradeService {
                     for (AssignmentGroup assignmentGroup : assignmentGroupList) {
                         GradingRules gradingRules = assignmentGroup.getGradingRules();
                         List<BigDecimal> values = groupGrades.get(new Long(assignmentGroup.getId()));
+                        Map<Integer, BigDecimal> valuesGrades = groupAssignmentGrades.get(new Long(assignmentGroup.getId()));
+
+                        if (gradingRules != null && valuesGrades != null) {
+                            if (gradingRules.getDropLowest() == null) gradingRules.setDropLowest(0);
+                            if (gradingRules.getDropHighest() == null) gradingRules.setDropHighest(0);
+                            if (gradingRules.getNeverDrop() == null) gradingRules.setNeverDrop(new ArrayList<>());
+                            if (gradingRules.getDropLowest() > 0 || gradingRules.getDropHighest() > 0) {
+                                Map<Integer, BigDecimal> lowestGrades = valuesGrades
+                                        .entrySet().stream()
+                                        .filter(a -> !(gradingRules.getNeverDrop().contains(a.getKey())))
+                                        .sorted((a1, a2) -> a1.getValue().compareTo(a2.getValue()))
+                                        .limit(gradingRules.getDropLowest())
+                                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,  
+                                        (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+                                Map<Integer, BigDecimal> highestGrades = valuesGrades
+                                        .entrySet().stream()
+                                        .filter(a -> !(gradingRules.getNeverDrop().contains(a.getKey())))
+                                        .sorted((a1, a2) -> -a1.getValue().compareTo(a2.getValue()))
+                                        .limit(gradingRules.getDropHighest())
+                                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,  
+                                        (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+                                Map<Integer, BigDecimal> removeGrades = new HashMap<>();
+                                removeGrades.putAll(lowestGrades);
+                                removeGrades.putAll(highestGrades);
+                                for (Map.Entry<Integer, BigDecimal> entry : removeGrades.entrySet()) {
+                                    values.remove(entry.getValue());
+                                }
+                            }
+                        }
 
                         if (values != null && !values.isEmpty()) {
                             BigDecimal totalValues = values.stream().reduce(BigDecimal.ZERO, BigDecimal::add);

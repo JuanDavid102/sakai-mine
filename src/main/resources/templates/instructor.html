@@ -843,22 +843,24 @@
       var usernames = [];
       $(dataAtCol).each(function(idx, val) {
         var cellMeta = GbGradeTable.instance.getCellMeta(idx, visualCol);
-        switch(messageTypesValue) {
-          case MSG_TYPE_NOT_GRADED:
-            if (val == GRADE_NOT_AVAILABLE) {
-              userIds.push(cellMeta.userId);
-            }
-            break;
-          case MSG_TYPE_LESS_THAN:
-            if (!isNaN(cutoff_score) && $('#cutoff_score').val() != '' && parseFloat(val) < cutoff_score) {
-              userIds.push(cellMeta.userId);
-            }
-            break;
-          case MSG_TYPE_MORE_THAN:
-            if (!isNaN(cutoff_score) && $('#cutoff_score').val() != '' && parseFloat(val) > cutoff_score) {
-              userIds.push(cellMeta.userId);
-            }
-            break;
+        if (cellMeta.isVisibleForUser) {
+          switch(messageTypesValue) {
+            case MSG_TYPE_NOT_GRADED:
+              if (val == GRADE_NOT_AVAILABLE) {
+                userIds.push(cellMeta.userId);
+              }
+              break;
+            case MSG_TYPE_LESS_THAN:
+              if (!isNaN(cutoff_score) && $('#cutoff_score').val() != '' && parseFloat(val) < cutoff_score) {
+                userIds.push(cellMeta.userId);
+              }
+              break;
+            case MSG_TYPE_MORE_THAN:
+              if (!isNaN(cutoff_score) && $('#cutoff_score').val() != '' && parseFloat(val) > cutoff_score) {
+                userIds.push(cellMeta.userId);
+              }
+              break;
+          }
         }
       });
       if (userIds.length > 0 && sendMessageSubject != '' && sendMessageTextarea != '' &&
@@ -879,25 +881,27 @@
       var usernames = [];
       $(dataAtCol).each(function(idx, val) {
         var cellMeta = GbGradeTable.instance.getCellMeta(idx, visualCol);
-        switch(messageTypesValue) {
-          case MSG_TYPE_NOT_GRADED:
-            if (val == GRADE_NOT_AVAILABLE) {
-              userIds.push(cellMeta.userId);
-              usernames.push(cellMeta.sortableName);
-            }
-            break;
-          case MSG_TYPE_LESS_THAN:
-            if (!isNaN(cutoff_score) && $('#cutoff_score').val() != '' && parseFloat(val) < cutoff_score) {
-              userIds.push(cellMeta.userId);
-              usernames.push(cellMeta.sortableName);
-            }
-            break;
-          case MSG_TYPE_MORE_THAN:
-            if (!isNaN(cutoff_score) && $('#cutoff_score').val() != '' && parseFloat(val) > cutoff_score) {
-              userIds.push(cellMeta.userId);
-              usernames.push(cellMeta.sortableName);
-            }
-            break;
+        if (cellMeta.isVisibleForUser) {
+          switch(messageTypesValue) {
+            case MSG_TYPE_NOT_GRADED:
+              if (val == GRADE_NOT_AVAILABLE) {
+                userIds.push(cellMeta.userId);
+                usernames.push(cellMeta.sortableName);
+              }
+              break;
+            case MSG_TYPE_LESS_THAN:
+              if (!isNaN(cutoff_score) && $('#cutoff_score').val() != '' && parseFloat(val) < cutoff_score) {
+                userIds.push(cellMeta.userId);
+                usernames.push(cellMeta.sortableName);
+              }
+              break;
+            case MSG_TYPE_MORE_THAN:
+              if (!isNaN(cutoff_score) && $('#cutoff_score').val() != '' && parseFloat(val) > cutoff_score) {
+                userIds.push(cellMeta.userId);
+                usernames.push(cellMeta.sortableName);
+              }
+              break;
+          }
         }
       });
       $('#send-message-users').empty();
@@ -1077,8 +1081,13 @@
     for (var i = 0; i < GbGradeTable.instance.getData().length; i++) {
       var physicalRow = GbGradeTable.instance.toPhysicalRow(i);
       var userId = cellSettings[physicalRow+1][0].userId;
-      Object.keys(assignmentGroupArray).forEach(function(assignmentGroupId) {
-        ajaxRequests.push(calcGroupGrade(assignmentGroupId, userId, i, false));
+      var sortedArray = Object.keys(assignmentGroupArray).map(function(groupId) {
+        assignmentGroupArray[groupId].groupId = groupId;
+        return assignmentGroupArray[groupId];
+      });
+      sortedArray = sortedArray.sort((a,b) => (a.assignmentGroupColIndex > b.assignmentGroupColIndex) ? 1 : ((b.assignmentGroupColIndex > a.assignmentGroupColIndex) ? -1 : 0));
+      Object.keys(sortedArray).forEach(function(idx) {
+        ajaxRequests.push(calcGroupGrade(sortedArray[idx].groupId, userId, i, false));
       });
       ajaxRequests.push(calcFinalGrade(userId, i, true, false));
       ajaxRequests.push(calcFinalGrade(userId, i, false, false));
