@@ -341,7 +341,7 @@ public class IndexController {
                     //Grade conversion logic
                     switch (assignment.getGradingType()) {
                         case GradeUtils.GRADE_TYPE_POINTS:
-                            grade = GradeUtils.mapGradeToScale(assignmentConversionScale, grade, assignment.getPointsPossible().toString());
+                            grade = GradeUtils.mapGradeToScale(assignmentConversionScale, grade, assignment.getPointsPossible() != null ? assignment.getPointsPossible().toString() : null);
                             break;
                         case GradeUtils.GRADE_TYPE_PERCENT:
                             grade = GradeUtils.mapPercentageToScale(assignmentConversionScale, grade);
@@ -473,7 +473,7 @@ public class IndexController {
 
                             //Grade conversion logic
                             if(GradeUtils.GRADE_TYPE_POINTS.equals(assignment.getGradingType())) {
-                                grade = GradeUtils.mapGradeToScale(assignmentConversionScale, grade, assignment.getPointsPossible().toString());
+                                grade = GradeUtils.mapGradeToScale(assignmentConversionScale, grade, assignment.getPointsPossible() != null ? assignment.getPointsPossible().toString() : null);
                             } else if(GradeUtils.GRADE_TYPE_PERCENT.equals(assignment.getGradingType())) { 
                                 grade = GradeUtils.mapPercentageToScale(assignmentConversionScale, grade);
                             }
@@ -694,7 +694,7 @@ public class IndexController {
 
                             //Grade conversion logic
                             if(GradeUtils.GRADE_TYPE_POINTS.equals(assignment.getGradingType())) {
-                                grade = GradeUtils.mapGradeToScale(assignmentConversionScale, grade, assignment.getPointsPossible().toString());
+                                grade = GradeUtils.mapGradeToScale(assignmentConversionScale, grade, assignment.getPointsPossible() != null ? assignment.getPointsPossible().toString() : null);
                             } else if(GradeUtils.GRADE_TYPE_PERCENT.equals(assignment.getGradingType())) { 
                                 grade = GradeUtils.mapPercentageToScale(assignmentConversionScale, grade);
                             }
