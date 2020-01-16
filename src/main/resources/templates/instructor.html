@@ -607,7 +607,7 @@
 
       if (createQtip){
         $(td).addClass('cursor-pointer');
-        $(td).qtip({
+        $(td).find('> div').qtip({
           position: {
             my : 'top center',
             at: 'bottom center',
@@ -702,7 +702,7 @@
         var sectionValue = elem[2].toLowerCase();
         var inputValue = studentFilter.value.toLowerCase();
         if (idValue.indexOf(inputValue) == -1 && nameValue.indexOf(inputValue) == -1 && sectionValue.indexOf(inputValue) == -1) {
-          $($('.ht_master.handsontable .htCore tbody tr')[index]).addClass('hidden');
+          $($('.ht_master.handsontable > .wtHolder .htCore > tbody > tr')[index]).addClass('hidden');
           $($('.ht_clone_left.handsontable .htCore tbody tr')[index]).addClass('hidden');
         }
       });
