@@ -6,7 +6,7 @@ import edu.ksu.canvas.model.assignment.GradingRules;
 import edu.ksu.canvas.model.assignment.Submission;
 import edu.ksu.lti.launch.model.LtiLaunchData;
 import edu.ksu.lti.launch.model.LtiSession;
-
+import edu.uc.ltigradebook.constants.LtiConstants;
 import edu.uc.ltigradebook.entity.AssignmentPreference;
 import edu.uc.ltigradebook.entity.CoursePreference;
 import edu.uc.ltigradebook.entity.StudentGrade;
@@ -89,7 +89,7 @@ public class GradeService {
         JSONArray dropLowestAssignments = new JSONArray();
 
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
-        String canvasUserId = lld.getCustom().get("canvas_user_id");
+        String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
         if (StringUtils.isBlank(courseId)) {
             courseId = ltiSession.getCanvasCourseId();
         }
@@ -245,7 +245,7 @@ public class GradeService {
         JSONArray dropLowestAssignments = new JSONArray();
 
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
-        String canvasUserId = lld.getCustom().get("canvas_user_id");
+        String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
         if (StringUtils.isBlank(courseId)) {
             courseId = ltiSession.getCanvasCourseId();
         }

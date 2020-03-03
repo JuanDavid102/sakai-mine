@@ -7,9 +7,9 @@ import java.util.List;
 
 @Slf4j
 public class RoleChecker {
-    
+
     private final List<InstitutionRole> validRoles;
-    
+
     public RoleChecker(List<InstitutionRole> validRoles) {
         this.validRoles = validRoles;
     }

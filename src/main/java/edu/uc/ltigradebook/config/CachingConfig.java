@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 
-import edu.uc.ltigradebook.constants.CacheConstant;
+import edu.uc.ltigradebook.constants.CacheConstants;
 import lombok.extern.slf4j.Slf4j;
 
 @Configuration
@@ -21,42 +21,42 @@ public class CachingConfig {
     @Bean
     public CacheManager cacheManager() {
         ConcurrentMapCacheManager cacheManager = new ConcurrentMapCacheManager(
-            CacheConstant.ASSIGNMENT_SUBMISSIONS, 
-            CacheConstant.ASSIGNMENTS_IN_COURSE, 
-            CacheConstant.COURSE_ASSIGNMENT_GROUPS, 
-            CacheConstant.EVENTS, 
-            CacheConstant.SINGLE_ASSIGNMENT, 
-            CacheConstant.SINGLE_EVENT, 
-            CacheConstant.SINGLE_SUBMISSION, 
-            CacheConstant.USERS_IN_COURSE,
-            CacheConstant.SECTIONS_IN_COURSE,
-            CacheConstant.SINGLE_COURSE,
-            CacheConstant.SUBACCOUNTS
+            CacheConstants.ASSIGNMENTS_IN_COURSE,
+            CacheConstants.ASSIGNMENT_SUBMISSIONS,
+            CacheConstants.COURSE_ASSIGNMENT_GROUPS,
+            CacheConstants.EVENTS,
+            CacheConstants.SECTIONS_IN_COURSE,
+            CacheConstants.SINGLE_ASSIGNMENT,
+            CacheConstants.SINGLE_COURSE,
+            CacheConstants.SINGLE_EVENT,
+            CacheConstants.SINGLE_SUBMISSION,
+            CacheConstants.SUBACCOUNTS,
+            CacheConstants.USERS_IN_COURSE
             );
         return cacheManager;
     }
     
     //Evict the grades cache every 2 minutes.
     @CacheEvict(allEntries = true, value = {
-            CacheConstant.ASSIGNMENT_SUBMISSIONS,
-            CacheConstant.ASSIGNMENTS_IN_COURSE,  
-            CacheConstant.SINGLE_SUBMISSION
+            CacheConstants.ASSIGNMENTS_IN_COURSE,
+            CacheConstants.ASSIGNMENT_SUBMISSIONS,
+            CacheConstants.SINGLE_SUBMISSION
             })
     @Scheduled(fixedDelay =  2 * 60 * 1000,  initialDelay = 500)
     public void gradeCacheEvict() {
-        log.info("Evicting grade caches of the Gradebook application, the grades are refreshed every 2 minutes.");
+        log.info("Evicting submissions and assignments caches of the Gradebook application, the cache is refreshed every 2 minutes.");
     }
 
     //Evict all the caches every 10 minutes.
     @CacheEvict(allEntries = true, value = { 
-            CacheConstant.COURSE_ASSIGNMENT_GROUPS, 
-            CacheConstant.EVENTS, 
-            CacheConstant.SINGLE_ASSIGNMENT, 
-            CacheConstant.SINGLE_EVENT, 
-            CacheConstant.USERS_IN_COURSE,
-            CacheConstant.SECTIONS_IN_COURSE,
-            CacheConstant.SINGLE_COURSE,
-            CacheConstant.SUBACCOUNTS
+            CacheConstants.COURSE_ASSIGNMENT_GROUPS, 
+            CacheConstants.EVENTS,
+            CacheConstants.SINGLE_ASSIGNMENT,
+            CacheConstants.SECTIONS_IN_COURSE,
+            CacheConstants.SINGLE_COURSE,
+            CacheConstants.SINGLE_EVENT,
+            CacheConstants.SUBACCOUNTS,
+            CacheConstants.USERS_IN_COURSE
             })
     @Scheduled(fixedDelay =  10 * 60 * 1000,  initialDelay = 500)
     public void cacheEvict() {

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
+import edu.uc.ltigradebook.constants.TemplateConstants;
 import edu.uc.ltigradebook.entity.AccountPreference;
 import edu.uc.ltigradebook.service.AccountService;
 import edu.uc.ltigradebook.service.CanvasAPIServiceWrapper;
@@ -34,7 +35,7 @@ public class AccountController {
             model.addAttribute("accountList", canvasService.getSubaccounts());
             new Long(selectedAccount);
         } catch(Exception ex) {
-            return new ModelAndView("admin_banner");
+            return new ModelAndView(TemplateConstants.ADMIN_BANNER_TEMPLATE);
         }
         AccountPreference accountPreference = null;
         Optional<AccountPreference> optionalAccountPreference = accountService.getAccountPreferences(new Long(selectedAccount));
@@ -55,8 +56,7 @@ public class AccountController {
         model.addAttribute("selectedAccount", selectedAccount);
         model.addAttribute("selectedIntegerAccount", Integer.valueOf(selectedAccount));      
         model.addAttribute("accountPreference", accountPreference);
-        model.addAttribute("adminBanner", true);
-        return new ModelAndView("admin_banner");
+        return new ModelAndView(TemplateConstants.ADMIN_BANNER_TEMPLATE);
     }
 
     @PostMapping(value = "/saveAccountPreferences")
@@ -84,8 +84,7 @@ public class AccountController {
             model.addAttribute("accountList", canvasService.getSubaccounts());
         } catch(Exception ex) {
         }
-        model.addAttribute("adminBanner", true);
-        return new ModelAndView("admin_banner");
+        return new ModelAndView(TemplateConstants.ADMIN_BANNER_TEMPLATE);
     }
 
 }

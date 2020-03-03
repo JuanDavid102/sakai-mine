@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
-import edu.uc.ltigradebook.constants.CacheConstant;
+import edu.uc.ltigradebook.constants.CacheConstants;
 import edu.uc.ltigradebook.entity.Event;
 import edu.uc.ltigradebook.repository.EventRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -20,13 +20,13 @@ public class EventTrackingService {
     @Autowired
     private EventRepository eventRepository;
 
-    @Cacheable(CacheConstant.EVENTS)
+    @Cacheable(CacheConstants.EVENTS)
     public Iterable<Event> getAllEvents() {
         log.debug("Getting all the events from the table.");
         return eventRepository.findAll();
     }
 
-    @Cacheable(CacheConstant.SINGLE_EVENT)
+    @Cacheable(CacheConstants.SINGLE_EVENT)
     public Optional<Event> getEventById(long eventId) {
         log.debug("Getting an event from the table by id {}.", eventId);
         return eventRepository.findById(eventId);

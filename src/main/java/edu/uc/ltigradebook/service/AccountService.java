@@ -15,7 +15,6 @@ public class AccountService {
 
     @Autowired
     private AccountRepository accountRepository;
-    
 
     public Optional<AccountPreference> getAccountPreferences(long accountId) {
         log.debug("Getting account preferences by accountId {}.", accountId);

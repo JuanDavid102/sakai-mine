@@ -48,8 +48,8 @@
 </table>
 
 <script th:inline="javascript">
+  /*<![CDATA[*/
   $(document).ready( function () {
-    /*<![CDATA[*/
     var assignmentGroupList = /*[[${assignmentGroupList}]]*/;
     var userId = /*[[${userId}]]*/;
     var messages = {
@@ -213,8 +213,8 @@
     });
     calcFinalGrade(userId, false);
     /**** END OF GROUP AND FINAL GRADES ****/
-    /*]]>*/
   });
+  /*]]>*/
 </script>
 </body>
 </html>

@@ -2,14 +2,14 @@
 <html xmlns:th="http://www.thymeleaf.org">
 
 <head>
-  <title th:text="${admin_events_title}">Events</title>
+  <title th:text="#{admin_events_title}">Events</title>
   <div th:insert="fragments/head :: head"></div>
 </head>
 
 <body>
   <div class="admin-container">
     <!-- Topbar -->
-    <div th:insert="fragments/topbar :: topbar"></div>
+    <div th:insert="fragments/topbar :: topbar (admin_events)"></div>
     <!-- End of Topbar -->
 
     <h2 class="canvas-h2" th:text="#{admin_sidebar_events}">Events</h2>
@@ -40,41 +40,41 @@
   </div><!-- End of container -->
 
   <script th:inline="javascript">
+    /*<![CDATA[*/
     $(document).ready( function () {
-        /*<![CDATA[*/
-        var search = /*[[#{admin_events_datatables_search}]]*/ 'search';
-        var lengthMenu = /*[[#{admin_events_datatables_lengthMenu}]]*/ 'lengthMenu';
-        var zeroRecords = /*[[#{admin_events_datatables_zeroRecords}]]*/ 'zeroRecords';
-        var info = /*[[#{datatables_info}]]*/ 'info';
-        var infoEmpty = /*[[#{admin_events_datatables_infoEmpty}]]*/ 'infoEmpty';
-        var infoFiltered = /*[[#{event_atatables_infoFiltered}]]*/ 'infoFiltered';
-        var emptyTable = /*[[#{datatables_emptyTable}]]*/ 'emptyTable';
-        var next = /*[[#{datatables_next}]]*/ 'next';
-        var previous = /*[[#{datatables_previous}]]*/ 'previous';
-        var sortAscending = /*[[#{datatables_sortAscending}]]*/ 'sortAscending';
-        var sortDescending = /*[[#{datatables_sortDescending}]]*/ 'sortDescending';
+      var search = /*[[#{admin_events_datatables_search}]]*/ 'search';
+      var lengthMenu = /*[[#{admin_events_datatables_lengthMenu}]]*/ 'lengthMenu';
+      var zeroRecords = /*[[#{admin_events_datatables_zeroRecords}]]*/ 'zeroRecords';
+      var info = /*[[#{datatables_info}]]*/ 'info';
+      var infoEmpty = /*[[#{admin_events_datatables_infoEmpty}]]*/ 'infoEmpty';
+      var infoFiltered = /*[[#{event_atatables_infoFiltered}]]*/ 'infoFiltered';
+      var emptyTable = /*[[#{datatables_emptyTable}]]*/ 'emptyTable';
+      var next = /*[[#{datatables_next}]]*/ 'next';
+      var previous = /*[[#{datatables_previous}]]*/ 'previous';
+      var sortAscending = /*[[#{datatables_sortAscending}]]*/ 'sortAscending';
+      var sortDescending = /*[[#{datatables_sortDescending}]]*/ 'sortDescending';
       $("#eventTable").DataTable({
-                "pageLength": 50,
+        "pageLength": 50,
         "language": {
-                    "search": search,
-                    "lengthMenu": lengthMenu,
-                    "zeroRecords": zeroRecords,
-                    "info": info,
-                    "infoEmpty": infoEmpty,
-                    "infoFiltered": infoFiltered,
-                    "emptyTable": emptyTable,
-                    "paginate": {
-                        "next": next,
-                        "previous": previous,
-                    },
-                    "aria": {
-                        "sortAscending": sortAscending,
-                        "sortDescending": sortDescending,
-                    }
-                }        
+          "search": search,
+          "lengthMenu": lengthMenu,
+          "zeroRecords": zeroRecords,
+          "info": info,
+          "infoEmpty": infoEmpty,
+          "infoFiltered": infoFiltered,
+          "emptyTable": emptyTable,
+          "paginate": {
+            "next": next,
+            "previous": previous,
+          },
+          "aria": {
+            "sortAscending": sortAscending,
+            "sortDescending": sortDescending,
+          }
+        }
       });
-          /*]]>*/
-    } );
+    });
+    /*]]>*/
   </script>
 </body>
 

@@ -42,7 +42,7 @@ Las propiedades más importantes a configurar son:
 | server.ssl.key-store | Ruta del fichero de almacén de claves para ficheros autogenerados. | - | /home/user/keystore.p12 |
 | server.ssl.key-store-password | Password del almacén de claves | - | changeit |
 | server.ssl.key-alias | Alias del almacén de claves | - | keystore_alias |
-| lti-gradebook.canvas_api_token | Token de API compartido que utilizará la aplicación para realizar llamadas | - | - |
+| lti-gradebook.canvas_api_token | Token de API que utilizará la aplicación para realizar llamadas cuando no encuentre ningún token en la base de datos. | - | - |
 | lti-gradebook.admins | Listado de usuarios de Canvas que son administradores de la aplicación, separados por comas. | - | mpellicer,jdoe,hsolo |
 | banner.enabled | Habilitar la integración con Banner. | false | false |
 | banner.datasource.username | Nombre de usuario de la conexión al esquema de Banner. | - | WEB_BANNER_LMS |

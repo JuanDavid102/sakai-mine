@@ -27,22 +27,22 @@ public class SecurityService {
        log.info("The current admins of the application are {}.", ltiGradebookAdmins);
        return StringUtils.isNotEmpty(ltiGradebookAdmins) && ltiGradebookAdmins.contains(userId);
    }
-   
+
    public boolean isFaculty(List<InstitutionRole> userRoles) {
-	   if(userRoles != null && !userRoles.isEmpty()) {
-		   return userRoles.contains(InstitutionRole.Administrator)
-		            || userRoles.contains(InstitutionRole.Instructor)
-		            || userRoles.contains(InstitutionRole.TeachingAssistant);
-		   }
-	   return false;	            
+       if(userRoles != null && !userRoles.isEmpty()) {
+           return userRoles.contains(InstitutionRole.Administrator)
+                    || userRoles.contains(InstitutionRole.Instructor)
+                    || userRoles.contains(InstitutionRole.TeachingAssistant);
+           }
+       return false;
    }
-   
+
    public boolean isStudent(List<InstitutionRole> userRoles) {
-	   if(userRoles != null && !userRoles.isEmpty()) {
-		   return userRoles.contains(InstitutionRole.Student)
-		            || userRoles.contains(InstitutionRole.Learner);
-		   }
-	   return false;	
+       if(userRoles != null && !userRoles.isEmpty()) {
+           return userRoles.contains(InstitutionRole.Student)
+                    || userRoles.contains(InstitutionRole.Learner);
+           }
+       return false;
    }
 
    public boolean isBannerEnabled(long accountId) {

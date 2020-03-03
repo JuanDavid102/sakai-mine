@@ -5,7 +5,8 @@ import edu.ksu.lti.launch.model.LtiLaunchData;
 import edu.ksu.lti.launch.model.LtiSession;
 import edu.ksu.lti.launch.oauth.LtiPrincipal;
 
-import edu.uc.ltigradebook.constants.EventConstant;
+import edu.uc.ltigradebook.constants.EventConstants;
+import edu.uc.ltigradebook.constants.LtiConstants;
 import edu.uc.ltigradebook.dao.BannerServiceDao;
 import edu.uc.ltigradebook.entity.StudentGrade;
 import edu.uc.ltigradebook.exception.GradeException;
@@ -55,9 +56,9 @@ public class GradeRestController {
     @RequestMapping(value = "/postGrade", method = RequestMethod.POST)
     public boolean postGrade(@RequestBody StudentGrade studentGrade, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) throws GradeException {
         String courseId = ltiSession.getCanvasCourseId();
-        String gradeString = StringUtils.replace(studentGrade.getGrade(), ",", ".");
-        
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
+        String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
+        String gradeString = StringUtils.replace(studentGrade.getGrade(), ",", ".");
         if (securityService.isFaculty(lld.getRolesList())) {
             if(StringUtils.isNotBlank(gradeString) && !GradeUtils.isValidGrade(gradeString)) {
                 log.warn("The grade {} is not valid, it will not be saved", gradeString);
@@ -66,17 +67,16 @@ public class GradeRestController {
 
             //Set one decimal
             gradeString = GradeUtils.roundGrade(gradeString);
-
             studentGrade.setGrade(gradeString);
             String eventDetails = new JSONObject().put("assignmentId", studentGrade.getAssignmentId()).put("userId", studentGrade.getUserId()).put("grade", gradeString).toString();
             log.debug("Posting grade {} for the user {} in the assignment {} and the course {}.", gradeString, studentGrade.getUserId(), studentGrade.getAssignmentId(), courseId);
             if (StringUtils.isBlank(gradeString)) {
                 log.debug("The inserted grade is empty, deleting grade...");
-                eventTrackingService.postEvent(EventConstant.INSTRUCTOR_DELETE_GRADE, ltiPrincipal.getUser(), courseId, eventDetails);
+                eventTrackingService.postEvent(EventConstants.INSTRUCTOR_DELETE_GRADE, canvasUserId, courseId, eventDetails);
                 gradeService.deleteGrade(studentGrade);
                 return true;
             } else {
-                eventTrackingService.postEvent(EventConstant.INSTRUCTOR_POST_GRADE, ltiPrincipal.getUser(), courseId, eventDetails);
+                eventTrackingService.postEvent(EventConstants.INSTRUCTOR_POST_GRADE, canvasUserId, courseId, eventDetails);
                 gradeService.saveGrade(studentGrade);
                 return true;
             }

@@ -3,7 +3,7 @@ package edu.uc.ltigradebook.controller;
 import edu.ksu.lti.launch.model.LtiSession;
 import edu.ksu.lti.launch.oauth.LtiPrincipal;
 
-import edu.uc.ltigradebook.constants.ScaleConstant;
+import edu.uc.ltigradebook.constants.ScaleConstants;
 import edu.uc.ltigradebook.entity.AssignmentPreference;
 import edu.uc.ltigradebook.service.AssignmentService;
 
@@ -37,20 +37,20 @@ public class AssignmentPreferenceController {
             case "":
                 assignmentPreference.setConversionScale("");
                 break;
-            case ScaleConstant.FIFTY:
-                assignmentPreference.setConversionScale(ScaleConstant.FIFTY);
+            case ScaleConstants.FIFTY:
+                assignmentPreference.setConversionScale(ScaleConstants.FIFTY);
                 break;
-            case ScaleConstant.SIXTY:
-                assignmentPreference.setConversionScale(ScaleConstant.SIXTY);
+            case ScaleConstants.SIXTY:
+                assignmentPreference.setConversionScale(ScaleConstants.SIXTY);
                 break;
-            case ScaleConstant.SEVENTY:
-                assignmentPreference.setConversionScale(ScaleConstant.SEVENTY);
+            case ScaleConstants.SEVENTY:
+                assignmentPreference.setConversionScale(ScaleConstants.SEVENTY);
                 break;
-            case ScaleConstant.EIGHTY:
-                assignmentPreference.setConversionScale(ScaleConstant.EIGHTY);
+            case ScaleConstants.EIGHTY:
+                assignmentPreference.setConversionScale(ScaleConstants.EIGHTY);
                 break;
-            case ScaleConstant.NINETY:
-                assignmentPreference.setConversionScale(ScaleConstant.NINETY);
+            case ScaleConstants.NINETY:
+                assignmentPreference.setConversionScale(ScaleConstants.NINETY);
                 break;
             default:
                 log.error("Conversion scale not recognized {}.", newConversionScale);

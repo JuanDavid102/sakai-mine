@@ -12,7 +12,6 @@ public class BannerUserMapper implements RowMapper<BannerUser> {
 
     @Override
     public BannerUser mapRow(ResultSet rs, int rowNum) throws SQLException {
-        
         BannerUser t = new BannerUser();
         t.setSPRIDEN_LAST_NAME(rs.getString("SPRIDEN_LAST_NAME"));
         t.setSPRIDEN_FIRST_NAME(rs.getString("SPRIDEN_FIRST_NAME"));

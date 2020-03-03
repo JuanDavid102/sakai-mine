@@ -2,14 +2,14 @@
 <html xmlns:th="http://www.thymeleaf.org">
 
 <head>
-  <title th:text="${admin_dashboard_title}">Dashboard</title>
+  <title th:text="#{admin_dashboard_title}">Dashboard</title>
   <div th:insert="fragments/head :: head"></div>
 </head>
 
 <body>
   <div class="admin-container">
     <!-- Topbar -->
-    <div th:insert="fragments/topbar :: topbar"></div>
+    <div th:insert="fragments/topbar :: topbar (admin_main)"></div>
     <!-- End of Topbar -->
 
     <h2 class="canvas-h2" th:text="#{admin_sidebar_dashboard}">Dashboard</h2>

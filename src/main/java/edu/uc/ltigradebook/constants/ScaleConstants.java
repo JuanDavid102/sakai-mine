@@ -1,6 +1,6 @@
 package edu.uc.ltigradebook.constants;
 
-public class ScaleConstant {
+public class ScaleConstants {
     public static final String FIFTY = "0.5";
     public static final String SIXTY = "0.6"; // The default Scale.
     public static final String SEVENTY = "0.7";

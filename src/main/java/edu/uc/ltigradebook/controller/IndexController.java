@@ -12,7 +12,9 @@ import edu.ksu.lti.launch.model.LtiLaunchData;
 import edu.ksu.lti.launch.model.LtiSession;
 import edu.ksu.lti.launch.oauth.LtiPrincipal;
 
-import edu.uc.ltigradebook.constants.EventConstant;
+import edu.uc.ltigradebook.constants.EventConstants;
+import edu.uc.ltigradebook.constants.LtiConstants;
+import edu.uc.ltigradebook.constants.TemplateConstants;
 import edu.uc.ltigradebook.dao.BannerServiceDao;
 import edu.uc.ltigradebook.entity.AssignmentPreference;
 import edu.uc.ltigradebook.entity.CoursePreference;
@@ -24,6 +26,7 @@ import edu.uc.ltigradebook.service.CourseService;
 import edu.uc.ltigradebook.service.EventTrackingService;
 import edu.uc.ltigradebook.service.GradeService;
 import edu.uc.ltigradebook.service.SecurityService;
+import edu.uc.ltigradebook.service.TokenService;
 import edu.uc.ltigradebook.util.GradeUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -90,6 +93,9 @@ public class IndexController {
     @Autowired
     private SessionLocaleResolver localeResolver;
 
+    @Autowired
+    private TokenService tokenService;
+
     @Value("${lti-gradebook.url:someurl}")
     private String canvasBaseUrl;
 
@@ -100,7 +106,7 @@ public class IndexController {
     public ModelAndView index(@ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, Model model) {
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
         localeResolver.setDefaultLocale(new Locale(lld.getLaunchPresentationLocale()));
-        return new ModelAndView("index");
+        return new ModelAndView(TemplateConstants.INDEX_TEMPLATE);
     }
 
     @GetMapping("/index")
@@ -109,11 +115,12 @@ public class IndexController {
             LtiLaunchData lld = ltiSession.getLtiLaunchData();
             log.info("Debugging ltiLaunch Object:\n"+ReflectionToStringBuilder.toString(lld));
             String canvasLoginId = ltiPrincipal.getUser();
+            String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
             String courseId = ltiSession.getCanvasCourseId();
             model.addAttribute("courseId", courseId);
             model.addAttribute("errors", errors);
 
-            eventTrackingService.postEvent(EventConstant.LOGIN, canvasLoginId, courseId);
+            eventTrackingService.postEvent(EventConstants.LTI_LOGIN, canvasUserId, courseId);
             
             if(lld.getRolesList() == null || lld.getRolesList().isEmpty()) {
                 throw new Exception(String.format("The user %s doesn't have any valid role.", canvasLoginId));       
@@ -140,16 +147,16 @@ public class IndexController {
             log.error("Error displaying the LTI tool content.", ex);
         }
 
-        return new ModelAndView("error");
+        return new ModelAndView(TemplateConstants.ERROR_TEMPLATE);
     }
 
     private ModelAndView handleInstructorView(@ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, Model model) {
-        log.info("Entering the instructor view...");
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
-        String canvasUserId = lld.getCustom().get("canvas_user_id");
+        String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
         String canvasLoginId = ltiPrincipal.getUser();
         String courseId = ltiSession.getCanvasCourseId();
         CoursePreference coursePreference = courseService.getCoursePreference(courseId);
+        log.info("The user {} with id {} is entering the instructor view.", canvasLoginId, canvasUserId);
 
         try {
             StopWatch stopwatch = StopWatch.createStarted();
@@ -251,7 +258,7 @@ public class IndexController {
             executorService.shutdown();
             //Wait until all the submission requests end.
             try {
-            	executorService.awaitTermination(2, TimeUnit.MINUTES);
+                executorService.awaitTermination(2, TimeUnit.MINUTES);
             } catch (InterruptedException e) {
                 log.error("The submissions thread has been interrupted, aborting.", e);
             }            
@@ -406,22 +413,22 @@ public class IndexController {
             stopwatch.stop();
             log.info("fill the instructor view took {} for {} students.", stopwatch, studentRowList.size());
             //Post an event to the tracking service
-            eventTrackingService.postEvent(EventConstant.INSTRUCTOR_VIEW, canvasLoginId, courseId);
-            return new ModelAndView("instructor");
+            eventTrackingService.postEvent(EventConstants.INSTRUCTOR_ACCESS, canvasUserId, courseId);
+            return new ModelAndView(TemplateConstants.INSTRUCTOR_TEMPLATE);
         } catch (Exception e) {
             log.error("Fatal error getting the instructor view for the user {} and the course {}.", canvasUserId, courseId, e);
         }
 
-        return new ModelAndView("error");
+        return new ModelAndView(TemplateConstants.ERROR_TEMPLATE);
     }
 
     private ModelAndView handleStudentView(@ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, Model model) {
-        log.info("Entering the student view...");
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
-        String canvasUserId = lld.getCustom().get("canvas_user_id");
+        String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
         String canvasLoginId = ltiPrincipal.getUser();
         String courseId = ltiSession.getCanvasCourseId();
         CoursePreference coursePreference = courseService.getCoursePreference(courseId);
+        log.info("The user {} with id {} is entering the student view.", canvasLoginId, canvasUserId);
 
         try {
             StopWatch stopwatch = StopWatch.createStarted();
@@ -493,7 +500,7 @@ public class IndexController {
             executorService.shutdown();
             //Wait until all the submission requests end.
             try {
-            	executorService.awaitTermination(2, TimeUnit.MINUTES);
+                executorService.awaitTermination(2, TimeUnit.MINUTES);
             } catch (InterruptedException e) {
                 log.error("The submissions thread has been interrupted, aborting.", e);
             }
@@ -516,87 +523,87 @@ public class IndexController {
             log.info("Get all the submissions for the student took {} for {} assignments.", stopwatch, gradeMap.size());
 
             //Post the event
-            eventTrackingService.postEvent(EventConstant.STUDENT_VIEW, canvasLoginId, courseId);
-            return new ModelAndView("student");
+            eventTrackingService.postEvent(EventConstants.STUDENT_ACCESS, canvasUserId, courseId);
+            return new ModelAndView(TemplateConstants.STUDENT_TEMPLATE);
          } catch(Exception ex) {
              log.error("Fatal error getting the student view for the user {} and the course {}.", courseId, canvasUserId, ex);
          }
 
-         return new ModelAndView("error");
+         return new ModelAndView(TemplateConstants.ERROR_TEMPLATE);
     }
 
-    @GetMapping("/admin_main")
+    @GetMapping("/" + TemplateConstants.ADMIN_MAIN_TEMPLATE)
     public ModelAndView adminMain(@ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, Model model) {
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
         localeResolver.setDefaultLocale(new Locale(lld.getLaunchPresentationLocale()));
-
+        String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
         String canvasLoginId = ltiPrincipal.getUser();
-        if (!(checkAdminPermissions(canvasLoginId) || lld.getRolesList().contains(InstitutionRole.Administrator))) {
-            return new ModelAndView("error");
+        if (!(checkAdminPermissions(canvasLoginId, canvasUserId) || lld.getRolesList().contains(InstitutionRole.Administrator))) {
+            return new ModelAndView(TemplateConstants.ERROR_TEMPLATE);
         }
+        log.info("The user {} with id {} is entering the main administrator view.", canvasLoginId, canvasUserId);
         //Model: Data sent to the UI
         model.addAttribute("userFullname", ltiSession.getLtiLaunchData().getLisPersonNameFull());
-        model.addAttribute("adminMain", true);
         model.addAttribute("eventCount", eventTrackingService.getEventCount());
         model.addAttribute("gradeCount", gradeService.getGradeCount());
         model.addAttribute("courseCount", courseService.getCourseCount());
         model.addAttribute("gradedUserCount", gradeService.getGradeCount());
 
-        return new ModelAndView("admin_main");
+        return new ModelAndView(TemplateConstants.ADMIN_MAIN_TEMPLATE);
     }
 
-    @GetMapping("/admin_events")
+    @GetMapping("/" + TemplateConstants.ADMIN_EVENTS_TEMPLATE)
     public ModelAndView adminEvents(@ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, Model model) {
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
         localeResolver.setDefaultLocale(new Locale(lld.getLaunchPresentationLocale()));
-
+        String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
         String canvasLoginId = ltiPrincipal.getUser();
-        if (!(checkAdminPermissions(canvasLoginId) || lld.getRolesList().contains(InstitutionRole.Administrator))) {
-            return new ModelAndView("error");
+        if (!(checkAdminPermissions(canvasLoginId, canvasUserId) || lld.getRolesList().contains(InstitutionRole.Administrator))) {
+            return new ModelAndView(TemplateConstants.ERROR_TEMPLATE);
         }
+        log.info("The user {} with id {} is entering the event administrator view.", canvasLoginId, canvasUserId);
         //Model: Data sent to the UI
         model.addAttribute("userFullname", ltiSession.getLtiLaunchData().getLisPersonNameFull());
         model.addAttribute("adminEvents", true);
         model.addAttribute("eventList", (List<Event>) eventTrackingService.getAllEvents());
-        eventTrackingService.postEvent(EventConstant.ADMIN_VIEW, canvasLoginId);
-        return new ModelAndView("admin_events");
+        eventTrackingService.postEvent(EventConstants.ADMIN_ACCESS, canvasUserId);
+        return new ModelAndView(TemplateConstants.ADMIN_EVENTS_TEMPLATE);
     }
 
-    @GetMapping("/admin_banner")
+    @GetMapping("/" + TemplateConstants.ADMIN_BANNER_TEMPLATE)
     public ModelAndView adminBanner(@ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, Model model) {
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
         localeResolver.setDefaultLocale(new Locale(lld.getLaunchPresentationLocale()));
-
+        String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
         String canvasLoginId = ltiPrincipal.getUser();
-        if (!(checkAdminPermissions(canvasLoginId) || lld.getRolesList().contains(InstitutionRole.Administrator))) {
-            return new ModelAndView("error");
+        if (!(checkAdminPermissions(canvasLoginId, canvasUserId) || lld.getRolesList().contains(InstitutionRole.Administrator))) {
+            return new ModelAndView(TemplateConstants.ERROR_TEMPLATE);
         }
-        model.addAttribute("userFullname", ltiSession.getLtiLaunchData().getLisPersonNameFull());
-        model.addAttribute("adminBanner", true);
+        log.info("The user {} with id {} is entering the banner administrator view.", canvasLoginId, canvasUserId);
         try {
             model.addAttribute("accountList", canvasService.getSubaccounts());
         } catch(Exception ex) {
             log.error("Error getting subaccounts from Canvas.", ex);
         }
-        return new ModelAndView("admin_banner");
+        return new ModelAndView(TemplateConstants.ADMIN_BANNER_TEMPLATE);
     }
 
-    @RequestMapping(value = "/admin_grades_courses")
+    @RequestMapping(value = "/" + TemplateConstants.ADMIN_GRADES_COURSES_TEMPLATE)
     public ModelAndView adminGradesCourses(@ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, @RequestParam(required = false) String selectedCourse, Model model)  {
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
         localeResolver.setDefaultLocale(new Locale(lld.getLaunchPresentationLocale()));
-
+        String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
         String canvasLoginId = ltiPrincipal.getUser();
-        if (!(checkAdminPermissions(canvasLoginId) || lld.getRolesList().contains(InstitutionRole.Administrator))) {
-            return new ModelAndView("error");
+        if (!(checkAdminPermissions(canvasLoginId, canvasUserId) || lld.getRolesList().contains(InstitutionRole.Administrator))) {
+            return new ModelAndView(TemplateConstants.ERROR_TEMPLATE);
         }
-
+        log.info("The user {} with id {} is entering the grade courses administrator view.", canvasLoginId, canvasUserId);
         try {
             model.addAttribute("courses", courseService.getAllCourses());
             model.addAttribute("adminGradesCourses", true);
             new Long(selectedCourse);
         } catch(Exception ex) {
-            return new ModelAndView("admin_grades_courses");
+            return new ModelAndView(TemplateConstants.ADMIN_GRADES_COURSES_TEMPLATE);
         }
         try {
             List<User> userList = canvasService.getUsersInCourse(selectedCourse);
@@ -627,19 +634,19 @@ public class IndexController {
             //log.error("Cannot get users in course {}", courseId);
             return null;
         }
-        return new ModelAndView("admin_grades_courses");
+        return new ModelAndView(TemplateConstants.ADMIN_GRADES_COURSES_TEMPLATE);
     }
 
-    @RequestMapping(value = "/admin_grades_students")
+    @RequestMapping(value = "/" + TemplateConstants.ADMIN_GRADES_STUDENTS_TEMPLATE)
     public ModelAndView adminGradesStudents(@ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, @RequestParam(required = false) String selectedCourse, @RequestParam(required = false) String selectedStudent, Model model)  {
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
         localeResolver.setDefaultLocale(new Locale(lld.getLaunchPresentationLocale()));
-
+        String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
         String canvasLoginId = ltiPrincipal.getUser();
-        if (!(checkAdminPermissions(canvasLoginId) || lld.getRolesList().contains(InstitutionRole.Administrator))) {
-            return new ModelAndView("error");
+        if (!(checkAdminPermissions(canvasLoginId, canvasUserId) || lld.getRolesList().contains(InstitutionRole.Administrator))) {
+            return new ModelAndView(TemplateConstants.ERROR_TEMPLATE);
         }
-
+        log.info("The user {} with id {} is entering the grade students administrator view.", canvasLoginId, canvasUserId);
         try {
             model.addAttribute("courses", courseService.getAllCourses());
             model.addAttribute("adminGradesStudents", true);
@@ -653,7 +660,7 @@ public class IndexController {
             model.addAttribute("selectedIntegerStudent", Integer.valueOf(selectedStudent));
             Optional<User> user = userList.stream().filter(u -> u.getId() == Integer.valueOf(selectedStudent)).findFirst();
             if (!user.isPresent()) {
-                return new ModelAndView("admin_grades_students");
+                return new ModelAndView(TemplateConstants.ADMIN_GRADES_STUDENTS_TEMPLATE);
             }
 
             List<Assignment> assignmentList = canvasService.listCourseAssignments(selectedCourse);
@@ -713,7 +720,7 @@ public class IndexController {
             executorService.shutdown();
             //Wait until all the submission requests end.
             try {
-            	executorService.awaitTermination(2, TimeUnit.MINUTES);
+                executorService.awaitTermination(2, TimeUnit.MINUTES);
             } catch (InterruptedException e) {
                 log.error("The submissions thread has been interrupted, aborting.", e);
             }
@@ -732,16 +739,33 @@ public class IndexController {
             model.addAttribute("assignmentGroupNameMap", assignmentGroupNameMap);
             
         } catch(Exception ex) {
-            //return new ModelAndView("admin_grades_students");
+            //return new ModelAndView(TemplateConstants.ADMIN_GRADES_STUDENTS_TEMPLATE);
         }
-        return new ModelAndView("admin_grades_students");
+        return new ModelAndView(TemplateConstants.ADMIN_GRADES_STUDENTS_TEMPLATE);
     }
 
-    @GetMapping("/send_to_banner")
+    @GetMapping("/" + TemplateConstants.ADMIN_TOKENS_TEMPLATE)
+    public ModelAndView adminTokens(@ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, Model model) {
+        LtiLaunchData lld = ltiSession.getLtiLaunchData();
+        localeResolver.setDefaultLocale(new Locale(lld.getLaunchPresentationLocale()));
+        String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
+        String canvasLoginId = ltiPrincipal.getUser();
+        if (!(checkAdminPermissions(canvasLoginId, canvasUserId) || lld.getRolesList().contains(InstitutionRole.Administrator))) {
+            return new ModelAndView(TemplateConstants.ERROR_TEMPLATE);
+        }
+        log.info("The user {} with id {} is entering the token administrator view.", canvasLoginId, canvasUserId);
+        model.addAttribute("tokenList", tokenService.getAllTokens());
+        return new ModelAndView(TemplateConstants.ADMIN_TOKENS_TEMPLATE);
+    }
+
+    @GetMapping("/" + TemplateConstants.SEND_TO_BANNER_TEMPLATE)
     public ModelAndView sendToBanner(@ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, Model model) {
         Map<String, String> bannerGrades = new HashMap<String, String>();
+        LtiLaunchData lld = ltiSession.getLtiLaunchData();
         String courseId = ltiSession.getCanvasCourseId();
+        String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
         String canvasLoginId = ltiPrincipal.getUser();
+        log.info("The user {} with id {} is entering the banner view.", canvasLoginId, canvasUserId);
         boolean userIsCourseMainInstructor = false;
         try {
             List<User> courseUsers = canvasService.getUsersInCourse(courseId);
@@ -789,7 +813,7 @@ public class IndexController {
             model.addAttribute("bannerGrades", bannerGrades);
             model.addAttribute("userIsCourseMainInstructor", userIsCourseMainInstructor);
 
-            return new ModelAndView("send_to_banner");
+            return new ModelAndView(TemplateConstants.SEND_TO_BANNER_TEMPLATE);
 
         } catch (IOException ex) {
             log.error("Cannot get users in course {}", courseId);
@@ -797,10 +821,10 @@ public class IndexController {
         }
     }
 
-    private boolean checkAdminPermissions(String canvasLoginId) {
+    private boolean checkAdminPermissions(String canvasLoginId, String canvasUserId) {
         if (!securityService.isAdminUser(canvasLoginId)) {
             log.info("User {} tried to access the admin area without proper permissions.", canvasLoginId);
-            eventTrackingService.postEvent(EventConstant.ADMIN_FORBIDDEN, canvasLoginId);
+            eventTrackingService.postEvent(EventConstants.ADMIN_ACCESS_FORBIDDEN, canvasUserId);
             return false;
         }
         return true;

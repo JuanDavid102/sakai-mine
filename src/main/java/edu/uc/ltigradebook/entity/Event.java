@@ -7,6 +7,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
 import lombok.AllArgsConstructor;
@@ -21,7 +22,8 @@ import lombok.NoArgsConstructor;
 public class Event {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator="event_generator")
+    @SequenceGenerator(name="event_generator", sequenceName="event_sequence", allocationSize=1)
     @Column(name = "event_id", nullable = false)
     private long eventId;
 

@@ -1,13 +1,13 @@
 <!doctype html>
 <html xmlns:th="http://www.thymeleaf.org">
   <head>
-    <title th:text="${admin_events_title}">Events</title>
+    <title th:text="#{admin_events_title}">Events</title>
     <div th:insert="fragments/head :: head"></div>
   </head>
   <body>
     <div class="admin-container">
       <!-- Topbar -->
-      <div th:insert="fragments/topbar :: topbar"></div>
+      <div th:insert="fragments/topbar :: topbar (admin_grades_courses)"></div>
       <!-- End of Topbar -->
 
       <h2 class="canvas-h2" th:text="#{admin_sidebar_grades_students}">Grades of Students in Courses</h2>

@@ -14,7 +14,7 @@ public class DateUtils {
 
     public static Instant convertDateToInstant(String inputDate) {
         try {
-        	Instant instant = LocalDateTime.parse(inputDate, DateTimeFormatter.ofPattern(DATE_FORMAT).withLocale(Locale.FRENCH)).atZone(ZoneId.systemDefault()).toInstant();
+            Instant instant = LocalDateTime.parse(inputDate, DateTimeFormatter.ofPattern(DATE_FORMAT).withLocale(Locale.FRENCH)).atZone(ZoneId.systemDefault()).toInstant();
             return instant;
         } catch(Exception e) {
             log.error("Error converting date {}", inputDate, e);

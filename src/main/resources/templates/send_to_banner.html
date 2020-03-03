@@ -61,8 +61,8 @@
 </div>
 
 <script th:inline="javascript">
+  /*<![CDATA[*/
   $(document).ready(function() {
-    /*<![CDATA[*/
       var courseUsers = /*[[${courseUsers}]]*/;
       var bannerGrades = /*[[${bannerGrades}]]*/;
 
@@ -118,8 +118,8 @@
           window.location = [[@{/send_to_banner}]];
         });
       });
-    /*]]>*/
   });
+  /*]]>*/
 </script>
 </body>
 </html>

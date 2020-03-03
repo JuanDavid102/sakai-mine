@@ -3,30 +3,35 @@
 <head>
 </head>
 <body>
-  <ul th:fragment="topbar" class="nav nav-tabs canvas-nav-tabs">
+  <ul th:fragment="topbar (current)" class="nav nav-tabs canvas-nav-tabs">
     <li class="nav-item">
-      <a class="nav-link" th:href="@{/admin_main}" th:classappend="${adminMain != null && adminMain} ? active : '' ">
+      <a class="nav-link" th:href="@{/admin_main}" th:classappend="${current}=='admin_main' ? 'active'">
         <span th:text="#{admin_sidebar_dashboard}">Dashboard</span>
       </a>
     </li>
     <li class="nav-item">
-      <a class="nav-link" th:href="@{/admin_events}" th:classappend="${adminEvents != null && adminEvents} ? active : '' ">
+      <a class="nav-link" th:href="@{/admin_events}" th:classappend="${current}=='admin_events' ? 'active'">
         <span th:text="#{admin_sidebar_events}">Events</span>
       </a>
     </li>
     <li class="nav-item">
-      <a class="nav-link" th:href="@{/admin_grades_courses}" th:classappend="${adminGradesCourses != null && adminGradesCourses} ? active : '' ">
+      <a class="nav-link" th:href="@{/admin_grades_courses}" th:classappend="${current}=='admin_grades_courses' ? 'active'">
         <span th:text="#{admin_sidebar_grades}">Grades of Courses</span>
       </a>
     </li>
     <li class="nav-item">
-      <a class="nav-link" th:href="@{/admin_grades_students}" th:classappend="${adminGradesStudents != null && adminGradesStudents} ? active : '' ">
+      <a class="nav-link" th:href="@{/admin_grades_students}" th:classappend="${current}=='admin_grades_students' ? 'active'">
         <span th:text="#{admin_sidebar_grades_students}">Grades of Students in Courses</span>
       </a>
     </li>
     <li class="nav-item">
-      <a class="nav-link" th:href="@{/admin_banner}" th:classappend="${adminBanner != null && adminBanner} ? active : '' ">
+      <a class="nav-link" th:href="@{/admin_banner}" th:classappend="${current}=='admin_banner' ? 'active'">
         <span th:text="#{admin_sidebar_banner_integration}">Banner integration</span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" th:href="@{/admin_tokens}" th:classappend="${current}=='admin_tokens' ? 'active'">
+        <span th:text="#{admin_sidebar_token_manahement}">Token Management</span>
       </a>
     </li>
   </ul>

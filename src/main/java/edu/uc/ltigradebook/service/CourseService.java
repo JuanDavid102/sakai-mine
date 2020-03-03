@@ -2,7 +2,7 @@ package edu.uc.ltigradebook.service;
 
 import edu.ksu.canvas.model.Course;
 
-import edu.uc.ltigradebook.constants.ScaleConstant;
+import edu.uc.ltigradebook.constants.ScaleConstants;
 import edu.uc.ltigradebook.entity.CoursePreference;
 import edu.uc.ltigradebook.repository.CourseRepository;
 
@@ -49,7 +49,7 @@ public class CourseService {
             log.debug("The course preference {} doesn't exist, creating it by default.", courseId);
             CoursePreference coursePreference = new CoursePreference();
             coursePreference.setCourseId(Long.valueOf(courseId));
-            coursePreference.setConversionScale(ScaleConstant.DEFAULT);
+            coursePreference.setConversionScale(ScaleConstants.DEFAULT);
             courseRepository.save(coursePreference);
             return coursePreference;
         }

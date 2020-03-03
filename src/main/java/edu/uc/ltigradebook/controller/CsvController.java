@@ -6,10 +6,12 @@ import edu.ksu.canvas.model.User;
 import edu.ksu.canvas.model.assignment.Assignment;
 import edu.ksu.canvas.model.assignment.AssignmentGroup;
 import edu.ksu.canvas.model.assignment.Submission;
+import edu.ksu.lti.launch.model.LtiLaunchData;
 import edu.ksu.lti.launch.model.LtiSession;
 import edu.ksu.lti.launch.oauth.LtiPrincipal;
 
-import edu.uc.ltigradebook.constants.EventConstant;
+import edu.uc.ltigradebook.constants.EventConstants;
+import edu.uc.ltigradebook.constants.LtiConstants;
 import edu.uc.ltigradebook.entity.CoursePreference;
 import edu.uc.ltigradebook.entity.StudentGrade;
 import edu.uc.ltigradebook.service.CanvasAPIServiceWrapper;
@@ -269,6 +271,8 @@ public class CsvController {
     @PostMapping("/import_csv")
     public ResponseEntity<String> importCsv(@RequestParam MultipartFile file, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) {
         String courseId = ltiSession.getCanvasCourseId();
+        LtiLaunchData lld = ltiSession.getLtiLaunchData();
+        String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
         CoursePreference coursePreference = courseService.getCoursePreference(courseId);
         boolean validCsv = false;
         boolean errors = false;
@@ -374,14 +378,14 @@ public class CsvController {
                         studentGrade.setUserId(studentId);
 
                         if (deleteGrade) {
-                            eventTrackingService.postEvent(EventConstant.IMPORT_DELETE_GRADE, ltiPrincipal.getUser(), courseId, eventDetails.toString());
+                            eventTrackingService.postEvent(EventConstants.IMPORT_DELETE_GRADE, canvasUserId, courseId, eventDetails.toString());
                             gradeService.deleteGrade(studentGrade);
-
                         } else if (saveGrade) {
-                            eventTrackingService.postEvent(EventConstant.IMPORT_POST_GRADE, ltiPrincipal.getUser(), courseId, eventDetails.toString());
+                            eventTrackingService.postEvent(EventConstants.IMPORT_POST_GRADE, canvasUserId, courseId, eventDetails.toString());
                             studentGrade.setGrade(newGrade);
                             gradeService.saveGrade(studentGrade);
                         }
+
                         validCsv = true;
 
                     } catch(Exception ex) {

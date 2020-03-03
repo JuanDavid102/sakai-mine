@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import edu.ksu.lti.launch.model.LtiSession;
 import edu.ksu.lti.launch.oauth.LtiPrincipal;
-import edu.uc.ltigradebook.constants.ScaleConstant;
+import edu.uc.ltigradebook.constants.ScaleConstants;
 import edu.uc.ltigradebook.entity.CoursePreference;
 import edu.uc.ltigradebook.service.CourseService;
 import lombok.extern.slf4j.Slf4j;
@@ -28,19 +28,19 @@ public class CoursePreferenceController {
         CoursePreference coursePreferences = courseService.getCoursePreference(courseId);
         switch (newConversionScale) {
             case "FIFTY":
-                coursePreferences.setConversionScale(ScaleConstant.FIFTY);
+                coursePreferences.setConversionScale(ScaleConstants.FIFTY);
                 break;
             case "SIXTY":
-                coursePreferences.setConversionScale(ScaleConstant.SIXTY);
+                coursePreferences.setConversionScale(ScaleConstants.SIXTY);
                 break;
             case "SEVENTY":
-                coursePreferences.setConversionScale(ScaleConstant.SEVENTY);
+                coursePreferences.setConversionScale(ScaleConstants.SEVENTY);
                 break;
             case "EIGHTY":
-                coursePreferences.setConversionScale(ScaleConstant.EIGHTY);
+                coursePreferences.setConversionScale(ScaleConstants.EIGHTY);
                 break;
             case "NINETY":
-                coursePreferences.setConversionScale(ScaleConstant.NINETY);
+                coursePreferences.setConversionScale(ScaleConstants.NINETY);
                 break;
             default:
                 log.error("Conversion scale not recognized {}.", newConversionScale);
