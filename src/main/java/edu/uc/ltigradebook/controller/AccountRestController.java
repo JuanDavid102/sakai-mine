@@ -21,9 +21,11 @@ import edu.uc.ltigradebook.constants.EventConstants;
 import edu.uc.ltigradebook.constants.LtiConstants;
 import edu.uc.ltigradebook.entity.AccountPreference;
 import edu.uc.ltigradebook.exception.AccountException;
+import edu.uc.ltigradebook.exception.TokenException;
 import edu.uc.ltigradebook.service.AccountService;
 import edu.uc.ltigradebook.service.CanvasAPIServiceWrapper;
 import edu.uc.ltigradebook.service.EventTrackingService;
+import edu.uc.ltigradebook.service.SecurityService;
 import edu.uc.ltigradebook.util.DateUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -40,10 +42,22 @@ public class AccountRestController {
     @Autowired
     EventTrackingService eventTrackingService;
 
+    @Autowired
+    SecurityService securityService;
+
     @RequestMapping(value = "/saveAccountPreferences", method = RequestMethod.POST)
     public boolean saveAccountPreferences(@RequestBody AccountPreference accountPreference, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) throws AccountException, IOException {
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
-        String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
+        String userId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
+        String canvasLoginId = ltiPrincipal.getUser();
+        String eventDetails = new JSONObject().put("accountId", accountPreference.getAccountId()).put("bannerFromStringDate", accountPreference.getBannerFromStringDate()).put("bannerUntilStringDate", accountPreference.getBannerUntilStringDate()).put("bannerEnabled", accountPreference.isBannerEnabled()).toString();
+
+        if (!securityService.isAdminUser(canvasLoginId, lld.getRolesList())) {
+            log.error("Security error when trying to save an account preference, reporting the issue.");
+            eventTrackingService.postEvent(EventConstants.ADMIN_ACCESS_FORBIDDEN, userId, StringUtils.EMPTY, eventDetails);
+            throw new AccountException();
+        }
+
         log.info("Saving banner account preferences {}.", accountPreference);
 
         if(StringUtils.isNotBlank(accountPreference.getBannerFromStringDate())) {
@@ -62,8 +76,7 @@ public class AccountRestController {
         log.info("Account {} preferences saved successfully.", accountPreference);
 
         // Post an event
-        String eventDetails = new JSONObject().put("accountId", accountPreference.getAccountId()).put("bannerFromStringDate", accountPreference.getBannerFromStringDate()).put("bannerUntilStringDate", accountPreference.getBannerUntilStringDate()).put("bannerEnabled", accountPreference.isBannerEnabled()).toString();
-        eventTrackingService.postEvent(EventConstants.ADMIN_SAVE_BANNER, canvasUserId, StringUtils.EMPTY, eventDetails);
+        eventTrackingService.postEvent(EventConstants.ADMIN_SAVE_BANNER, userId, StringUtils.EMPTY, eventDetails);
 
         return true;
     }
@@ -71,7 +84,16 @@ public class AccountRestController {
     @PostMapping(value = "/deleteAccountPreferences")
     public boolean deleteAccountPreferences(@RequestParam String accountId, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) throws AccountException, IOException {
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
-        String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
+        String userId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
+        String canvasLoginId = ltiPrincipal.getUser();
+        String eventDetails = new JSONObject().put("accountId", accountId).toString();
+
+        if (!securityService.isAdminUser(canvasLoginId, lld.getRolesList())) {
+            log.error("Security error when trying to delete an account preference, reporting the issue.");
+            eventTrackingService.postEvent(EventConstants.ADMIN_ACCESS_FORBIDDEN, userId, StringUtils.EMPTY, eventDetails);
+            throw new AccountException();
+        }
+
         log.info("Deleting banner account preferences for the account {}.", accountId);
 
         long longAccountId = Long.MIN_VALUE;
@@ -88,8 +110,7 @@ public class AccountRestController {
             log.info("Account {} preferences deleted successfully.", accountId);
 
             // Post an event
-            String eventDetails = new JSONObject().put("accountId", accountId).toString();
-            eventTrackingService.postEvent(EventConstants.ADMIN_DELETE_BANNER, canvasUserId, StringUtils.EMPTY, eventDetails);
+            eventTrackingService.postEvent(EventConstants.ADMIN_DELETE_BANNER, userId, StringUtils.EMPTY, eventDetails);
         } else {
             throw new AccountException();
         }

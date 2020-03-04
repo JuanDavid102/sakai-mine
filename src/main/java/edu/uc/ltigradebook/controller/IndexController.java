@@ -135,7 +135,7 @@ public class IndexController {
             try {
                 Long.parseLong(courseId);
             } catch(Exception e) {
-                if(securityService.isAdminUser(canvasLoginId) || lld.getRolesList().contains(InstitutionRole.Administrator)) {
+                if(securityService.isAdminUser(canvasLoginId, lld.getRolesList())) {
                     return adminMain(ltiPrincipal, ltiSession, model);
                 }
             }
@@ -543,9 +543,10 @@ public class IndexController {
         localeResolver.setDefaultLocale(new Locale(lld.getLaunchPresentationLocale()));
         String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
         String canvasLoginId = ltiPrincipal.getUser();
-        if (!(checkAdminPermissions(canvasLoginId, canvasUserId) || lld.getRolesList().contains(InstitutionRole.Administrator))) {
-            return new ModelAndView(TemplateConstants.ERROR_TEMPLATE);
+        if (!(checkAdminPermissions(canvasLoginId, canvasUserId, lld.getRolesList()))) {
+            return new ModelAndView(TemplateConstants.FORBIDDEN_TEMPLATE);
         }
+
         log.info("The user {} with id {} is entering the main administrator view.", canvasLoginId, canvasUserId);
         //Model: Data sent to the UI
         model.addAttribute("userFullname", ltiSession.getLtiLaunchData().getLisPersonNameFull());
@@ -563,9 +564,10 @@ public class IndexController {
         localeResolver.setDefaultLocale(new Locale(lld.getLaunchPresentationLocale()));
         String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
         String canvasLoginId = ltiPrincipal.getUser();
-        if (!(checkAdminPermissions(canvasLoginId, canvasUserId) || lld.getRolesList().contains(InstitutionRole.Administrator))) {
-            return new ModelAndView(TemplateConstants.ERROR_TEMPLATE);
+        if (!(checkAdminPermissions(canvasLoginId, canvasUserId, lld.getRolesList()))) {
+            return new ModelAndView(TemplateConstants.FORBIDDEN_TEMPLATE);
         }
+
         log.info("The user {} with id {} is entering the event administrator view.", canvasLoginId, canvasUserId);
         //Model: Data sent to the UI
         model.addAttribute("userFullname", ltiSession.getLtiLaunchData().getLisPersonNameFull());
@@ -581,9 +583,10 @@ public class IndexController {
         localeResolver.setDefaultLocale(new Locale(lld.getLaunchPresentationLocale()));
         String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
         String canvasLoginId = ltiPrincipal.getUser();
-        if (!(checkAdminPermissions(canvasLoginId, canvasUserId) || lld.getRolesList().contains(InstitutionRole.Administrator))) {
-            return new ModelAndView(TemplateConstants.ERROR_TEMPLATE);
+        if (!(checkAdminPermissions(canvasLoginId, canvasUserId, lld.getRolesList()))) {
+            return new ModelAndView(TemplateConstants.FORBIDDEN_TEMPLATE);
         }
+
         log.info("The user {} with id {} is entering the banner administrator view.", canvasLoginId, canvasUserId);
 
         List<Account> subaccountList = new ArrayList<Account>();
@@ -611,9 +614,10 @@ public class IndexController {
         localeResolver.setDefaultLocale(new Locale(lld.getLaunchPresentationLocale()));
         String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
         String canvasLoginId = ltiPrincipal.getUser();
-        if (!(checkAdminPermissions(canvasLoginId, canvasUserId) || lld.getRolesList().contains(InstitutionRole.Administrator))) {
-            return new ModelAndView(TemplateConstants.ERROR_TEMPLATE);
+        if (!(checkAdminPermissions(canvasLoginId, canvasUserId, lld.getRolesList()))) {
+            return new ModelAndView(TemplateConstants.FORBIDDEN_TEMPLATE);
         }
+
         log.info("The user {} with id {} is entering the grade courses administrator view.", canvasLoginId, canvasUserId);
         try {
             model.addAttribute("courses", courseService.getAllCourses());
@@ -660,9 +664,10 @@ public class IndexController {
         localeResolver.setDefaultLocale(new Locale(lld.getLaunchPresentationLocale()));
         String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
         String canvasLoginId = ltiPrincipal.getUser();
-        if (!(checkAdminPermissions(canvasLoginId, canvasUserId) || lld.getRolesList().contains(InstitutionRole.Administrator))) {
-            return new ModelAndView(TemplateConstants.ERROR_TEMPLATE);
+        if (!(checkAdminPermissions(canvasLoginId, canvasUserId, lld.getRolesList()))) {
+            return new ModelAndView(TemplateConstants.FORBIDDEN_TEMPLATE);
         }
+
         log.info("The user {} with id {} is entering the grade students administrator view.", canvasLoginId, canvasUserId);
         try {
             model.addAttribute("courses", courseService.getAllCourses());
@@ -767,9 +772,10 @@ public class IndexController {
         localeResolver.setDefaultLocale(new Locale(lld.getLaunchPresentationLocale()));
         String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
         String canvasLoginId = ltiPrincipal.getUser();
-        if (!(checkAdminPermissions(canvasLoginId, canvasUserId) || lld.getRolesList().contains(InstitutionRole.Administrator))) {
-            return new ModelAndView(TemplateConstants.ERROR_TEMPLATE);
+        if (!(checkAdminPermissions(canvasLoginId, canvasUserId, lld.getRolesList()))) {
+            return new ModelAndView(TemplateConstants.FORBIDDEN_TEMPLATE);
         }
+
         log.info("The user {} with id {} is entering the token administrator view.", canvasLoginId, canvasUserId);
         model.addAttribute("tokenList", tokenService.getAllTokens());
         return new ModelAndView(TemplateConstants.ADMIN_TOKENS_TEMPLATE);
@@ -838,8 +844,8 @@ public class IndexController {
         }
     }
 
-    private boolean checkAdminPermissions(String canvasLoginId, String canvasUserId) {
-        if (!securityService.isAdminUser(canvasLoginId)) {
+    private boolean checkAdminPermissions(String canvasLoginId, String canvasUserId, List<InstitutionRole> userRoles) {
+        if (!securityService.isAdminUser(canvasLoginId, userRoles)) {
             log.info("User {} tried to access the admin area without proper permissions.", canvasLoginId);
             eventTrackingService.postEvent(EventConstants.ADMIN_ACCESS_FORBIDDEN, canvasUserId);
             return false;

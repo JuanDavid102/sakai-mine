@@ -12,6 +12,10 @@ public class EventConstants {
     public static final String INSTRUCTOR_ACCESS = "instructor.access";
     public static final String INSTRUCTOR_POST_GRADE = "instructor.post.grade";
     public static final String INSTRUCTOR_DELETE_GRADE = "instructor.delete.grade";
+    public static final String INSTRUCTOR_SAVE_ASSIGNMENT_MUTE = "instructor.save.assignment.mute";
+    public static final String INSTRUCTOR_SAVE_ASSIGNMENT_SCALE = "instructor.save.assignment.scale";
+    public static final String INSTRUCTOR_SAVE_COURSE_SCALE = "instructor.save.course.scale";
+    public static final String INSTRUCTOR_SEND_MESSAGE = "instructor.send.message";
     public static final String LTI_LOGIN = "lti.login";
     public static final String LTI_LOGOUT = "lti.logout";
     public static final String STUDENT_ACCESS = "student.access";

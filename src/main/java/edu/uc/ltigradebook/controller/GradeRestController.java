@@ -37,10 +37,10 @@ import java.util.Map;
 @Slf4j
 @RestController
 public class GradeRestController {
-    
+
     @Autowired
     private BannerServiceDao bannerServiceDao;
-    
+
     @Autowired
     private CanvasAPIServiceWrapper canvasService;
 
@@ -59,32 +59,34 @@ public class GradeRestController {
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
         String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
         String gradeString = StringUtils.replace(studentGrade.getGrade(), ",", ".");
-        if (securityService.isFaculty(lld.getRolesList())) {
-            if(StringUtils.isNotBlank(gradeString) && !GradeUtils.isValidGrade(gradeString)) {
-                log.warn("The grade {} is not valid, it will not be saved", gradeString);
-                throw new GradeException();
-            }
+        String eventDetails = new JSONObject().put("assignmentId", studentGrade.getAssignmentId()).put("userId", studentGrade.getUserId()).put("grade", gradeString).toString();
 
-            //Set one decimal
-            gradeString = GradeUtils.roundGrade(gradeString);
-            studentGrade.setGrade(gradeString);
-            String eventDetails = new JSONObject().put("assignmentId", studentGrade.getAssignmentId()).put("userId", studentGrade.getUserId()).put("grade", gradeString).toString();
-            log.debug("Posting grade {} for the user {} in the assignment {} and the course {}.", gradeString, studentGrade.getUserId(), studentGrade.getAssignmentId(), courseId);
-            if (StringUtils.isBlank(gradeString)) {
-                log.debug("The inserted grade is empty, deleting grade...");
-                eventTrackingService.postEvent(EventConstants.INSTRUCTOR_DELETE_GRADE, canvasUserId, courseId, eventDetails);
-                gradeService.deleteGrade(studentGrade);
-                return true;
-            } else {
-                eventTrackingService.postEvent(EventConstants.INSTRUCTOR_POST_GRADE, canvasUserId, courseId, eventDetails);
-                gradeService.saveGrade(studentGrade);
-                return true;
-            }
-
-        } else {
-            log.warn("User role is not valid");
+        if (!securityService.isFaculty(lld.getRolesList())) {
+            log.error("Security error when trying post a grade, reporting the issue.");
+            eventTrackingService.postEvent(EventConstants.ADMIN_ACCESS_FORBIDDEN, canvasUserId, courseId, eventDetails);
             throw new GradeException();
         }
+
+        if(StringUtils.isNotBlank(gradeString) && !GradeUtils.isValidGrade(gradeString)) {
+            log.warn("The grade {} is not valid, it will not be saved", gradeString);
+            throw new GradeException();
+        }
+
+        //Set one decimal
+        gradeString = GradeUtils.roundGrade(gradeString);
+        studentGrade.setGrade(gradeString);
+        log.debug("Posting grade {} for the user {} in the assignment {} and the course {}.", gradeString, studentGrade.getUserId(), studentGrade.getAssignmentId(), courseId);
+        if (StringUtils.isBlank(gradeString)) {
+            log.debug("The inserted grade is empty, deleting grade...");
+            eventTrackingService.postEvent(EventConstants.INSTRUCTOR_DELETE_GRADE, canvasUserId, courseId, eventDetails);
+            gradeService.deleteGrade(studentGrade);
+            return true;
+        } else {
+            eventTrackingService.postEvent(EventConstants.INSTRUCTOR_POST_GRADE, canvasUserId, courseId, eventDetails);
+            gradeService.saveGrade(studentGrade);
+            return true;
+        }
+
     }
 
     @RequestMapping(value = "/getStudentGroupGrade", method = RequestMethod.POST)
@@ -99,9 +101,18 @@ public class GradeRestController {
 
     @RequestMapping(value = "/sendGradesToBanner", method = RequestMethod.POST)
     public boolean sendGradesToBanner(@RequestBody List<StudentGrade> studentGrades, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) throws GradeException, IOException {
-        String instructorRUT = ltiPrincipal.getUser();
         String courseId = ltiSession.getCanvasCourseId();
+        LtiLaunchData lld = ltiSession.getLtiLaunchData();
+        String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
+        String eventDetails = new JSONObject().put("courseId", courseId).toString();
 
+        if (!securityService.isFaculty(lld.getRolesList())) {
+            log.error("Security error when trying to send the grades to banner, reporting the issue.");
+            eventTrackingService.postEvent(EventConstants.ADMIN_ACCESS_FORBIDDEN, canvasUserId, courseId, eventDetails);
+            throw new GradeException();
+        }
+
+        String instructorRUT = ltiPrincipal.getUser();
         List<User> userList = canvasService.getUsersInCourse(courseId);
         //Associate the users with the sections
         Map<String, String> studentSectionMap = new HashMap<String, String>();
@@ -127,39 +138,50 @@ public class GradeRestController {
                 String academicPeriod = splittedSectionId[0];
                 String nrcCode = splittedSectionId[1];
                 /*String courseInitials = splittedSectionId[2];
-                String sectionNumber = splittedSectionId[3];*/                    
+                String sectionNumber = splittedSectionId[3];*/
                 bannerServiceDao.sendGradeToBanner(nrcCode, grade, userId, instructorRUT, academicPeriod);
             } catch(Exception e) {
                 log.error("Cannot send the grade {} to the student {}.", userId, grade, e);
             }
         }
+
         return true;
     }
 
     @RequestMapping(value = "/sendMessageToUsers", method = RequestMethod.POST)
     public boolean sendMessageToUsers(@RequestBody String jsonData, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) throws GradeException {
+        String courseId = ltiSession.getCanvasCourseId();
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
-        if (securityService.isFaculty(lld.getRolesList())) {
-            try {
-                JSONObject jsonObj = new JSONObject(jsonData);
-                JSONArray userIdsArr = jsonObj.getJSONArray("userIds");
-                List<String> userIds = new ArrayList<>();
-                String subject = jsonObj.getString("sendMessageSubject");
-                String message = jsonObj.getString("sendMessageTextarea");
-                for (int i = 0; i < userIdsArr.length(); i++) {
-                    userIds.add(Integer.toString(userIdsArr.getInt(i)));
-                }
-                canvasService.createConversation(userIds, subject, message);
+        String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
+        String eventDetails = new JSONObject().put("courseId", courseId).put("jsonData", jsonData).toString();
 
-            } catch (IOException ex) {
-                log.warn("Conversation cannot be created");
-                throw new GradeException();
-            }
-
-        } else {
-            log.warn("User role is not valid");
+        if (!securityService.isFaculty(lld.getRolesList())) {
+            log.error("Security error when trying to send messages users, reporting the issue.");
+            eventTrackingService.postEvent(EventConstants.ADMIN_ACCESS_FORBIDDEN, canvasUserId, courseId, eventDetails);
             throw new GradeException();
         }
+
+        try {
+            JSONObject jsonObj = new JSONObject(jsonData);
+            JSONArray userIdsArr = jsonObj.getJSONArray("userIds");
+            List<String> userIds = new ArrayList<>();
+            String subject = jsonObj.getString("sendMessageSubject");
+            String message = jsonObj.getString("sendMessageTextarea");
+            for (int i = 0; i < userIdsArr.length(); i++) {
+                userIds.add(Integer.toString(userIdsArr.getInt(i)));
+            }
+
+            canvasService.createConversation(userIds, subject, message);
+
+            // Post an event
+            eventTrackingService.postEvent(EventConstants.INSTRUCTOR_SEND_MESSAGE, canvasUserId, courseId, eventDetails);
+
+        } catch (IOException ex) {
+            log.warn("Conversation cannot be created");
+            throw new GradeException();
+        }
+
         return true;
     }
+
 }

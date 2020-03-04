@@ -28,6 +28,7 @@ import edu.uc.ltigradebook.exception.GradeException;
 import edu.uc.ltigradebook.service.AssignmentService;
 import edu.uc.ltigradebook.service.EventTrackingService;
 import edu.uc.ltigradebook.service.GradeService;
+import edu.uc.ltigradebook.service.SecurityService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -71,8 +72,11 @@ import java.util.concurrent.TimeUnit;
 public class CsvController {
 
     @Autowired
+    private AssignmentService assignmentService;
+
+    @Autowired
     private CanvasAPIServiceWrapper canvasService;
-    
+
     @Autowired
     private CourseService courseService;
 
@@ -83,10 +87,10 @@ public class CsvController {
     private GradeService gradeService;
 
     @Autowired
-    private AssignmentService assignmentService;
+    private MessageSource messageSource;
 
     @Autowired
-    private MessageSource messageSource;
+    private SecurityService securityService;
 
     private static final char CSV_SEPARATOR = ';';
     private static final String BOM = "\uFEFF";
@@ -95,8 +99,18 @@ public class CsvController {
 
     @GetMapping("/export_csv")
     public ResponseEntity<Resource> exportToCsv(LtiSession ltiSession, @RequestParam String sectionId) throws GradeException {
-        File tempFile;
         String courseId = ltiSession.getCanvasCourseId();
+        LtiLaunchData lld = ltiSession.getLtiLaunchData();
+        String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
+        String eventDetails = new JSONObject().put("courseId", courseId).put("sectionId", sectionId).toString();
+
+        if (!securityService.isFaculty(lld.getRolesList())) {
+            log.error("Security error when trying export to CSV, reporting the issue.");
+            eventTrackingService.postEvent(EventConstants.ADMIN_ACCESS_FORBIDDEN, canvasUserId, courseId, eventDetails);
+            return null;
+        }
+
+        File tempFile;
         CoursePreference coursePreference = courseService.getCoursePreference(courseId);
         boolean exportAllSection = (EXPORT_ALL_SECTION_VALUE.equals(sectionId));
 
@@ -273,6 +287,14 @@ public class CsvController {
         String courseId = ltiSession.getCanvasCourseId();
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
         String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
+        String eventDetails = new JSONObject().put("courseId", courseId).toString();
+
+        if (!securityService.isFaculty(lld.getRolesList())) {
+            log.error("Security error when trying import from CSV, reporting the issue.");
+            eventTrackingService.postEvent(EventConstants.ADMIN_ACCESS_FORBIDDEN, canvasUserId, courseId, eventDetails);
+            return null;
+        }
+
         CoursePreference coursePreference = courseService.getCoursePreference(courseId);
         boolean validCsv = false;
         boolean errors = false;
@@ -317,7 +339,7 @@ public class CsvController {
                     try {
                         String studentId = all.get(z)[1];
                         String newGrade = all.get(z)[i];
-                        JSONObject eventDetails = new JSONObject().put("assignmentId", assignmentId).put("userId", studentId).put("newGrade", newGrade);
+                        JSONObject eventDetailsJSon = new JSONObject().put("assignmentId", assignmentId).put("userId", studentId).put("newGrade", newGrade);
                         boolean saveGrade = false;
                         boolean deleteGrade = false;
                         boolean sameGrade = false;
@@ -325,7 +347,7 @@ public class CsvController {
                         Optional<StudentGrade> overwrittenStudentGrade = gradeService.getGradeByAssignmentAndUser(assignmentId, studentId);
                         if (overwrittenStudentGrade.isPresent()){
                             String overwrittenGrade = overwrittenStudentGrade.get().getGrade();
-                            eventDetails.put("previousGrade", overwrittenGrade);
+                            eventDetailsJSon.put("previousGrade", overwrittenGrade);
                             if (!newGrade.equals(overwrittenGrade)) saveGrade = true;
                             else sameGrade = true;
                             if (StringUtils.isBlank(newGrade)) {
@@ -358,12 +380,12 @@ public class CsvController {
                                         grade = GRADE_NOT_AVAILABLE;
                                         break;
                                 }
-                                eventDetails.put("previousGrade", grade);
+                                eventDetailsJSon.put("previousGrade", grade);
                                 if (!newGrade.equals(grade) && StringUtils.isNotBlank(newGrade))
                                     saveGrade = true;
                                 else sameGrade = true;
 
-                            } else eventDetails.put("previousGrade", GRADE_NOT_AVAILABLE);
+                            } else eventDetailsJSon.put("previousGrade", GRADE_NOT_AVAILABLE);
                         }
 
                         //If new grade is invalid, skip saving process
@@ -378,10 +400,10 @@ public class CsvController {
                         studentGrade.setUserId(studentId);
 
                         if (deleteGrade) {
-                            eventTrackingService.postEvent(EventConstants.IMPORT_DELETE_GRADE, canvasUserId, courseId, eventDetails.toString());
+                            eventTrackingService.postEvent(EventConstants.IMPORT_DELETE_GRADE, canvasUserId, courseId, eventDetailsJSon.toString());
                             gradeService.deleteGrade(studentGrade);
                         } else if (saveGrade) {
-                            eventTrackingService.postEvent(EventConstants.IMPORT_POST_GRADE, canvasUserId, courseId, eventDetails.toString());
+                            eventTrackingService.postEvent(EventConstants.IMPORT_POST_GRADE, canvasUserId, courseId, eventDetailsJSon.toString());
                             studentGrade.setGrade(newGrade);
                             gradeService.saveGrade(studentGrade);
                         }

@@ -23,9 +23,11 @@ public class SecurityService {
    @Autowired
    private AccountService accountService;
 
-   public boolean isAdminUser(String userId) {
+   public boolean isAdminUser(String canvasLoginId, List<InstitutionRole> userRoles) {
        log.info("The current admins of the application are {}.", ltiGradebookAdmins);
-       return StringUtils.isNotEmpty(ltiGradebookAdmins) && ltiGradebookAdmins.contains(userId);
+       // Better security check for admins
+       // return userRoles.contains(InstitutionRole.Administrator) || (StringUtils.isNotEmpty(ltiGradebookAdmins) && ltiGradebookAdmins.contains(canvasLoginId));
+       return StringUtils.isNotEmpty(ltiGradebookAdmins) && ltiGradebookAdmins.contains(canvasLoginId) && userRoles.contains(InstitutionRole.Administrator);
    }
 
    public boolean isFaculty(List<InstitutionRole> userRoles) {
