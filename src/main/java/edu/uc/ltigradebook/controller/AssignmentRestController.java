@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
-public class AssignmentPreferenceController {
+public class AssignmentRestController {
 
     @Autowired
     AssignmentService assignmentService;

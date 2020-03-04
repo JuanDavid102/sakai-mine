@@ -52,25 +52,27 @@ public class CanvasAPIServiceWrapper {
 
     @Autowired
     private TokenService tokenService;
-    
+
     @Value("${lti-gradebook.canvas_api_token:secret}")
     private String canvasApiToken;
 
     public boolean validateToken(String token) {
         OauthToken oauthToken = new NonRefreshableOauthToken(token);
         AccountReader accountReader = canvasApiFactory.getReader(AccountReader.class, oauthToken);
+
         try {
             accountReader.getSingleAccount("1").get();
         } catch (Exception e) {
             log.error("Validate token has detected an invalid token, full token hidden for security reasons.");
             return false;
         }
+
         return true;
     }
 
     private OauthToken getRandomOauthToken() {
         List<edu.uc.ltigradebook.entity.OauthToken> tokenList = tokenService.getAllValidTokens();
-        
+
         // Return the default token is the list is empty.
         if (tokenList.isEmpty()) {
             log.error("The LTI tool does not have any valid API token, using the default, please create one or you're not be able to use the tool properly.");
@@ -85,7 +87,7 @@ public class CanvasAPIServiceWrapper {
 
     @Cacheable(CacheConstants.USERS_IN_COURSE)
     public List<User> getUsersInCourse(String courseId) throws IOException {
-    	OauthToken oauthToken = this.getRandomOauthToken();
+        OauthToken oauthToken = this.getRandomOauthToken();
         UserReader userReader = canvasApiFactory.getReader(UserReader.class, oauthToken);
         GetUsersInCourseOptions options = new GetUsersInCourseOptions(courseId)
                 .include(Arrays.asList(GetUsersInCourseOptions.Include.ENROLLMENTS))

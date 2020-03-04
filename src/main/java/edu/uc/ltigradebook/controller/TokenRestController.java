@@ -24,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RestController
-public class TokenController {
+public class TokenRestController {
 
     @Autowired
     private CanvasAPIServiceWrapper canvasService;

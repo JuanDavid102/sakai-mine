@@ -13,64 +13,128 @@
     <!-- End of Topbar -->
 
     <h2 class="canvas-h2" th:text="#{admin_sidebar_banner_integration}">Banner integration</h2>
-
-     <div class="alert alert-success" role="alert" th:if="${successSavingPreferences != null && successSavingPreferences}" th:text="#{admin_banner_success_preferences}">
-       Success saving prefs!
-     </div>
-     <div class="alert alert-danger" role="alert" th:if="${errorSavingPreferences != null && errorSavingPreferences}" th:text="#{admin_banner_error_preferences}">
-       Error saving prefs!
-     </div>
-     <form th:action="@{/selectAccount}" method="post">
-         <div class="form-group">
-             <label for="selectedAccount" th:text="#{admin_banner_select_subaccount}">Select subaccount from the list:</label>
-             <select id="selectedAccount" name="selectedAccount" class="form-control" onchange="this.form.submit();">
-                 <option></option>
-                 <option th:each="account : ${accountList}" th:value="${account.id}" th:text="${account.name}" th:selected="${account.id.equals(selectedIntegerAccount)}"></option>
-             </select>
-         </div>
-     </form>
-
-     <form id="bannerConfigurationForm" th:if="${selectedAccount != null}" th:object="${accountPreference}" th:action="@{/saveAccountPreferences}" method="post">
-         <input type="hidden" name="accountId" value="${selectedAccount}" th:field="*{accountId}"/>
-         <div class="form-group">
-             <label for="startdate" th:text="#{admin_banner_from}">Banner enabled in this subaccount from:</label>
-             <div class="input-group mb-3">
-                 <input class="form-control" id="startdate" type="text" name="startdate" th:field="*{bannerFromStringDate}">
-                 <div class="input-group-append">
+    <div id="successMessage" class="alert alert-success" role="alert" style="display:none;" th:text="#{admin_banner_success_preferences}">Success saving prefs!</div>
+    <div id="errorMessage" class="alert alert-danger" role="alert" style="display:none;" th:text="#{admin_banner_error_preferences}">Error saving prefs!</div>
+    <div class="text-left"> 
+      <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addBannerModal" th:text="#{admin_banner_add_new}">Add banner configuration</button>
+    </div>
+    <div class="modal fade" id="addBannerModal" tabindex="-1" role="dialog">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addClassModalLabel" th:text="#{admin_banner_add_new}">Add banner configuration</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          </div>
+          <div class="modal-body">
+            <div class="alert alert-warning" th:text="#{admin_banner_info}"></div>
+            <form id="addBannerForm" th:action="@{/saveAccountPreferences}" method="post">
+              <div class="form-group">
+                <label for="accountId" th:text="#{admin_banner_select_subaccount}">Select subaccount from the list:</label>
+                <select id="accountId" name="accountId" class="form-control">
+                   <option th:each="account : ${accountList}" th:value="${account.id}" th:text="${account.name}" th:selected="${account.id.equals(selectedIntegerAccount)}"></option>
+               </select>
+              </div>
+              <div class="form-group">
+                <label for="startDate" th:text="#{admin_banner_from}">Banner enabled in this subaccount from:</label>
+                <div class="input-group mb-3">
+                  <input class="form-control" id="startDate" type="text" name="startDate">
+                  <div class="input-group-append">
+                    <span class="fa fa-calendar"></span>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="endDate" th:text="#{admin_banner_until}">Banner enabled in this subaccount until:</label>
+                <div class="input-group mb-3">
+                  <input class="form-control" id="endDate" type="text" name="endDate">
+                  <div class="input-group-append">
                      <span class="fa fa-calendar"></span>
                  </div>
-             </div>
-         </div>
-         <div class="form-group">
-             <label for="enddate" th:text="#{admin_banner_until}">Banner enabled in this subaccount until:</label>
-             <div class="input-group mb-3">
-                 <input class="form-control" id="enddate" type="text" name="enddate" th:field="*{bannerUntilStringDate}">
-                 <div class="input-group-append">
-                     <span class="fa fa-calendar"></span>
-                 </div>
-             </div>
-         </div>
-         <div class="form-group form-check">
-             <input class="form-check-input" type="checkbox" name="enableBannerIntegration" id="enableBannerIntegration" th:field="*{bannerEnabled}">
-             <label class="form-check-label" for="enableBannerIntegration" th:text="#{admin_banner_enable}">Enable banner integration:</label>
-         </div>
-         <button type="submit" class="btn btn-primary" th:text="#{admin_banner_save}">Submit</button>
-     </form>        
+              </div>
+              </div>
+              <div class="form-group form-check">
+                 <input class="form-check-input" type="checkbox" name="enableBanner" id="enableBanner">
+                <label class="form-check-label" for="enableBanner" th:text="#{admin_banner_enable}">Enable banner integration:</label>
+              </div>
+              <button type="submit" class="btn btn-primary"><i class="glyphicon glyphicon-ok"></i><span th:text="#{admin_banner_save_configuration}">Save configuration</span></button>
+              <button type="button" class="btn btn-secondary" data-dismiss="modal" th:text="#{admin_banner_cancel}"></button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="alert alert-warning" role="alert" th:if="${accountPreferenceList.isEmpty()}" th:text="#{admin_banner_empty_list}"></div>
+    <table th:if="${!accountPreferenceList.isEmpty()}" id="accountPreferenceTable" class="table table-striped table-hovered table-bordered">
+      <thead>
+        <tr>
+          <th th:text="#{admin_banner_header_account}">Account</th>
+          <th th:text="#{admin_banner_header_enabled}">Status</th>
+          <th th:text="#{admin_banner_header_startdate}">Start</th>
+          <th th:text="#{admin_banner_header_enddate}">End Date</th>
+          <th th:text="#{admin_banner_header_actions}">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="accountPreference : ${accountPreferenceList}">
+          <td th:text="${subAccountNameMap.get(accountPreference.accountId)}"></td>
+          <td><i th:if="${accountPreference.bannerEnabled}" class="fas fa-check" th:title="#{admin_banner_enabled}"></i><i th:if="!${accountPreference.bannerEnabled}" class="fas fa-exclamation-circle" th:title="#{admin_banner_disabled}"></i></td>
+          <td th:text="${accountPreference.bannerFromDate}"></td>
+          <td th:text="${accountPreference.bannerUntilDate}"></td>
+          <td><button th:id="${accountPreference.accountId}" class="btn btn-primary" onclick="deleteAccountPreference(this);"><span th:text="#{admin_banner_delete}">Delete banner configuration</span></button></td>
+        </tr>
+      </tbody>
+    </table>
   </div><!-- End of container -->
-
   <script th:inline="javascript">
     /*<![CDATA[*/
     $(document).ready(function() {
       var format = "YYYY-MM-DD HH:mm";
-      $('#startdate').datetimepicker({
+      $('#startDate').datetimepicker({
         format: format
       });
-      $('#enddate').datetimepicker({
+      $('#endDate').datetimepicker({
         format: format
       });
     });
-    /*]]>*/
-</script>
-</body>
 
+    $('#addBannerForm').submit(function(e) {
+      e.preventDefault();
+      $('#addBannerModal').modal('toggle');
+      var accountPreference = {};
+      accountPreference['accountId'] = $('#accountId').val();
+      accountPreference['bannerEnabled'] = $('#enableBanner')[0].checked;
+      accountPreference['bannerFromStringDate'] = $('#startDate').val();
+      accountPreference['bannerUntilStringDate'] = $('#endDate').val();
+      $.ajax({
+        url: [[@{/saveAccountPreferences}]],
+        data: JSON.stringify(accountPreference),
+        dataType: 'json',
+        type: 'POST',
+        contentType: 'application/json; charset=utf-8'
+      }).done(function() {
+        console.debug('Account preference save successfully...');
+        $('#successMessage').show();
+        document.location.reload();
+      }).fail(function () {
+        console.debug('Error saving account preference...');
+        $('#errorMessage').show();
+      });
+    });
+
+    function deleteAccountPreference(accountPreference) {
+      var accountPreferenceId = accountPreference.id;
+      $.ajax({
+        url: [[@{/deleteAccountPreferences}]]  + '?accountId=' + accountPreferenceId,
+        type: 'POST',
+        contentType: 'text/plain; charset=utf-8'
+      }).done(function() {
+        console.debug('Account preference deleted successfully...');
+        document.location.reload();
+      }).fail(function () {
+        console.debug('Error deleting account preference...');
+      });
+    }
+    /*]]>*/
+  </script>
+</body>
 </html>

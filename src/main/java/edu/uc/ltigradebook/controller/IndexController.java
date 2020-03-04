@@ -1,5 +1,6 @@
 package edu.uc.ltigradebook.controller;
 
+import edu.ksu.canvas.model.Account;
 import edu.ksu.canvas.model.Course;
 import edu.ksu.canvas.model.Enrollment;
 import edu.ksu.canvas.model.Section;
@@ -20,6 +21,7 @@ import edu.uc.ltigradebook.entity.AssignmentPreference;
 import edu.uc.ltigradebook.entity.CoursePreference;
 import edu.uc.ltigradebook.entity.Event;
 import edu.uc.ltigradebook.entity.StudentGrade;
+import edu.uc.ltigradebook.service.AccountService;
 import edu.uc.ltigradebook.service.AssignmentService;
 import edu.uc.ltigradebook.service.CanvasAPIServiceWrapper;
 import edu.uc.ltigradebook.service.CourseService;
@@ -65,6 +67,9 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Controller
 public class IndexController {
+
+    @Autowired
+    private AccountService accountService;
 
     @Autowired
     private BannerServiceDao bannerServiceDao;
@@ -121,11 +126,11 @@ public class IndexController {
             model.addAttribute("errors", errors);
 
             eventTrackingService.postEvent(EventConstants.LTI_LOGIN, canvasUserId, courseId);
-            
+
             if(lld.getRolesList() == null || lld.getRolesList().isEmpty()) {
-                throw new Exception(String.format("The user %s doesn't have any valid role.", canvasLoginId));       
+                throw new Exception(String.format("The user %s doesn't have any valid role.", canvasLoginId));
             }
-            
+
             //Assume that the contextId should be a Long value, if not the tool is being executed in a special context.
             try {
                 Long.parseLong(courseId);
@@ -134,7 +139,7 @@ public class IndexController {
                     return adminMain(ltiPrincipal, ltiSession, model);
                 }
             }
-            
+
             if(securityService.isStudent(lld.getRolesList())) {
                 return handleStudentView(ltiPrincipal, ltiSession, model);
             }
@@ -580,11 +585,23 @@ public class IndexController {
             return new ModelAndView(TemplateConstants.ERROR_TEMPLATE);
         }
         log.info("The user {} with id {} is entering the banner administrator view.", canvasLoginId, canvasUserId);
+
+        List<Account> subaccountList = new ArrayList<Account>();
         try {
-            model.addAttribute("accountList", canvasService.getSubaccounts());
+            subaccountList.addAll(canvasService.getSubaccounts());
         } catch(Exception ex) {
             log.error("Error getting subaccounts from Canvas.", ex);
         }
+
+        Map<Long, String> subAccountNameMap = new HashMap<Long, String>();
+        for (Account subaccount : subaccountList) {
+            subAccountNameMap.put(Long.valueOf(subaccount.getId()), subaccount.getName());
+        }
+
+        model.addAttribute("accountList", subaccountList);
+        model.addAttribute("subAccountNameMap", subAccountNameMap);
+        model.addAttribute("accountPreferenceList", accountService.getAllAccountPreferences());
+
         return new ModelAndView(TemplateConstants.ADMIN_BANNER_TEMPLATE);
     }
 

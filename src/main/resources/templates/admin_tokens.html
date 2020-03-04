@@ -21,7 +21,7 @@
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="addClassModalLabel">Add new token</h5>
+            <h5 class="modal-title" id="addClassModalLabel" th:text="#{admin_token_add_new_token}">Add new token</h5>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
           </div>
           <div class="modal-body">
@@ -46,7 +46,7 @@
           <th th:text="#{admin_token_header_status}">Status</th>
           <th th:text="#{admin_token_header_created_date}">User</th>
           <th th:text="#{admin_token_header_created_by}">Date</th>
-          <th th:text="#{admin_token_header_delete}">Delete</th>
+          <th th:text="#{admin_token_header_actions}">Actions</th>
         </tr>
       </thead>
       <tbody>
