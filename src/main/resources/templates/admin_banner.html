@@ -78,8 +78,8 @@
         <tr th:each="accountPreference : ${accountPreferenceList}">
           <td th:text="${subAccountNameMap.get(accountPreference.accountId)}"></td>
           <td><i th:if="${accountPreference.bannerEnabled}" class="fas fa-check" th:title="#{admin_banner_enabled}"></i><i th:if="!${accountPreference.bannerEnabled}" class="fas fa-exclamation-circle" th:title="#{admin_banner_disabled}"></i></td>
-          <td th:text="${accountPreference.bannerFromDate}"></td>
-          <td th:text="${accountPreference.bannerUntilDate}"></td>
+          <td class="tableDate" th:text="${accountPreference.bannerFromDate}"></td>
+          <td class="tableDate" th:text="${accountPreference.bannerUntilDate}"></td>
           <td><button th:id="${accountPreference.accountId}" class="btn btn-primary" onclick="deleteAccountPreference(this);"><span th:text="#{admin_banner_delete}">Delete banner configuration</span></button></td>
         </tr>
       </tbody>
@@ -88,6 +88,7 @@
   <script th:inline="javascript">
     /*<![CDATA[*/
     $(document).ready(function() {
+      //Initialize modal date pickers
       var format = "YYYY-MM-DD HH:mm";
       $('#startDate').datetimepicker({
         format: format
@@ -95,6 +96,16 @@
       $('#endDate').datetimepicker({
         format: format
       });
+
+      // Provide pretty dates
+      $('.tableDate').each(function () {
+        var dateContent = $(this).html();
+        if (dateContent != '') {
+          var prettyDate = moment(dateContent).format('lll');
+          $(this).html(prettyDate);
+        }
+      });
+
     });
 
     $('#addBannerForm').submit(function(e) {
@@ -134,6 +145,7 @@
         console.debug('Error deleting account preference...');
       });
     }
+
     /*]]>*/
   </script>
 </body>

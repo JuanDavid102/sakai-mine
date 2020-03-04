@@ -31,7 +31,7 @@
           <td th:text="${event.eventType}">an event type</td>
           <td th:text="${event.eventUser}">an event user</td>
           <td th:text="${event.eventCourse}">an event course</td>
-          <td th:text="${event.eventDate}">an event date</td>
+          <td class="tableDate" th:text="${event.eventDate}">an event date</td>
           <td th:text="${event.eventDetails}">an event details</td>
         </tr>
       </tbody>
@@ -42,6 +42,15 @@
   <script th:inline="javascript">
     /*<![CDATA[*/
     $(document).ready( function () {
+      // Provide pretty dates
+      $('.tableDate').each(function () {
+        var dateContent = $(this).html();
+        if (dateContent != '') {
+          var prettyDate = moment(dateContent).format('lll');
+          $(this).html(prettyDate);
+        }
+      });
+
       var search = /*[[#{admin_events_datatables_search}]]*/ 'search';
       var lengthMenu = /*[[#{admin_events_datatables_lengthMenu}]]*/ 'lengthMenu';
       var zeroRecords = /*[[#{admin_events_datatables_zeroRecords}]]*/ 'zeroRecords';
@@ -74,6 +83,7 @@
         }
       });
     });
+
     /*]]>*/
   </script>
 </body>

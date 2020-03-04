@@ -53,7 +53,7 @@
         <tr th:each="token : ${tokenList}">
           <td th:text="${token.token}"></td>
           <td><i th:if="${token.status}" class="fas fa-check" th:title="#{admin_token_status_ok}"></i><i th:if="!${token.status}" class="fas fa-exclamation-circle" th:title="#{admin_token_status_ko}"></i></td>
-          <td th:text="${token.createdDate}"></td>
+          <td class="tableDate" th:text="${token.createdDate}"></td>
           <td th:text="${token.createdBy}"></td>
           <td><button th:id="${token.token}" class="btn btn-primary" onclick="deleteToken(this);"><span th:text="#{admin_token_delete}">Delete token</span></button></td>
         </tr>
@@ -62,6 +62,17 @@
   </div><!-- End of container -->
   <script th:inline="javascript">
     /*<![CDATA[*/
+    $(document).ready(function() {
+      // Provide pretty dates
+      $('.tableDate').each(function () {
+        var dateContent = $(this).html();
+        if (dateContent != '') {
+          var prettyDate = moment(dateContent).format('lll');
+          $(this).html(prettyDate);
+        }
+      });
+    });
+
     $('#addTokenForm').submit(function(e) {
       e.preventDefault();
       $('#addTokenModal').modal('toggle');
@@ -92,6 +103,7 @@
         console.debug('Error deleting token...');
       });
     }
+
     /*]]>*/
   </script>
 </body>
