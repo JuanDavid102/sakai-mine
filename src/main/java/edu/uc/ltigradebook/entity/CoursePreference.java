@@ -10,7 +10,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "gradebook_course_preferences")
+@Table(name = "lti_gb_course_prefs")
 @AllArgsConstructor
 @Data
 @NoArgsConstructor

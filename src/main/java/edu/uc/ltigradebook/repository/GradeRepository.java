@@ -9,8 +9,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface GradeRepository extends CrudRepository<StudentGrade, StudentGradeId> {
-
-    @Query(value = "select count(distinct(user_id)) from gradebook_grades", nativeQuery=true)
+    @Query(value = "select count(distinct(user_id)) from lti_gb_grades", nativeQuery=true)
     Long getGradedUserCount();
-
 }

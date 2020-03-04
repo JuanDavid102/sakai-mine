@@ -15,7 +15,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "gradebook_events")
+@Table(name = "lti_gb_events")
 @AllArgsConstructor
 @Data
 @NoArgsConstructor
@@ -23,7 +23,7 @@ public class Event {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator="event_generator")
-    @SequenceGenerator(name="event_generator", sequenceName="event_sequence", allocationSize=1)
+    @SequenceGenerator(name="event_generator", sequenceName="lti_gb_event_seq", allocationSize=1)
     @Column(name = "event_id", nullable = false)
     private long eventId;
 

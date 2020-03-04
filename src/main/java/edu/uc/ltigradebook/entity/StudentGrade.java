@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @IdClass(StudentGradeId.class)
-@Table(name = "gradebook_grades")
+@Table(name = "lti_gb_grades")
 @AllArgsConstructor
 @Data
 @NoArgsConstructor

@@ -8,8 +8,6 @@ import edu.uc.ltigradebook.entity.CoursePreference;
 
 @Repository
 public interface CourseRepository extends CrudRepository<CoursePreference, Long> {
-
-    @Query(value = "select count(distinct(event_course)) from gradebook_events where event_course is not null and event_course <> ''", nativeQuery=true)
+    @Query(value = "select count(distinct(course_id)) from lti_gb_course_prefs", nativeQuery=true)
     Long getCourseCount();
-
 }

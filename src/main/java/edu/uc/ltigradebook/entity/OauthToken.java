@@ -15,7 +15,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "gradebook_tokens")
+@Table(name = "lti_gb_tokens")
 @AllArgsConstructor
 @Data
 @NoArgsConstructor
@@ -23,7 +23,7 @@ public class OauthToken {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator="token_generator")
-    @SequenceGenerator(name="token_generator", sequenceName="token_sequence", allocationSize=1)
+    @SequenceGenerator(name="token_generator", sequenceName="lti_gb_token_seq", allocationSize=1)
     @Column(name = "token_id", nullable = false)
     private long tokenId;
 

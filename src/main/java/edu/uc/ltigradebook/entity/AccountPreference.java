@@ -13,7 +13,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "gradebook_account_preferences")
+@Table(name = "lti_gb_account_prefs")
 @AllArgsConstructor
 @Data
 @NoArgsConstructor
