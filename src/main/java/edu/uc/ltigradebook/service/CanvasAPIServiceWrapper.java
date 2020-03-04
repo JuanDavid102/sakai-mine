@@ -62,45 +62,25 @@ public class CanvasAPIServiceWrapper {
         try {
             accountReader.getSingleAccount("1").get();
         } catch (Exception e) {
-            log.error("The token {} is not valid, full token hidden for security reasons.", token.substring(0 , 9));
+            log.error("Validate token has detected an invalid token, full token hidden for security reasons.");
             return false;
         }
         return true;
     }
 
     private OauthToken getRandomOauthToken() {
-        // Create the default backup token.
-    	OauthToken oauthToken = new NonRefreshableOauthToken(canvasApiToken);
-        boolean validToken = false;
-        // Try to get a valid random token 3 times
-        int retryCount = 0;
-        int maxAttempts = 3;
         List<edu.uc.ltigradebook.entity.OauthToken> tokenList = tokenService.getAllValidTokens();
+        
+        // Return the default token is the list is empty.
         if (tokenList.isEmpty()) {
-            log.error("The LTI tool does not have any API token, using the default, please create one or you're not be able to use the tool.");
-            return oauthToken;
+            log.error("The LTI tool does not have any valid API token, using the default, please create one or you're not be able to use the tool properly.");
+            return new NonRefreshableOauthToken(canvasApiToken);
         }
 
-        while (!validToken && retryCount < maxAttempts) {
-            retryCount++;
-            Random rand = new Random();
-            String randomCanvasApiToken = tokenList.get(rand.nextInt(tokenList.size())).getToken();
-            OauthToken randomOauthToken = new NonRefreshableOauthToken(randomCanvasApiToken);
-            validToken = this.validateToken(randomOauthToken.getAccessToken());
-            if (validToken) {
-            	return randomOauthToken;
-            } else {
-            	for (edu.uc.ltigradebook.entity.OauthToken invalidToken : tokenService.getOauthToken(randomCanvasApiToken)) {
-            		if (invalidToken.isStatus()) {
-                    	log.error("The token {} has been detected as invalid, invalidating it in the database.", randomCanvasApiToken);
-            			invalidToken.setStatus(false);
-                		tokenService.saveToken(invalidToken);
-            		}
-            	}
-            }
-        }
-
-        return oauthToken;
+        // Return a random token from the valid token list.
+        Random rand = new Random();
+        String randomCanvasApiToken = tokenList.get(rand.nextInt(tokenList.size())).getToken();
+        return new NonRefreshableOauthToken(randomCanvasApiToken);
     }
 
     @Cacheable(CacheConstants.USERS_IN_COURSE)

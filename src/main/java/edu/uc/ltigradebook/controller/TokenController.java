@@ -39,11 +39,11 @@ public class TokenController {
     public boolean saveToken(@RequestParam String token, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) throws TokenException {
         String userId = ltiSession.getLtiLaunchData().getCustom().get(LtiConstants.CANVAS_USER_ID);
         OauthToken oauthToken = new OauthToken();
-        if (StringUtils.isBlank(token) || token.length() < 9 || !canvasService.validateToken(token)) {
+        if (StringUtils.isBlank(token) || !canvasService.validateToken(token)) {
             log.error("Cannot create an invalid token {}.", token);
             throw new TokenException();
         }
-        log.info("Saving token {} by the user {}, token hidden for security reasons.", token.substring(0, 9), userId);
+        log.info("Saving token by the user {}, token hidden for security reasons.", userId);
         oauthToken.setToken(token);
         oauthToken.setCreatedBy(userId);
         oauthToken.setCreatedDate(Instant.now());
