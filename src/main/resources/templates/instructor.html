@@ -364,6 +364,7 @@
       instructor_import_modal_info: /*[[#{instructor_import_modal_info}]]*/,
       instructor_not_supported: /*[[#{instructor_not_supported}]]*/,
       instructor_replaced_grade: /*[[#{instructor_replaced_grade}]]*/,
+      instructor_not_replaced_grade: /*[[#{instructor_not_replaced_grade}]]*/,
       instructor_assignment_not_assigned: /*[[#{instructor_assignment_not_assigned}]]*/,
       instructor_details_modal_title: /*[[#{instructor_details_modal_title}]]*/,
       instructor_details_modal_total: /*[[#{instructor_details_modal_total}]]*/,
@@ -681,7 +682,7 @@
 
     function cellRatingRenderer(instance, td, row, col, prop, value, cellProperties) {
       Handsontable.renderers.TextRenderer.apply(this, arguments);
-      $(td).html('<div class="gb-save-info">' + td.innerHTML + '</div>');
+      $(td).html('<div class="gb-save-info" title="' + messages.instructor_not_replaced_grade + '">' + td.innerHTML + '</div>');
     }
 
     function cellConvertedRatingRenderer(instance, td, row, col, prop, value, cellProperties) {
