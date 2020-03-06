@@ -15,9 +15,9 @@ public class GradeUtils {
     private static final String PERCENT_SYMBOL = "%";
     private static final String MAX_PERCENT = "100.0";
 
-    private static final BigDecimal MIN_GRADE = new BigDecimal("1.0");
-    private static final BigDecimal MAX_GRADE = new BigDecimal("7.0");
-    private static final BigDecimal PASS_GRADE = new BigDecimal("4.0");
+    public static final BigDecimal MIN_GRADE = new BigDecimal("1.0");
+    public static final BigDecimal MAX_GRADE = new BigDecimal("7.0");
+    public static final BigDecimal PASS_GRADE = new BigDecimal("4.0");
 
     public static boolean isValidGrade(String input) {
         if (isValidDouble(input)) {

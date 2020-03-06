@@ -446,6 +446,10 @@
 
           properties.renderer = cellBlankRenderer;
 
+          if (properties.gradeOutOfRange) {
+            properties.renderer = cellSaveErrorRenderer;
+          }
+
           if (properties.isZeroPoints) {
             properties.renderer = cellNoPointsRenderer;
           }

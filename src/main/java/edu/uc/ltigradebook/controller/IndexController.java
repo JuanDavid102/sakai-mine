@@ -374,6 +374,12 @@ public class IndexController {
                         gradeTypeNotSupported = false;
                     }
 
+                    try {
+                        // If grade is less than MIN_GRADE or more than MAX_GRADE
+                        cellSettings.put("gradeOutOfRange", (new BigDecimal(grade).compareTo(GradeUtils.MAX_GRADE) > 0) || (new BigDecimal(grade).compareTo(GradeUtils.MIN_GRADE) < 0));
+                    } catch (Exception ex) {
+                        cellSettings.put("gradeOutOfRange", false);
+                    }
                     cellSettings.put("isVisibleForUser", isVisibleForUser);
                     cellSettings.put("assignmentGroupId", assignmentGroupId);
                     cellSettings.put("omitFromFinalGrade", omitFromFinalGrade);
