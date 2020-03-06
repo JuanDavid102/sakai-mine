@@ -35,6 +35,12 @@
         </select>
       </div>
       <div class="canvas-btn-group">
+        <button class="canvas-btn" th:title="#{instructor_option_audit}" id="auditLogModalButton" data-toggle="modal" data-target="#auditLog">
+          <span class="fas fa-history"></span>
+          <span class="d-none d-sm-inline-block" th:text="#{instructor_option_audit}">Audit Log</span>
+        </button>
+      </div>
+      <div class="canvas-btn-group">
         <button class="canvas-btn" th:title="#{instructor_option_import}" data-toggle="modal" data-target="#importCsv">
           <span class="fas fa-file-import"></span>
           <span class="d-none d-sm-inline-block" th:text="#{instructor_option_import}">Import</span>
@@ -61,6 +67,29 @@
     </div>
   </div>
   <div th:id="${'studentTable' + courseId}" th:if="${!assignmentList.isEmpty()}" class="studentTable"></div>
+
+  <!-- Modal Audit Log -->
+  <div class="modal fade" id="auditLog" tabindex="-1" role="dialog" aria-labelledby="auditLogModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="auditLogModalLabel" th:text="#{instructor_option_audit}">Audit Log</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body text-center" id="auditLogBody">
+          <div class="spinner-border" role="status">
+            <span class="sr-only" th:text="#{instructor_spinner_loading}">Loading</span>
+          </div>
+          <div id="auditLogTableContainer" class="text-left"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="canvas-btn rounded-btn" data-dismiss="modal" th:text="#{instructor_import_modal_close}">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Modal Import -->
   <div class="modal fade" id="importCsv" tabindex="-1" role="dialog" aria-labelledby="importCsvModalLabel" aria-hidden="true">
@@ -353,7 +382,19 @@
       instructor_header_muted_assignment: /*[[#{instructor_header_muted_assignment}]]*/,
       instructor_ignore_highest_grade: /*[[#{instructor_ignore_highest_grade}]]*/,
       instructor_ignore_lowest_grade: /*[[#{instructor_ignore_lowest_grade}]]*/,
-      shared_ignored_assignments_message: /*[[#{shared_ignored_assignments_message}]]*/
+      shared_ignored_assignments_message: /*[[#{shared_ignored_assignments_message}]]*/,
+      instructor_audit_log_date: /*[[#{instructor_audit_log_date}]]*/,
+      instructor_audit_log_student_name: /*[[#{instructor_audit_log_student_name}]]*/,
+      instructor_audit_log_assignment: /*[[#{instructor_audit_log_assignment}]]*/,
+      instructor_audit_log_old_grade: /*[[#{instructor_audit_log_old_grade}]]*/,
+      instructor_audit_log_new_grade: /*[[#{instructor_audit_log_new_grade}]]*/,
+      instructor_audit_log_instructor_name: /*[[#{instructor_audit_log_instructor_name}]]*/,
+      instructor_datatables_info: /*[[#{instructor_datatables_info}]]*/,
+      instructor_datatables_emptyTable: /*[[#{instructor_datatables_emptyTable}]]*/,
+      instructor_datatables_next: /*[[#{instructor_datatables_next}]]*/,
+      instructor_datatables_previous: /*[[#{instructor_datatables_previous}]]*/,
+      instructor_datatables_sortAscending: /*[[#{instructor_datatables_sortAscending}]]*/,
+      instructor_datatables_sortDescending: /*[[#{instructor_datatables_sortDescending}]]*/
     };
     var container = $('#studentTable' + [[${courseId}]])[0];
     var studentFilter = document.getElementById('studentFilter');
@@ -494,12 +535,16 @@
               var physicalCol = GbGradeTable.instance.toPhysicalColumn(col);
               var cellMeta = GbGradeTable.instance.getCellMeta(row, visualCol);
 
-              var oldScore = change[2];
+              var oldScore = cellMeta.score;
+              if (oldScore === undefined) {
+                oldScore = change[2];
+              }
               var newScore = change[3];
               var studentGrade = {};
               studentGrade['assignmentId'] = cellMeta.assignmentId;
               studentGrade['userId'] = cellMeta.userId;
               studentGrade['grade'] = newScore;
+              studentGrade['oldGrade'] = oldScore;
               console.debug('Assignment ' + cellMeta.assignmentId + ' changed to ' + newScore + ' for user '+cellMeta.userId);
 
               if (oldScore+'' !== newScore+'') {
@@ -520,7 +565,8 @@
                 }).done(function() {
                   console.debug('The grade has been saved successfully.');
                   var settings = cellSettings[this.custom.physicalRow+1][this.custom.col];
-                  cellSettings[this.custom.physicalRow+1][this.custom.col].renderer = cellSaveSuccessRenderer;
+                  settings.renderer = cellSaveSuccessRenderer;
+                  settings.score = newScore;
                   var groupId = settings.assignmentGroupId;
                   var userId = settings.userId;
                   if (!settings.omitFromFinalGrade && !settings.assignmentIsMuted && !settings.isZeroPoints) {
@@ -1200,6 +1246,93 @@
     });
     /**** END OF CHANGE CONVERSION SCALE **/
 
+    /**** LOAD COURSE GRADE EVENTS ****/
+    jQuery.extend(jQuery.fn.dataTableExt.oSort, {
+      "hiddenValue-asc": function (a, b) {
+        a = $(a).find(".hiddenValue").text();
+        b = $(b).find(".hiddenValue").text();
+        return a.localeCompare(b);
+      },
+      "hiddenValue-desc": function (a, b) {
+        a = $(a).find(".hiddenValue").text();
+        b = $(b).find(".hiddenValue").text();
+        return b.localeCompare(a);
+      }
+    });
+    var search = /*[[#{instructor_datatables_records_search}]]*/ 'search';
+    var lengthMenu = /*[[#{instructor_datatables_records_lengthMenu}]]*/ 'lengthMenu';
+    var zeroRecords = /*[[#{instructor_datatables_records_zeroRecords}]]*/ 'zeroRecords';
+    var info = /*[[#{instructor_datatables_info}]]*/ 'info';
+    var infoEmpty = /*[[#{instructor_datatables_records_infoEmpty}]]*/ 'infoEmpty';
+    var infoFiltered = /*[[#{instructor_datatables_records_infoFiltered}]]*/ 'infoFiltered';
+    var emptyTable = /*[[#{instructor_datatables_emptyTable}]]*/ 'emptyTable';
+    var next = /*[[#{instructor_datatables_next}]]*/ 'next';
+    var previous = /*[[#{instructor_datatables_previous}]]*/ 'previous';
+    var sortAscending = /*[[#{instructor_datatables_sortAscending}]]*/ 'sortAscending';
+    var sortDescending = /*[[#{instructor_datatables_sortDescending}]]*/ 'sortDescending';
+    var auditLogExists = false;
+    $('#auditLogModalButton').click(function() {
+      $('#auditLogBody .spinner-border').removeClass('d-none');
+      if (auditLogExists) {
+        $('#auditLogTable').DataTable().clear();
+        $('#auditLogTable').DataTable().destroy();
+      }
+      $('#auditLogTableContainer').empty();
+
+      $.ajax({
+        url: [[@{/getCourseGradeEvents}]]  + '?courseId=' + [[${courseId}]],
+        type: 'POST',
+        contentType: 'text/plain; charset=utf-8'
+      }).done(function(response) {
+        var json = [];
+        $(response).each(function(idx, elem) {
+          var eventDetails = JSON.parse(elem.eventDetails);
+          var jsonElement = {
+            'date': '<div>' + moment(elem.eventDate).format('lll') + '<span class="hiddenValue d-none">' + elem.eventDate + '</span></div>',
+            'studentName': eventDetails.studentName,
+            'assignmentName': eventDetails.assignmentName,
+            'oldGrade': eventDetails.oldGrade,
+            'newGrade': eventDetails.grade,
+            'teacherName': eventDetails.teacherName
+          };
+          json.push(jsonElement);
+        });
+        $('#auditLogTableContainer').append('<table id="auditLogTable" class="table table-bordered table-striped"></table>');
+        $('#auditLogBody .spinner-border').addClass('d-none');
+        $('#auditLogTable').DataTable({
+          data: json,
+          columns: [
+            {'data': 'date', 'title': messages.instructor_audit_log_date, 'type': 'hiddenValue'},
+            {'data': 'studentName', 'title': messages.instructor_audit_log_student_name},
+            {'data': 'assignmentName', 'title': messages.instructor_audit_log_assignment},
+            {'data': 'oldGrade', 'title': messages.instructor_audit_log_old_grade},
+            {'data': 'newGrade', 'title': messages.instructor_audit_log_new_grade},
+            {'data': 'teacherName', 'title': messages.instructor_audit_log_instructor_name},
+          ],
+          order: [0, 'desc'],
+          pageLength: 50,
+          language: {
+            'search': search,
+            'lengthMenu': lengthMenu,
+            'zeroRecords': zeroRecords,
+            'info': info,
+            'infoEmpty': infoEmpty,
+            'infoFiltered': infoFiltered,
+            'emptyTable': emptyTable,
+            'paginate': {
+              'next': next,
+              'previous': previous,
+            },
+            'aria': {
+              'sortAscending': sortAscending,
+              'sortDescending': sortDescending,
+            }
+          }
+        });
+      });
+      auditLogExists = true;
+    });
+    /**** END OF LOAD COURSE GRADE EVENTS ****/
     /*]]>*/
 </script>
 </body>

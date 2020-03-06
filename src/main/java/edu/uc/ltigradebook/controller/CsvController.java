@@ -336,10 +336,10 @@ public class CsvController {
                 Assignment assignment = assignmentList.stream().filter(a -> assignmentId.equals(String.valueOf(a.getId()))).findFirst().get();
                 List<Submission> submissionsForAssignment = submissionsMap.get(assignmentId);
                 for (int z = 1; z < all.size(); z++) {
+                    String studentId = all.get(z)[1];
                     try {
-                        String studentId = all.get(z)[1];
                         String newGrade = all.get(z)[i];
-                        JSONObject eventDetailsJSon = new JSONObject().put("assignmentId", assignmentId).put("userId", studentId).put("newGrade", newGrade);
+                        JSONObject eventDetailsJson = new JSONObject().put("assignmentId", assignmentId).put("userId", studentId).put("grade", newGrade);
                         boolean saveGrade = false;
                         boolean deleteGrade = false;
                         boolean sameGrade = false;
@@ -347,7 +347,7 @@ public class CsvController {
                         Optional<StudentGrade> overwrittenStudentGrade = gradeService.getGradeByAssignmentAndUser(assignmentId, studentId);
                         if (overwrittenStudentGrade.isPresent()){
                             String overwrittenGrade = overwrittenStudentGrade.get().getGrade();
-                            eventDetailsJSon.put("previousGrade", overwrittenGrade);
+                            eventDetailsJson.put("oldGrade", overwrittenGrade);
                             if (!newGrade.equals(overwrittenGrade)) saveGrade = true;
                             else sameGrade = true;
                             if (StringUtils.isBlank(newGrade)) {
@@ -380,12 +380,12 @@ public class CsvController {
                                         grade = GRADE_NOT_AVAILABLE;
                                         break;
                                 }
-                                eventDetailsJSon.put("previousGrade", grade);
+                                eventDetailsJson.put("oldGrade", grade);
                                 if (!newGrade.equals(grade) && StringUtils.isNotBlank(newGrade))
                                     saveGrade = true;
                                 else sameGrade = true;
 
-                            } else eventDetailsJSon.put("previousGrade", GRADE_NOT_AVAILABLE);
+                            } else eventDetailsJson.put("oldGrade", GRADE_NOT_AVAILABLE);
                         }
 
                         //If new grade is invalid, skip saving process
@@ -400,10 +400,10 @@ public class CsvController {
                         studentGrade.setUserId(studentId);
 
                         if (deleteGrade) {
-                            eventTrackingService.postEvent(EventConstants.IMPORT_DELETE_GRADE, canvasUserId, courseId, eventDetailsJSon.toString());
+                            eventTrackingService.postEvent(EventConstants.IMPORT_DELETE_GRADE, canvasUserId, courseId, eventDetailsJson.toString());
                             gradeService.deleteGrade(studentGrade);
                         } else if (saveGrade) {
-                            eventTrackingService.postEvent(EventConstants.IMPORT_POST_GRADE, canvasUserId, courseId, eventDetailsJSon.toString());
+                            eventTrackingService.postEvent(EventConstants.IMPORT_POST_GRADE, canvasUserId, courseId, eventDetailsJson.toString());
                             studentGrade.setGrade(newGrade);
                             gradeService.saveGrade(studentGrade);
                         }
@@ -412,7 +412,7 @@ public class CsvController {
 
                     } catch(Exception ex) {
                         errors = true;
-                        log.error("Cannot save grade on {} assignment", assignmentId);
+                        log.error("Cannot save grade on {} assignment {} studentId", assignmentId, studentId);
                     }
                 }
             }

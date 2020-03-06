@@ -31,7 +31,8 @@ public class CachingConfig {
             CacheConstants.SINGLE_EVENT,
             CacheConstants.SINGLE_SUBMISSION,
             CacheConstants.SUBACCOUNTS,
-            CacheConstants.USERS_IN_COURSE
+            CacheConstants.USERS_IN_COURSE,
+            CacheConstants.INSTRUCTORS_IN_COURSE
             );
         return cacheManager;
     }
@@ -56,7 +57,8 @@ public class CachingConfig {
             CacheConstants.SINGLE_COURSE,
             CacheConstants.SINGLE_EVENT,
             CacheConstants.SUBACCOUNTS,
-            CacheConstants.USERS_IN_COURSE
+            CacheConstants.USERS_IN_COURSE,
+            CacheConstants.INSTRUCTORS_IN_COURSE
             })
     @Scheduled(fixedDelay =  10 * 60 * 1000,  initialDelay = 500)
     public void cacheEvict() {

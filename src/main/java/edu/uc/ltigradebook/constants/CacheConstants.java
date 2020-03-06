@@ -12,4 +12,5 @@ public class CacheConstants {
     public static final String SINGLE_SUBMISSION = "SINGLE_SUBMISSION";
     public static final String SUBACCOUNTS = "SUBACCOUNTS";
     public static final String USERS_IN_COURSE = "USERS_IN_COURSE";
+    public static final String INSTRUCTORS_IN_COURSE = "INSTRUCTORS_IN_COURSE";
 }

@@ -59,7 +59,7 @@ public class GradeRestController {
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
         String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
         String gradeString = StringUtils.replace(studentGrade.getGrade(), ",", ".");
-        String eventDetails = new JSONObject().put("assignmentId", studentGrade.getAssignmentId()).put("userId", studentGrade.getUserId()).put("grade", gradeString).toString();
+        String eventDetails = new JSONObject().put("assignmentId", studentGrade.getAssignmentId()).put("userId", studentGrade.getUserId()).put("grade", gradeString).put("oldGrade", studentGrade.getOldGrade()).toString();
 
         if (!securityService.isFaculty(lld.getRolesList())) {
             log.error("Security error when trying post a grade, reporting the issue.");

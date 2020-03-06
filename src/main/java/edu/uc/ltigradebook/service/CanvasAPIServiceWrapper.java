@@ -95,6 +95,16 @@ public class CanvasAPIServiceWrapper {
         return userReader.getUsersInCourse(options);
     }
 
+    @Cacheable(CacheConstants.INSTRUCTORS_IN_COURSE)
+    public List<User> getTeachersInCourse(String courseId) throws IOException {
+        OauthToken oauthToken = this.getRandomOauthToken();
+        UserReader userReader = canvasApiFactory.getReader(UserReader.class, oauthToken);
+        GetUsersInCourseOptions options = new GetUsersInCourseOptions(courseId)
+                .include(Arrays.asList(GetUsersInCourseOptions.Include.ENROLLMENTS))
+                .enrollmentType(Arrays.asList(EnrollmentType.TEACHER));
+        return userReader.getUsersInCourse(options);
+    }
+
     @Cacheable(CacheConstants.SECTIONS_IN_COURSE)
     public List<Section> getSectionsInCourse(String courseId) throws IOException {
         OauthToken oauthToken = this.getRandomOauthToken();
