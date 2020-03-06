@@ -55,16 +55,17 @@ public class GradeUtils {
             BigDecimal earnedDecimalPoints = new BigDecimal(earnedPoints);
             BigDecimal passPoints = totalDecimalPoints.multiply(PASS_PERCENT);
     
-            if (earnedDecimalPoints.compareTo(passPoints) >= 0 ) {
-                BigDecimal dividend = MAX_GRADE.subtract(PASS_GRADE);
-                BigDecimal divisor = totalDecimalPoints.subtract(passPoints);
-                BigDecimal secondLiteral = earnedDecimalPoints.subtract(passPoints);
-                convertedGrade = dividend.divide(divisor, 3, RoundingMode.HALF_UP).multiply(secondLiteral).add(PASS_GRADE);
+            // If earned points are less than passpoints...
+            if (earnedDecimalPoints.compareTo(passPoints) < 0) {
+                convertedGrade = (PASS_GRADE.subtract(MIN_GRADE))
+                        .multiply(earnedDecimalPoints
+                        .divide(passPoints, 3, RoundingMode.HALF_UP))
+                        .add(MIN_GRADE);
             } else {
-                BigDecimal dividend = PASS_GRADE.subtract(MIN_GRADE);
-                BigDecimal divisor = passPoints.subtract(minimumPoints);
-                BigDecimal secondLiteral = earnedDecimalPoints.subtract(minimumPoints);
-                convertedGrade = dividend.divide(divisor, 3, RoundingMode.HALF_UP).multiply(secondLiteral).add(MIN_GRADE);
+                convertedGrade = (PASS_GRADE.subtract(MIN_GRADE))
+                        .multiply(earnedDecimalPoints.subtract(passPoints)
+                        .divide(totalDecimalPoints.subtract(passPoints), 3, RoundingMode.HALF_UP))
+                        .add(PASS_GRADE);
             }
         } catch(Exception ex) {
             log.error("Fatal error mapping the grade to the {} scale, {} earnedPoints, {} totalPoints.", PASS_PERCENT, earnedPoints, totalPoints, ex);
