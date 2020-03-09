@@ -61,6 +61,11 @@
       shared_ignored_assignments_message: /*[[#{shared_ignored_assignments_message}]]*/
     };
 
+    var totalGroupWeight = 0;
+    $(assignmentGroupList).each(function(idx, obj) {
+      totalGroupWeight += obj.groupWeight;
+    });
+
     var search = /*[[#{student_datatables_search}]]*/ 'search';
     var lengthMenu = /*[[#{student_datatables_lengthMenu}]]*/ 'lengthMenu';
     var zeroRecords = /*[[#{student_datatables_zeroRecords}]]*/ 'zeroRecords';
@@ -84,6 +89,9 @@
         api.column(groupColumn, {page:'current'} ).data().each( function ( group, i ) {
           if ( last !== group ) {
             $(rows).eq( i ).before(function() {
+              if (i == rows.length-1) {
+                group += ' (' + totalGroupWeight + ')%';
+              }
               return '<tr class="group"><td>'+group+'</td><td>' + api.column(groupColumn+1, {page:'current'} ).data()[i] + '</td></tr>';
             });
             last = group;
