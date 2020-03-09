@@ -395,7 +395,8 @@
       instructor_datatables_next: /*[[#{instructor_datatables_next}]]*/,
       instructor_datatables_previous: /*[[#{instructor_datatables_previous}]]*/,
       instructor_datatables_sortAscending: /*[[#{instructor_datatables_sortAscending}]]*/,
-      instructor_datatables_sortDescending: /*[[#{instructor_datatables_sortDescending}]]*/
+      instructor_datatables_sortDescending: /*[[#{instructor_datatables_sortDescending}]]*/,
+      instructor_dropdown_speed_grader: /*[[#{instructor_dropdown_speed_grader}]]*/
     };
     var container = $('#studentTable' + [[${courseId}]])[0];
     var studentFilter = document.getElementById('studentFilter');
@@ -617,7 +618,13 @@
 
     function cellBlankRenderer(instance, td, row, col, prop, value, cellProperties) {
       Handsontable.renderers.TextRenderer.apply(this, arguments);
-      $(td).html('<div>' + td.innerHTML + '</div>');
+      var html =  '<div>' + 
+                    td.innerHTML;
+      if (cellProperties.speedGraderUrl != undefined) {
+        html += '<a title="' + messages.instructor_dropdown_speed_grader + '" class="fas fa-external-link-alt speed-grader" aria-hidden="true" href="' + cellProperties.speedGraderUrl + '" + target="_blank"></a>';
+      }
+      html += '</div>';
+      $(td).html(html);
     }
 
     function cellGroupGradeRenderer(instance, td, row, col, prop, value, cellProperties) {
@@ -686,12 +693,22 @@
 
     function cellRatingRenderer(instance, td, row, col, prop, value, cellProperties) {
       Handsontable.renderers.TextRenderer.apply(this, arguments);
-      $(td).html('<div class="gb-save-info" title="' + messages.instructor_not_replaced_grade + '">' + td.innerHTML + '</div>');
+      var html = '<div class="gb-save-info" title="' + messages.instructor_not_replaced_grade + '">' + td.innerHTML;
+      if (cellProperties.speedGraderUrl != undefined) {
+        html += '<a title="' + messages.instructor_dropdown_speed_grader + '" class="fas fa-external-link-alt speed-grader" aria-hidden="true" href="' + cellProperties.speedGraderUrl + '" + target="_blank"></a>';
+      }
+      html += '</div>';
+      $(td).html(html);
     }
 
     function cellConvertedRatingRenderer(instance, td, row, col, prop, value, cellProperties) {
       Handsontable.renderers.TextRenderer.apply(this, arguments);
-      $(td).html('<div class="gb-save-info" title="' + messages.instructor_replaced_grade + '">' + td.innerHTML + '</div>');
+      var html = '<div class="gb-save-info" title="' + messages.instructor_replaced_grade + '">' + td.innerHTML;
+      if (cellProperties.speedGraderUrl != undefined) {
+        html += '<a title="' + messages.instructor_dropdown_speed_grader + '" class="fas fa-external-link-alt speed-grader" aria-hidden="true" href="' + cellProperties.speedGraderUrl + '" + target="_blank"></a>';
+      }
+      html += '</div>';
+      $(td).html(html);
     }
 
     function cellNotSupportedRenderer(instance, td, row, col, prop, value, cellProperties) {
@@ -729,7 +746,12 @@
 
     function cellSaveErrorRenderer(instance, td, row, col, prop, value, cellProperties) {
       Handsontable.renderers.TextRenderer.apply(this, arguments);
-      $(td).html('<div class="gb-save-error" title="' + messages.instructor_grade_out_range + '">' + td.innerHTML + '</div>');
+      var html = '<div class="gb-save-error" title="' + messages.instructor_grade_out_range + '">' + td.innerHTML;
+      if (cellProperties.speedGraderUrl != undefined) {
+        html += '<a title="' + messages.instructor_dropdown_speed_grader + '" class="fas fa-external-link-alt speed-grader" aria-hidden="true" href="' + cellProperties.speedGraderUrl + '" + target="_blank"></a>';
+      }
+      html += '</div>';
+      $(td).html(html);
     }
 
     function cellLoadingRenderer(instance, td, row, col, prop, value, cellProperties) {

@@ -380,6 +380,7 @@ public class IndexController {
                     } catch (Exception ex) {
                         cellSettings.put("gradeOutOfRange", false);
                     }
+                    cellSettings.put("speedGraderUrl", String.format(SPEED_GRADER_URL + "&student_id=%s", canvasBaseUrl, courseId, assignmentId, userId));
                     cellSettings.put("isVisibleForUser", isVisibleForUser);
                     cellSettings.put("assignmentGroupId", assignmentGroupId);
                     cellSettings.put("omitFromFinalGrade", omitFromFinalGrade);

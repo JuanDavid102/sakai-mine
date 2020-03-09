@@ -240,6 +240,7 @@
   height: 32px;
   line-height: 32px;
   padding: 2px 7px;
+  position: relative;
 }
 
 #tableContainer .studentTable .handsontable td .gb-save-success {
@@ -421,6 +422,18 @@ table.table tr.success td {
 .w-content {
   min-width: 16px;
   max-width: 16px;
+}
+
+#tableContainer .studentTable .handsontable td > div .speed-grader {
+  position: absolute;
+  right: 7px;
+  top: 9px;
+  display: none;
+}
+
+#tableContainer .studentTable .handsontable td > div:hover .speed-grader,
+#tableContainer .studentTable .handsontable td > div:active .speed-grader {
+  display: block;
 }
 
 .qtip.qtip-content-info {
