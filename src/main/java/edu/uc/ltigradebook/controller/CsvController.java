@@ -177,7 +177,7 @@ public class CsvController {
 
                 List<AssignmentGroup> assignmentGroupList = canvasService.listAssignmentGroups(courseId);
                 for(AssignmentGroup assignmentGroup : assignmentGroupList) {
-                    header.add(assignmentGroup.getName());
+                    header.add(String.format("%s (%s%%)", assignmentGroup.getName(), assignmentGroup.getGroupWeight().toString()));
                 }
                 header.add(messageSource.getMessage("shared_current_grade", new Object[]{}, LocaleContextHolder.getLocale()));
                 header.add(messageSource.getMessage("shared_final_grade", new Object[]{}, LocaleContextHolder.getLocale()));
