@@ -37,8 +37,12 @@ public class GradeUtils {
         }
     }
    
-    public static String mapGradeToScale(String scalePassPercent, String earnedPoints, String totalPoints) {
-        if(!isValidDouble(earnedPoints) || !isValidDouble(totalPoints)) {
+    public static String mapGradeToScale(String scalePassPercent, String earnedPoints, Double totalPoints) {
+        if (totalPoints == null) {
+            totalPoints = 0d;
+        }
+        String totalPointsStr = totalPoints.toString();
+        if(!isValidDouble(earnedPoints) || !isValidDouble(totalPointsStr)) {
             return StringUtils.EMPTY;
         }
 
@@ -47,7 +51,7 @@ public class GradeUtils {
         BigDecimal PASS_PERCENT = new BigDecimal(scalePassPercent);
 
         try {
-            BigDecimal totalDecimalPoints = new BigDecimal(totalPoints);
+            BigDecimal totalDecimalPoints = new BigDecimal(totalPointsStr);
             if(minimumPoints.compareTo(totalDecimalPoints) == 0) {
                 return StringUtils.EMPTY;
             }
@@ -68,17 +72,17 @@ public class GradeUtils {
                         .add(PASS_GRADE);
             }
         } catch(Exception ex) {
-            log.error("Fatal error mapping the grade to the {} scale, {} earnedPoints, {} totalPoints.", PASS_PERCENT, earnedPoints, totalPoints, ex);
+            log.error("Fatal error mapping the grade to the {} scale, {} earnedPoints, {} totalPointsStr.", PASS_PERCENT, earnedPoints, totalPointsStr, ex);
             return StringUtils.EMPTY;
         }
 
         convertedGrade = convertedGrade.setScale(1, RoundingMode.HALF_UP);
-        log.debug("Mapping grade to the {} scale, {} earnedPoints, {} totalPoints, converted grade {}.", PASS_PERCENT, earnedPoints, totalPoints, convertedGrade);
+        log.debug("Mapping grade to the {} scale, {} earnedPoints, {} totalPointsStr, converted grade {}.", PASS_PERCENT, earnedPoints, totalPointsStr, convertedGrade);
         return convertedGrade.toString();
     }
 
     public static String mapPercentageToScale(String scalePassPercent, String earnedPercentage) {
-        return mapGradeToScale(scalePassPercent, StringUtils.replace(earnedPercentage, PERCENT_SYMBOL, StringUtils.EMPTY), MAX_PERCENT);
+        return mapGradeToScale(scalePassPercent, StringUtils.replace(earnedPercentage, PERCENT_SYMBOL, StringUtils.EMPTY), new Double(MAX_PERCENT));
     }
 
     public static String roundGrade(String gradeValue) {

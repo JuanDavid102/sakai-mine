@@ -237,7 +237,7 @@ public class CsvController {
                                 //Grade conversion logic
                                 switch (assignment.getGradingType()) {
                                     case GradeUtils.GRADE_TYPE_POINTS:
-                                        grade = GradeUtils.mapGradeToScale(assignmentConversionScale, grade, assignment.getPointsPossible().toString());
+                                        grade = GradeUtils.mapGradeToScale(assignmentConversionScale, grade, assignment.getPointsPossible());
                                         break;
                                     case GradeUtils.GRADE_TYPE_PERCENT:
                                         grade = GradeUtils.mapPercentageToScale(assignmentConversionScale, grade);
@@ -371,7 +371,7 @@ public class CsvController {
                                 //Grade conversion logic
                                 switch (assignment.getGradingType()) {
                                     case GradeUtils.GRADE_TYPE_POINTS:
-                                        grade = GradeUtils.mapGradeToScale(assignmentConversionScale, grade, assignment.getPointsPossible().toString());
+                                        grade = GradeUtils.mapGradeToScale(assignmentConversionScale, grade, assignment.getPointsPossible());
                                         break;
                                     case GradeUtils.GRADE_TYPE_PERCENT:
                                         grade = GradeUtils.mapPercentageToScale(assignmentConversionScale, grade);
