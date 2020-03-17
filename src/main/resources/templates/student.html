@@ -16,7 +16,7 @@
   </tr>
   </thead>
   <tbody>
-  <tr th:each="assignment : ${assignmentList}">
+  <tr th:each="assignment : ${assignmentList}" th:if="${assignment.muted == 'false'}">
     <td th:text="${assignment.name}">an assignment name</td>
     <td>
       <span th:if="${assignment.omitFromFinalGrade}" class="fas fa-exclamation-circle" th:title="#{instructor_header_omit_final_grade}"></span>
