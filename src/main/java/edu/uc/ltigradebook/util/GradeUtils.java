@@ -59,12 +59,12 @@ public class GradeUtils {
             if (earnedDecimalPoints.compareTo(passPoints) < 0) {
                 convertedGrade = (PASS_GRADE.subtract(MIN_GRADE))
                         .multiply(earnedDecimalPoints
-                        .divide(passPoints, 3, RoundingMode.HALF_UP))
+                        .divide(passPoints, 9, RoundingMode.HALF_UP)).setScale(2, RoundingMode.HALF_UP)
                         .add(MIN_GRADE);
             } else {
                 convertedGrade = (PASS_GRADE.subtract(MIN_GRADE))
                         .multiply(earnedDecimalPoints.subtract(passPoints)
-                        .divide(totalDecimalPoints.subtract(passPoints), 3, RoundingMode.HALF_UP))
+                        .divide(totalDecimalPoints.subtract(passPoints), 9, RoundingMode.HALF_UP)).setScale(2, RoundingMode.HALF_UP)
                         .add(PASS_GRADE);
             }
         } catch(Exception ex) {
@@ -72,7 +72,7 @@ public class GradeUtils {
             return StringUtils.EMPTY;
         }
 
-        convertedGrade = convertedGrade.setScale(1,  RoundingMode.HALF_UP);
+        convertedGrade = convertedGrade.setScale(1, RoundingMode.HALF_UP);
         log.debug("Mapping grade to the {} scale, {} earnedPoints, {} totalPoints, converted grade {}.", PASS_PERCENT, earnedPoints, totalPoints, convertedGrade);
         return convertedGrade.toString();
     }
