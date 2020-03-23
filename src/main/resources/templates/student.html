@@ -17,7 +17,9 @@
   </thead>
   <tbody>
   <tr th:each="assignment : ${assignmentList}" th:if="${assignment.muted == 'false'}">
-    <td th:text="${assignment.name}">an assignment name</td>
+    <td>
+      <a th:text="${assignment.name}" th:href="${canvasBaseUrl + '/courses/' + courseId + '/assignments/' + assignment.id + '/submissions/' + userId}" target="_blank">an assignment name</a>
+    </td>
     <td>
       <span th:if="${assignment.omitFromFinalGrade}" class="fas fa-exclamation-circle" th:title="#{instructor_header_omit_final_grade}"></span>
       <span th:if="${assignment.muted == 'true'}" class="fas fa-bell-slash" th:title="#{instructor_header_muted_assignment}"></span>

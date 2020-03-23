@@ -531,6 +531,8 @@ public class IndexController {
             model.addAttribute("assignmentGroupList", assignmentGroupList);
             model.addAttribute("assignmentGroupNameMap", assignmentGroupNameMap);
             model.addAttribute("userId", canvasUserId);
+            model.addAttribute("canvasBaseUrl", canvasBaseUrl);
+            model.addAttribute("courseId", courseId);
             stopwatch.stop();
             log.info("Get all the submissions for the student took {} for {} assignments.", stopwatch, gradeMap.size());
 
