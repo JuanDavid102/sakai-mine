@@ -19,6 +19,38 @@
   <tr th:each="assignment : ${assignmentList}" th:if="${assignment.muted == 'false'}">
     <td>
       <a th:text="${assignment.name}" th:href="${canvasBaseUrl + '/courses/' + courseId + '/assignments/' + assignment.id + '/submissions/' + userId}" target="_blank">an assignment name</a>
+      <span th:if="${assignmentStats.containsKey(assignment.id)}" class="fas fa-fw fa-chart-bar cursor-pointer" data-toggle="modal" th:attr="data-target=${'#assignment' + assignment.id}"></span>
+      <!-- Modal Assignment Details -->
+      <div th:if="${assignmentStats.containsKey(assignment.id)}" class="modal fade" th:id="${'assignment' + assignment.id}" tabindex="-1" role="dialog" aria-labelledby="assignmentDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" th:text="#{instructor_details_modal_title(${assignment.name})}">an assignment name</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="row">
+                <div class="col-sm-7"><span th:text="#{instructor_details_modal_label_mean}"></span></div>
+                <div class="col-sm-5"><span th:text="${assignmentStats.get(assignment.id).averageScore}"></span></div>
+              </div>
+              <div class="row">
+                <div class="col-sm-7"><span th:text="#{instructor_details_modal_label_max}"></span></div>
+                <div class="col-sm-5"><span th:text="${assignmentStats.get(assignment.id).highestGrade}"></span></div>
+              </div>
+              <div class="row">
+                <div class="col-sm-7"><span th:text="#{instructor_details_modal_label_min}"></span></div>
+                <div class="col-sm-5"><span th:text="${assignmentStats.get(assignment.id).lowestGrade}"></span></div>
+              </div>
+              <div class="row">
+                <div class="col-sm-7"><span th:text="#{instructor_details_modal_label_total}"></span></div>
+                <div class="col-sm-5"><span th:text="#{instructor_details_modal_total(${assignmentStats.get(assignment.id).submissions})}"></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </td>
     <td>
       <span th:if="${assignment.omitFromFinalGrade}" class="fas fa-exclamation-circle" th:title="#{instructor_header_omit_final_grade}"></span>

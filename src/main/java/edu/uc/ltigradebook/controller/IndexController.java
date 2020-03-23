@@ -18,6 +18,7 @@ import edu.uc.ltigradebook.constants.LtiConstants;
 import edu.uc.ltigradebook.constants.TemplateConstants;
 import edu.uc.ltigradebook.dao.BannerServiceDao;
 import edu.uc.ltigradebook.entity.AssignmentPreference;
+import edu.uc.ltigradebook.entity.AssignmentStatistic;
 import edu.uc.ltigradebook.entity.CoursePreference;
 import edu.uc.ltigradebook.entity.Event;
 import edu.uc.ltigradebook.entity.StudentGrade;
@@ -51,8 +52,10 @@ import org.springframework.web.servlet.i18n.SessionLocaleResolver;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -105,6 +108,7 @@ public class IndexController {
     private String canvasBaseUrl;
 
     private static final String GRADE_NOT_AVAILABLE = "-";
+    private static final String[] ASSIGNMENT_STATISTIC_INVALID_VALUES = new String[]{"","-","A+","A","A-","B+","B","B-","C+","C","C-","D+","D","D-","F"};
     private static final String SPEED_GRADER_URL = "%s/courses/%s/gradebook/speed_grader?assignment_id=%s";
 
     @GetMapping("/")
@@ -293,6 +297,7 @@ public class IndexController {
             stopwatch.reset();
             stopwatch.start();
             List<List<String>> studentRowList = new ArrayList<>();
+            Map<String, List<BigDecimal>> assignmentStatisticsMap = new HashMap<>();
 
             for (User user : userList) {
                 String sisUserId = user.getSisUserId();
@@ -392,6 +397,12 @@ public class IndexController {
                     cellSettings.put("gradeTypeNotSupported", gradeTypeNotSupported);
                     userSettings.add(cellSettings);
                     userGrades.add(StringUtils.isNotBlank(grade) ? grade : GRADE_NOT_AVAILABLE);
+
+                    if (!Arrays.asList(ASSIGNMENT_STATISTIC_INVALID_VALUES).contains(grade)) {
+                        List<BigDecimal> assignmentGrades = assignmentStatisticsMap.getOrDefault(assignmentId, new ArrayList<>());
+                        assignmentGrades.add(new BigDecimal(grade));
+                        assignmentStatisticsMap.put(assignmentId, assignmentGrades);
+                    }
                 }
 
                 //Add The last columns, assignment groups and totals
@@ -402,6 +413,37 @@ public class IndexController {
 
                 cellRowListSettings.add(userSettings);
                 studentRowList.add(userGrades);
+            }
+
+            for (Assignment assignment : assignmentList) {
+                AssignmentStatistic assignmentStats = new AssignmentStatistic();
+                assignmentStats.setAssignmentId(assignment.getId());
+                BigDecimal gradesSum = BigDecimal.ZERO;
+                BigDecimal maximumGrade = BigDecimal.ZERO;
+                BigDecimal minimumGrade = BigDecimal.TEN;
+                List<BigDecimal> assignmentGrades = (ArrayList) assignmentStatisticsMap.getOrDefault(String.valueOf(assignment.getId()), new ArrayList<>());
+                if (assignmentGrades.isEmpty()) {
+                    assignmentStats.setAverageScore(GRADE_NOT_AVAILABLE);
+                    assignmentStats.setHighestGrade(GRADE_NOT_AVAILABLE);
+                    assignmentStats.setLowestGrade(GRADE_NOT_AVAILABLE);
+                    assignmentStats.setSubmissions(0);
+
+                } else {
+                    for (BigDecimal grade : assignmentGrades) {
+                        gradesSum = gradesSum.add(grade);
+                        if (grade.compareTo(minimumGrade) < 0) {
+                            minimumGrade = grade;
+                        }
+                        if (grade.compareTo(maximumGrade) > 0) {
+                            maximumGrade = grade;
+                        }
+                    }
+                    assignmentStats.setAverageScore(gradesSum.divide(new BigDecimal(assignmentGrades.size()), 1, RoundingMode.HALF_UP).toString());
+                    assignmentStats.setHighestGrade(maximumGrade.toString());
+                    assignmentStats.setLowestGrade(minimumGrade.toString());
+                    assignmentStats.setSubmissions(assignmentGrades.size());
+                }
+                assignmentService.saveAssignmentStatistic(assignmentStats);
             }
 
             //Model: Data sent to the UI
@@ -459,10 +501,13 @@ public class IndexController {
             stopwatch.reset();
             stopwatch.start();
             Map<Integer, String> gradeMap = new HashMap<Integer, String>();
+            Map<Integer, AssignmentStatistic> assignmentStats = new HashMap<>();
             ExecutorService executorService = Executors.newCachedThreadPool();
             for (Assignment assignment : assignmentList) {
                 String assignmentId = String.valueOf(assignment.getId());
                 Optional<AssignmentPreference> assignmentPref = assignmentService.getAssignmentPreference(assignmentId);
+                Optional<AssignmentStatistic> assignmentStat = assignmentService.getAssignmentStatistic(assignmentId);
+                if (assignmentStat.isPresent()) assignmentStats.put(assignment.getId(), assignmentStat.get());
                 /*boolean assignmentIsMuted = "true".equals(assignment.getMuted());
                 boolean omitFromFinalGrade = assignment.isOmitFromFinalGrade();*/
 
@@ -527,6 +572,7 @@ public class IndexController {
 
             //Model: Data sent to the UI
             model.addAttribute("gradeMap", gradeMap);
+            model.addAttribute("assignmentStats", assignmentStats);
             model.addAttribute("assignmentList", assignmentList);
             model.addAttribute("assignmentGroupList", assignmentGroupList);
             model.addAttribute("assignmentGroupNameMap", assignmentGroupNameMap);
