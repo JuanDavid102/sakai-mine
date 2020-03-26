@@ -461,7 +461,15 @@ public class IndexController {
             //model.addAttribute("isAdminUser", securityService.isAdminUser(canvasLoginId) || lld.getRolesList().contains(InstitutionRole.Administrator));
             model.addAttribute("isAdminUser", false);
             //Display the banner options
-            model.addAttribute("isBannerEnabled", securityService.isBannerEnabled(canvasService.getSingleCourse(courseId).get().getAccountId()));
+            boolean bannerEnabled = false;
+            Optional<Course> courseOptional = canvasService.getSingleCourse(courseId);
+            if (courseOptional.isPresent()) {
+                Optional<Account> mainSubAccount = canvasService.getSubAccountForCourseAccount(String.valueOf(courseOptional.get().getAccountId()));
+                if (mainSubAccount.isPresent()) {
+                    bannerEnabled = securityService.isBannerEnabled(mainSubAccount.get().getId());
+                }
+            }
+            model.addAttribute("isBannerEnabled", bannerEnabled);
             //Add the course preferences
             model.addAttribute("coursePreference", coursePreference);
             stopwatch.stop();

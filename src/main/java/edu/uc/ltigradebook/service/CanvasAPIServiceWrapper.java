@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -173,14 +174,34 @@ public class CanvasAPIServiceWrapper {
             List<Account> subaccountList = accountReader.getSubAccounts(options);
             //Add a second level of accounts
             allAccountList.addAll(subaccountList);
-            //Add a third level of accounts
-            for(Account subAccount : subaccountList) {
+            //Add a third level of accounts. Removed in March 2020 due to changes to the banner preferences.
+            /*for(Account subAccount : subaccountList) {
                 GetSubAccountsOptions subOptions = new GetSubAccountsOptions(String.valueOf(subAccount.getId()));
                 allAccountList.addAll(accountReader.getSubAccounts(subOptions));
-            }
+            }*/
         }
 
         return allAccountList;
+    }
+
+    public Optional<Account> getSubAccountForCourseAccount(String accountId) throws IOException {
+        OauthToken oauthToken = this.getRandomOauthToken();
+        AccountReader accountReader = canvasApiFactory.getReader(AccountReader.class, oauthToken);
+        List<Integer> subaccountIdList = this.getSubaccounts().stream().map(account -> account.getId()).collect(Collectors.toList());
+        Optional<Account> accountOptional = accountReader.getSingleAccount(accountId);
+        // Check if the account of the course exists.
+        if (accountOptional.isPresent()) {
+            Integer subAccountId = accountOptional.get().getId();
+            // While the account of the course is not in the list of main subaccounts, we need to explore the parent accounts
+            while (!subaccountIdList.contains(subAccountId)) {
+                // Check the parent account, if the parent account is a main subaccount, we got it.
+                subAccountId = accountOptional.get().getParentAccountId();
+                accountOptional = accountReader.getSingleAccount(String.valueOf(subAccountId));
+            }
+            return accountOptional;
+        } else {
+            return Optional.empty();
+        }
     }
 
     public void createConversation(List<String> userIds, String subject, String bodyMessage) throws IOException {
