@@ -12,10 +12,16 @@ import edu.ksu.lti.launch.oauth.LtiPrincipal;
 
 import edu.uc.ltigradebook.constants.EventConstants;
 import edu.uc.ltigradebook.constants.LtiConstants;
+import edu.uc.ltigradebook.entity.AssignmentPreference;
 import edu.uc.ltigradebook.entity.CoursePreference;
 import edu.uc.ltigradebook.entity.StudentGrade;
+import edu.uc.ltigradebook.exception.GradeException;
+import edu.uc.ltigradebook.service.AssignmentService;
 import edu.uc.ltigradebook.service.CanvasAPIServiceWrapper;
 import edu.uc.ltigradebook.service.CourseService;
+import edu.uc.ltigradebook.service.EventTrackingService;
+import edu.uc.ltigradebook.service.GradeService;
+import edu.uc.ltigradebook.service.SecurityService;
 import edu.uc.ltigradebook.util.GradeUtils;
 
 import com.opencsv.CSVParser;
@@ -23,12 +29,6 @@ import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.CSVWriter;
-import edu.uc.ltigradebook.entity.AssignmentPreference;
-import edu.uc.ltigradebook.exception.GradeException;
-import edu.uc.ltigradebook.service.AssignmentService;
-import edu.uc.ltigradebook.service.EventTrackingService;
-import edu.uc.ltigradebook.service.GradeService;
-import edu.uc.ltigradebook.service.SecurityService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -56,6 +56,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -66,6 +67,8 @@ import java.util.StringJoiner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Controller
@@ -120,7 +123,7 @@ public class CsvController {
             //CSV separator is comma unless the comma is the decimal separator, then is ;
             try (OutputStreamWriter fstream = new OutputStreamWriter(new FileOutputStream(tempFile), StandardCharsets.UTF_8.name())){
                 fstream.write(BOM);
-                CSVWriter csvWriter = new CSVWriter(fstream, ".".equals(",") ? CSVWriter.DEFAULT_SEPARATOR : CSV_SEPARATOR, CSVWriter.DEFAULT_QUOTE_CHARACTER, CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.RFC4180_LINE_END);
+                CSVWriter csvWriter = new CSVWriter(fstream, CSV_SEPARATOR, CSVWriter.DEFAULT_QUOTE_CHARACTER, CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.RFC4180_LINE_END);
 
                 // Create csv header
                 List<String> header = new ArrayList<>();
@@ -300,8 +303,12 @@ public class CsvController {
         boolean errors = false;
 
         try (BufferedReader br = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
+            Stream<String> lines = br.lines();
+            List<String> replaced = lines.map(line -> line.replaceAll(",", ";")).collect(Collectors.toList());
+            BufferedReader newBr = new BufferedReader(new StringReader(String.join("\n", replaced)));
+
             CSVParser parser = new CSVParserBuilder().withSeparator(CSV_SEPARATOR).build();
-            CSVReader csvReader = new CSVReaderBuilder(br).withCSVParser(parser).build();
+            CSVReader csvReader = new CSVReaderBuilder(newBr).withCSVParser(parser).build();
             List<Assignment> assignmentList = canvasService.listCourseAssignments(courseId);
             Map<String, List<Submission>> submissionsMap = new HashMap<>();
             ExecutorService executorService = Executors.newCachedThreadPool();
