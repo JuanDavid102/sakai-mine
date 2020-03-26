@@ -281,10 +281,10 @@ public class GradeService {
                     boolean isZeroPoints = assignment.getPointsPossible() == null || assignment.getPointsPossible().equals(new Double(0));
                     boolean isVisibleForUser = assignment.getAssignmentVisibility().stream().anyMatch(studentId.toString()::equals);
 
-                    // Skip if assignment is not in the group, assignment is muted, grade is omitted from final grade or assignment possible points is zero
+                    // Skip if assignment is not in the group, assignment is muted and you are getting user current grade, grade is omitted from final grade or assignment possible points is zero
                     if (assignmentIsMuted) mutedAssignments.put(assignmentJson);
                     else if (omitFromFinalGrade) omittedAssignments.put(assignmentJson);
-                    if (assignmentIsMuted || omitFromFinalGrade || isZeroPoints || !isVisibleForUser) continue;
+                    if ((assignmentIsMuted && isCurrentGrade) || omitFromFinalGrade || isZeroPoints || !isVisibleForUser) continue;
 
                     String grade = submission.getGrade();
                     boolean gradeTypeNotSupported = false;
@@ -317,7 +317,8 @@ public class GradeService {
                     }
 
                     if (!gradeTypeNotSupported) {
-                        if (StringUtils.isBlank(grade)) {
+                        if (StringUtils.isBlank(grade) || assignmentIsMuted) {
+                            // If there is no grade or assignment is muted, and you are getting the final grade for the user:
                             if (!isCurrentGrade) {
                                 calculateFinalGrade = false;
                                 break;
