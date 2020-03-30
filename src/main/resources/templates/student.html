@@ -68,7 +68,18 @@
     </td>
   </tr>
   <tr>
-    <td th:text="#{shared_total}">TOTAL</td>
+    <td th:text="#{shared_current_grade}">TOTAL</td>
+    <td>
+      <div id="spinnerCurrent" class="spinner-border student-spinner" role="status">
+        <span class="sr-only" th:text="#{instructor_spinner_loading}">Loading</span>
+      </div>
+      <span id="currentGrade"></span>
+    </td>
+    <td th:text="#{shared_total}">TOTALCATEGORY</td>
+    <td class="d-none"></td>
+  </tr>
+  <tr>
+    <td th:text="#{shared_final_grade}">TOTAL</td>
     <td>
       <div id="spinnerFinal" class="spinner-border student-spinner" role="status">
         <span class="sr-only" th:text="#{instructor_spinner_loading}">Loading</span>
@@ -133,6 +144,7 @@
         });
       },
       'paging': false,
+      'info': false,
       'language': {
         'search': search,
         'lengthMenu': lengthMenu,
@@ -156,6 +168,7 @@
         var groupId = obj.id;
         calcGroupGrade(groupId, userId, 0, 0);
       });
+      calcFinalGrade(userId, true);
       calcFinalGrade(userId, false);
     });
 
@@ -185,8 +198,13 @@
 
       }).done(function(response) {
         if (response.grade === '-') response.grade = messages.student_grade_not_available;
-        $('#spinnerFinal').addClass('d-none');
-        createQtip($('#finalGrade')[0], response);
+        if (isCurrentGrade) {
+          $('#spinnerCurrent').addClass('d-none');
+          createQtip($('#currentGrade')[0], response);
+        } else {
+          $('#spinnerFinal').addClass('d-none');
+          createQtip($('#finalGrade')[0], response);
+        }
       });
     }
 
@@ -253,6 +271,7 @@
       var groupId = obj.id;
       calcGroupGrade(groupId, userId, 0, 0);
     });
+    calcFinalGrade(userId, true);
     calcFinalGrade(userId, false);
     /**** END OF GROUP AND FINAL GRADES ****/
   });
