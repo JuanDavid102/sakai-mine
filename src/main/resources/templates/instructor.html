@@ -355,6 +355,8 @@
     const MSG_TYPE_LESS_THAN = 2;
     const MSG_TYPE_MORE_THAN = 3;
 
+    var groupWeightsAre100 = /*[[${!groupWeightsNot100}]]*/;
+
     window.GbGradeTable = { _onReadyCallbacks: [] };
     var assignmentGroupArray = /*[[${assignmentGroupArray}]]*/;
     var columns = /*[[${tableHeaderList}]]*/;
@@ -578,7 +580,9 @@
                   if (!settings.omitFromFinalGrade && !settings.assignmentIsMuted && !settings.isZeroPoints) {
                     calcGroupGrade(groupId, userId, this.custom.physicalRow, true);
                     calcFinalGrade(userId, this.custom.physicalRow, true, true);
-                    calcFinalGrade(userId, this.custom.physicalRow, false, true);
+                    if (groupWeightsAre100) {
+                      calcFinalGrade(userId, this.custom.physicalRow, false, true);
+                    }
                   }
 
                 }).fail(function() {
@@ -1241,7 +1245,11 @@
         ajaxRequests.push(calcGroupGrade(sortedArray[idx].groupId, userId, i, false));
       });
       ajaxRequests.push(calcFinalGrade(userId, i, true, false));
-      ajaxRequests.push(calcFinalGrade(userId, i, false, false));
+      if (groupWeightsAre100) {
+        ajaxRequests.push(calcFinalGrade(userId, i, false, false));
+      } else {
+        ajaxRequests.push(GRADE_NOT_AVAILABLE);
+      }
     }
     Promise.all(ajaxRequests).then((arr) => {
       var newArr = [];
