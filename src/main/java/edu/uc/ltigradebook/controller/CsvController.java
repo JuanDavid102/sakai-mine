@@ -411,6 +411,7 @@ public class CsvController {
                             gradeService.deleteGrade(studentGrade);
                         } else if (saveGrade) {
                             eventTrackingService.postEvent(EventConstants.IMPORT_POST_GRADE, canvasUserId, courseId, eventDetailsJson.toString());
+                            newGrade = GradeUtils.roundGrade(newGrade);
                             studentGrade.setGrade(newGrade);
                             gradeService.saveGrade(studentGrade);
                         }
