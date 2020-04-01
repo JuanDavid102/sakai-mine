@@ -391,7 +391,7 @@ public class GradeService {
                             assignmentWeightSum = assignmentWeightSum.add(new BigDecimal(assignmentGroup.getGroupWeight()));
                         }
                     }
-                    if ((assignmentWeightSum.compareTo(new BigDecimal(100)) < 0 && !isCurrentGrade) || assignmentWeightSum.equals(BigDecimal.ZERO)) {
+                    if ((assignmentWeightSum.compareTo(new BigDecimal(100)) != 0 && !isCurrentGrade) || assignmentWeightSum.equals(BigDecimal.ZERO)) {
                         json.put("grade", GRADE_NOT_AVAILABLE);
                         return json;
                     }
