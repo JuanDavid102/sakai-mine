@@ -851,10 +851,18 @@ public class IndexController {
         String courseId = ltiSession.getCanvasCourseId();
         String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
         String canvasLoginId = ltiPrincipal.getUser();
-        log.info("The user {} with id {} is entering the banner view.", canvasLoginId, canvasUserId);
         boolean userIsCourseMainInstructor = false;
         try {
             List<User> courseUsers = canvasService.getUsersInCourse(courseId);
+            // We need the SIS ID of the user because Banner use the RUT instead of the login or the ID.
+            Optional<User> optionalUser = canvasService.getTeachersInCourse(courseId).stream().filter(user -> user.getId() == Integer.valueOf(canvasUserId)).findFirst();
+            if (!optionalUser.isPresent()) {
+                log.error("Fatal error locating user sis identifier using canvas id {}.", canvasUserId);
+                return new ModelAndView(TemplateConstants.ERROR_TEMPLATE);
+            }
+            String sisUserId = optionalUser.get().getSisUserId();
+
+            log.info("The user {} with id {} is entering the banner view.", canvasLoginId, canvasUserId, sisUserId);
 
             JSONObject userSections = new JSONObject();
             List<Section> sectionList = canvasService.getSectionsInCourse(courseId);
@@ -871,9 +879,9 @@ public class IndexController {
                     String nrcCode = splittedSectionId[1];
                     /*String courseInitials = splittedSectionId[2];
                     String sectionNumber = splittedSectionId[3];*/
-                    userIsCourseMainInstructor = bannerServiceDao.isCourseMainInstructor(nrcCode, academicPeriod, canvasLoginId);
+                    userIsCourseMainInstructor = bannerServiceDao.isCourseMainInstructor(nrcCode, academicPeriod, sisUserId);
                     if(userIsCourseMainInstructor) {
-                        bannerGrades.putAll(bannerServiceDao.getBannerUserListFromCourse(nrcCode, academicPeriod, canvasLoginId));
+                        bannerGrades.putAll(bannerServiceDao.getBannerUserListFromCourse(nrcCode, academicPeriod, sisUserId));
                     }
                 } catch(Exception e) {
                     log.error("Cannot get the banner grades from the section {}.", section.getSisSectionId());
