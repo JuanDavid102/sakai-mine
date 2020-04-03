@@ -96,16 +96,17 @@ public class BannerServiceDao {
             //Construct the store procedure call
             String readCourseMainInstructor = String.format("select count(1) from sirasgn, ssbsect where sirasgn_term_code = ssbsect_term_code and sirasgn_crn = ssbsect_crn and "+
                     "sirasgn_primary_ind = 'Y' and "+
-                    "SIRASGN_term_code = %s and "+
-                    "SIRASGN_PIDM = %s and "+
+                    "sirasgn_term_code = %s and "+
+                    "sirasgn_pidm =(select spriden_pidm from spriden where spriden_id = '%s' AND spriden_change_ind is null) and " +
                     "ssbsect_crn = %s", 
+                    
                     periodId, teacherId, ncrCode);
             log.info(readCourseMainInstructor);
 
             //Call the procedure
             Integer result = getJdbcTemplate().queryForObject(readCourseMainInstructor, Integer.class);
 
-            return result.equals(new Integer(1));
+            return new Integer(1).equals(result);
         } catch (Exception e) {
             log.error("Fatal error checking the course main instructor.", e);
         }
@@ -165,7 +166,7 @@ public class BannerServiceDao {
         try {
             //Construct the store procedure call
             String insertBannerString = String.format("call pk_adap_15_carga_nota.sp_ingresa_calificacion ('%s', '%s', '%s', '%s' , '%s' , '%s')", cod_ncr, nota, rut_alumno, rut_profesor, StringUtils.EMPTY, ano_periodo_banner);
-            log.debug(insertBannerString);
+            log.info(insertBannerString);
 
             //Call the procedure
             getJdbcTemplate().update(insertBannerString);

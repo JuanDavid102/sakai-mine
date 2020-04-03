@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @RestController
@@ -112,7 +113,13 @@ public class GradeRestController {
             throw new GradeException();
         }
 
-        String instructorRUT = ltiPrincipal.getUser();
+        // We need the SIS ID of the user because Banner use the RUT instead of the login or the ID.
+        Optional<User> optionalUser = canvasService.getTeachersInCourse(courseId).stream().filter(user -> user.getId() == Integer.valueOf(canvasUserId)).findFirst();
+        if (!optionalUser.isPresent()) {
+            log.error("Fatal error locating user sis identifier using canvas id {}.", canvasUserId);
+            throw new GradeException();
+        }
+        String sisUserId = optionalUser.get().getSisUserId();
         List<User> userList = canvasService.getUsersInCourse(courseId);
         //Associate the users with the sections
         Map<String, String> studentSectionMap = new HashMap<String, String>();
@@ -139,7 +146,7 @@ public class GradeRestController {
                 String nrcCode = splittedSectionId[1];
                 /*String courseInitials = splittedSectionId[2];
                 String sectionNumber = splittedSectionId[3];*/
-                bannerServiceDao.sendGradeToBanner(nrcCode, grade, userId, instructorRUT, academicPeriod);
+                bannerServiceDao.sendGradeToBanner(nrcCode, grade, userId, sisUserId, academicPeriod);
             } catch(Exception e) {
                 log.error("Cannot send the grade {} to the student {}.", userId, grade, e);
             }
