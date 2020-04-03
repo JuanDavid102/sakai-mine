@@ -50,6 +50,7 @@ Las propiedades más importantes a configurar son:
 | banner.datasource.driver-class-name | Drivers de conexión al esquema de Banner. | oracle.jdbc.driver.OracleDriver | oracle.jdbc.driver.OracleDriver |
 | banner.datasource.url | URL de conexión al esquema de Banner. | - | jdbc:oracle:thin:@localhost:1521:ORCL |
 | banner.datasource.connectionInitSql | SQL de inicialización. | - | SET ROLE rol_banner_lms_carga_notas identified by rlms_carga1911 |
+| logging.level.edu.uc.ltigradebook | Modificar el nivel de logging, habilitar DEBUG para depuración. | INFO | DEBUG |
 
 ## Ejecución
 Para ejecutar el código necesitamos configurar correctamente la aplicación y lanzar el siguiente comando:
