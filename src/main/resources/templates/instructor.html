@@ -622,8 +622,14 @@
 
     function cellBlankRenderer(instance, td, row, col, prop, value, cellProperties) {
       Handsontable.renderers.TextRenderer.apply(this, arguments);
-      var html =  '<div>' + 
-                    td.innerHTML;
+      var html = '';
+      // Set title to first 3 columns (RUT, Student Name and Section)
+      if (col <= 2) {
+        html += '<div title="' + td.innerHTML + '">';
+      } else {
+        html += '<div>';
+      }
+      html += td.innerHTML;
       if (cellProperties.speedGraderUrl != undefined) {
         html += '<a title="' + messages.instructor_dropdown_speed_grader + '" class="fas fa-external-link-alt speed-grader" aria-hidden="true" href="' + cellProperties.speedGraderUrl + '" + target="_blank"></a>';
       }
