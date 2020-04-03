@@ -30,7 +30,7 @@ public class TokenRefresher {
         List<OauthToken> oauthTokenList = new ArrayList<OauthToken>();
         tokenService.getAllTokens().forEach(oauthTokenList::add);
         if (oauthTokenList.isEmpty()) {
-            log.warn("IMPORTANT: Please configure some authentication tokens or the gradebook application may fail in high load conditions.");
+            log.warn("IMPORTANT: Please provide some authentication tokens using the administration area or the gradebook application may fail in high load conditions.");
             return;
         }
 

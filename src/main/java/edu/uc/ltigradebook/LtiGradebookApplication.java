@@ -53,7 +53,7 @@ public class LtiGradebookApplication {
 
     @Bean
     public CanvasApiFactory canvasApiFactory() {
-        log.info("Creating Canvas API Factory using this domain {}.", canvasBaseUrl);
+        log.info("Creating Canvas API Factory for the domain {}.", canvasBaseUrl);
         return new CanvasApiFactory(canvasBaseUrl);
     }
 

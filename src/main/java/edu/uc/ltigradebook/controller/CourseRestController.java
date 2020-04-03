@@ -48,7 +48,7 @@ public class CourseRestController {
             return false;
         }
 
-        log.info("Set conversion scale to {} for the course {}.", newConversionScale, courseId);
+        log.debug("Set conversion scale to {} for the course {}.", newConversionScale, courseId);
         CoursePreference coursePreferences = courseService.getCoursePreference(courseId);
         switch (newConversionScale) {
             case "FIFTY":

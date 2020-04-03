@@ -60,15 +60,15 @@ public class GradeService {
     }
 
     public void saveGrade(StudentGrade studentGrade) {
-        log.info("Saving grade {} for the user {} and assignment {}.", studentGrade.getGrade(), studentGrade.getUserId(), studentGrade.getAssignmentId());
+        log.debug("Saving grade {} for the user {} and assignment {}.", studentGrade.getGrade(), studentGrade.getUserId(), studentGrade.getAssignmentId());
         gradeRepository.save(studentGrade);
-        log.info("Grade saved successfully");
+        log.debug("Grade saved successfully");
     }
 
     public void deleteGrade(StudentGrade studentGrade) {
-        log.info("Deleting grade for the user {} and assignment {}.", studentGrade.getUserId(), studentGrade.getAssignmentId());
+        log.debug("Deleting grade for the user {} and assignment {}.", studentGrade.getUserId(), studentGrade.getAssignmentId());
         gradeRepository.delete(studentGrade);
-        log.info("Grade deleted successfully");
+        log.debug("Grade deleted successfully");
     }
 
     public long getGradeCount() {

@@ -32,15 +32,15 @@ public class TokenService {
     }
 
     public void saveToken(OauthToken oauthToken) {
-        log.info("Saving token for the user {}.", oauthToken.getCreatedBy());
+        log.debug("Saving token for the user {}.", oauthToken.getCreatedBy());
         tokenRepository.save(oauthToken);
-        log.info("Token saved successfully");
+        log.debug("Token saved successfully");
     }
 
     public void deleteToken(OauthToken oauthToken) {
-        log.info("Deleting the token by the user {}.", oauthToken.getCreatedBy());
+        log.debug("Deleting the token by the user {}.", oauthToken.getCreatedBy());
         tokenRepository.delete(oauthToken);
-        log.info("Token deleted successfully");
+        log.debug("Token deleted successfully");
     }
 
 }

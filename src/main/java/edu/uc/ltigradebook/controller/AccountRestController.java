@@ -58,7 +58,7 @@ public class AccountRestController {
             throw new AccountException();
         }
 
-        log.info("Saving banner account preferences {}.", accountPreference);
+        log.debug("Saving banner account preferences {}.", accountPreference);
 
         if(StringUtils.isNotBlank(accountPreference.getBannerFromStringDate())) {
             accountPreference.setBannerFromDate(DateUtils.convertDateToInstant(accountPreference.getBannerFromStringDate()));
@@ -73,7 +73,7 @@ public class AccountRestController {
         }
 
         accountService.saveAccountPreferences(accountPreference);
-        log.info("Account {} preferences saved successfully.", accountPreference);
+        log.debug("Account {} preferences saved successfully.", accountPreference);
 
         // Post an event
         eventTrackingService.postEvent(EventConstants.ADMIN_SAVE_BANNER, userId, StringUtils.EMPTY, eventDetails);
@@ -94,7 +94,7 @@ public class AccountRestController {
             throw new AccountException();
         }
 
-        log.info("Deleting banner account preferences for the account {}.", accountId);
+        log.debug("Deleting banner account preferences for the account {}.", accountId);
 
         long longAccountId = Long.MIN_VALUE;
         try {
@@ -107,7 +107,7 @@ public class AccountRestController {
         Optional<AccountPreference> accountServiceOptional = accountService.getAccountPreferences(longAccountId);
         if (accountServiceOptional.isPresent()) {
             accountService.deleteAccountPreferences(accountServiceOptional.get());
-            log.info("Account {} preferences deleted successfully.", accountId);
+            log.debug("Account {} preferences deleted successfully.", accountId);
 
             // Post an event
             eventTrackingService.postEvent(EventConstants.ADMIN_DELETE_BANNER, userId, StringUtils.EMPTY, eventDetails);

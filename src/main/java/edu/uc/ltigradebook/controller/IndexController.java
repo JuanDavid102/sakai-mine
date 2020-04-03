@@ -122,7 +122,7 @@ public class IndexController {
     public ModelAndView index(@ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, Model model, @RequestParam(required=false) Boolean errors) {
         try {
             LtiLaunchData lld = ltiSession.getLtiLaunchData();
-            log.info("Debugging ltiLaunch Object:\n"+ReflectionToStringBuilder.toString(lld));
+            log.debug("Debugging ltiLaunch Object:\n"+ReflectionToStringBuilder.toString(lld));
             String canvasLoginId = ltiPrincipal.getUser();
             String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
             String courseId = ltiSession.getCanvasCourseId();
@@ -165,13 +165,13 @@ public class IndexController {
         String canvasLoginId = ltiPrincipal.getUser();
         String courseId = ltiSession.getCanvasCourseId();
         CoursePreference coursePreference = courseService.getCoursePreference(courseId);
-        log.info("The user {} with id {} is entering the instructor view.", canvasLoginId, canvasUserId);
+        log.debug("The user {} with id {} is entering the instructor view.", canvasLoginId, canvasUserId);
 
         try {
             StopWatch stopwatch = StopWatch.createStarted();
             List<User> userList = canvasService.getUsersInCourse(courseId);
             stopwatch.stop();
-            log.info("getUsersInCourse took {} for {} users.", stopwatch, userList.size());
+            log.debug("getUsersInCourse took {} for {} users.", stopwatch, userList.size());
             
             stopwatch.reset();
             stopwatch.start();
@@ -181,7 +181,7 @@ public class IndexController {
                 sectionMap.put(String.valueOf(section.getId()), section.getName());
             }
             stopwatch.stop();
-            log.info("getSectionsInCourse took {} for {} sections.", stopwatch, sectionList.size());
+            log.debug("getSectionsInCourse took {} for {} sections.", stopwatch, sectionList.size());
 
             stopwatch.reset();
             stopwatch.start();
@@ -197,19 +197,19 @@ public class IndexController {
             model.addAttribute("exportFileName", exportFileName);
             model.addAttribute("courseName", courseName);
             stopwatch.stop();
-            log.info("getSingleCourse took {}.", stopwatch);
+            log.debug("getSingleCourse took {}.", stopwatch);
 
             stopwatch.reset();
             stopwatch.start();
             List<Assignment> assignmentList = canvasService.listCourseAssignments(courseId);
             stopwatch.stop();
-            log.info("listCourseAssignments took {} for {} assignments.", stopwatch, assignmentList.size());
+            log.debug("listCourseAssignments took {} for {} assignments.", stopwatch, assignmentList.size());
             
             stopwatch.reset();
             stopwatch.start();
             List<AssignmentGroup> assignmentGroupList = canvasService.listAssignmentGroups(courseId);
             stopwatch.stop();
-            log.info("listAssignmentGroups took {} for {} groups.", stopwatch, assignmentGroupList.size());
+            log.debug("listAssignmentGroups took {} for {} groups.", stopwatch, assignmentGroupList.size());
 
             stopwatch.reset();
             stopwatch.start();
@@ -292,7 +292,7 @@ public class IndexController {
             RIGHT_READ_ONLY_COLS = RIGHT_READ_ONLY_COLS + 2;
 
             stopwatch.stop();
-            log.info("Building all the gradebook table took {} for {} assignments.", stopwatch, submissionsMap.size());
+            log.debug("Building all the gradebook table took {} for {} assignments.", stopwatch, submissionsMap.size());
 
             stopwatch.reset();
             stopwatch.start();
@@ -473,7 +473,7 @@ public class IndexController {
             //Add the course preferences
             model.addAttribute("coursePreference", coursePreference);
             stopwatch.stop();
-            log.info("fill the instructor view took {} for {} students.", stopwatch, studentRowList.size());
+            log.debug("fill the instructor view took {} for {} students.", stopwatch, studentRowList.size());
             //Post an event to the tracking service
             eventTrackingService.postEvent(EventConstants.INSTRUCTOR_ACCESS, canvasUserId, courseId);
             return new ModelAndView(TemplateConstants.INSTRUCTOR_TEMPLATE);
@@ -490,7 +490,7 @@ public class IndexController {
         String canvasLoginId = ltiPrincipal.getUser();
         String courseId = ltiSession.getCanvasCourseId();
         CoursePreference coursePreference = courseService.getCoursePreference(courseId);
-        log.info("The user {} with id {} is entering the student view.", canvasLoginId, canvasUserId);
+        log.debug("The user {} with id {} is entering the student view.", canvasLoginId, canvasUserId);
 
         try {
             StopWatch stopwatch = StopWatch.createStarted();
@@ -498,13 +498,13 @@ public class IndexController {
             stopwatch.start();
             List<Assignment> assignmentList = canvasService.listCourseAssignments(courseId);
             stopwatch.stop();
-            log.info("listCourseAssignments took {} for {} assignments.", stopwatch, assignmentList.size());
+            log.debug("listCourseAssignments took {} for {} assignments.", stopwatch, assignmentList.size());
             
             stopwatch.reset();
             stopwatch.start();
             List<AssignmentGroup> assignmentGroupList = canvasService.listAssignmentGroups(courseId);
             stopwatch.stop();
-            log.info("listAssignmentGroups took {} for {} groups.", stopwatch, assignmentGroupList.size());
+            log.debug("listAssignmentGroups took {} for {} groups.", stopwatch, assignmentGroupList.size());
 
             stopwatch.reset();
             stopwatch.start();
@@ -588,7 +588,7 @@ public class IndexController {
             model.addAttribute("canvasBaseUrl", canvasBaseUrl);
             model.addAttribute("courseId", courseId);
             stopwatch.stop();
-            log.info("Get all the submissions for the student took {} for {} assignments.", stopwatch, gradeMap.size());
+            log.debug("Get all the submissions for the student took {} for {} assignments.", stopwatch, gradeMap.size());
 
             //Post the event
             eventTrackingService.postEvent(EventConstants.STUDENT_ACCESS, canvasUserId, courseId);
@@ -610,7 +610,7 @@ public class IndexController {
             return new ModelAndView(TemplateConstants.FORBIDDEN_TEMPLATE);
         }
 
-        log.info("The user {} with id {} is entering the main administrator view.", canvasLoginId, canvasUserId);
+        log.debug("The user {} with id {} is entering the main administrator view.", canvasLoginId, canvasUserId);
         //Model: Data sent to the UI
         model.addAttribute("userFullname", ltiSession.getLtiLaunchData().getLisPersonNameFull());
         model.addAttribute("eventCount", eventTrackingService.getEventCount());
@@ -631,7 +631,7 @@ public class IndexController {
             return new ModelAndView(TemplateConstants.FORBIDDEN_TEMPLATE);
         }
 
-        log.info("The user {} with id {} is entering the event administrator view.", canvasLoginId, canvasUserId);
+        log.debug("The user {} with id {} is entering the event administrator view.", canvasLoginId, canvasUserId);
         //Model: Data sent to the UI
         model.addAttribute("userFullname", ltiSession.getLtiLaunchData().getLisPersonNameFull());
         model.addAttribute("adminEvents", true);
@@ -650,7 +650,7 @@ public class IndexController {
             return new ModelAndView(TemplateConstants.FORBIDDEN_TEMPLATE);
         }
 
-        log.info("The user {} with id {} is entering the banner administrator view.", canvasLoginId, canvasUserId);
+        log.debug("The user {} with id {} is entering the banner administrator view.", canvasLoginId, canvasUserId);
 
         List<Account> subaccountList = new ArrayList<Account>();
         try {
@@ -681,7 +681,7 @@ public class IndexController {
             return new ModelAndView(TemplateConstants.FORBIDDEN_TEMPLATE);
         }
 
-        log.info("The user {} with id {} is entering the grade courses administrator view.", canvasLoginId, canvasUserId);
+        log.debug("The user {} with id {} is entering the grade courses administrator view.", canvasLoginId, canvasUserId);
         try {
             model.addAttribute("courses", courseService.getAllCourses());
             model.addAttribute("adminGradesCourses", true);
@@ -715,7 +715,7 @@ public class IndexController {
             model.addAttribute("userSectionMap", userSectionMap);
 
         } catch (IOException ex) {
-            //log.error("Cannot get users in course {}", courseId);
+            log.error("Cannot get users in course {}", selectedCourse);
             return null;
         }
         return new ModelAndView(TemplateConstants.ADMIN_GRADES_COURSES_TEMPLATE);
@@ -731,7 +731,7 @@ public class IndexController {
             return new ModelAndView(TemplateConstants.FORBIDDEN_TEMPLATE);
         }
 
-        log.info("The user {} with id {} is entering the grade students administrator view.", canvasLoginId, canvasUserId);
+        log.debug("The user {} with id {} is entering the grade students administrator view.", canvasLoginId, canvasUserId);
         try {
             model.addAttribute("courses", courseService.getAllCourses());
             model.addAttribute("adminGradesStudents", true);
@@ -839,7 +839,7 @@ public class IndexController {
             return new ModelAndView(TemplateConstants.FORBIDDEN_TEMPLATE);
         }
 
-        log.info("The user {} with id {} is entering the token administrator view.", canvasLoginId, canvasUserId);
+        log.debug("The user {} with id {} is entering the token administrator view.", canvasLoginId, canvasUserId);
         model.addAttribute("tokenList", tokenService.getAllTokens());
         return new ModelAndView(TemplateConstants.ADMIN_TOKENS_TEMPLATE);
     }
@@ -862,7 +862,7 @@ public class IndexController {
             }
             String sisUserId = optionalUser.get().getSisUserId();
 
-            log.info("The user {} with id {} is entering the banner view.", canvasLoginId, canvasUserId, sisUserId);
+            log.debug("The user {} with id {} is entering the banner view.", canvasLoginId, canvasUserId, sisUserId);
 
             JSONObject userSections = new JSONObject();
             List<Section> sectionList = canvasService.getSectionsInCourse(courseId);
@@ -873,7 +873,7 @@ public class IndexController {
                 sectionMap.put(String.valueOf(section.getId()), section.getName());
                 try {
                     String sisSectionId = section.getSisSectionId();
-                    log.info("Getting banner grades for the section {}.", sisSectionId);
+                    log.debug("Getting banner grades for the section {}.", sisSectionId);
                     String[] splittedSectionId = sisSectionId.split("-");
                     String academicPeriod = splittedSectionId[0];
                     String nrcCode = splittedSectionId[1];
@@ -888,7 +888,7 @@ public class IndexController {
                 }
             }
             stopwatch.stop();
-            log.info("Got {} grades from Banner, the process took {}.", bannerGrades.size(), stopwatch);
+            log.debug("Got {} grades from Banner, the process took {}.", bannerGrades.size(), stopwatch);
 
             for (User user : courseUsers) {
                 Object section = StringUtils.EMPTY;

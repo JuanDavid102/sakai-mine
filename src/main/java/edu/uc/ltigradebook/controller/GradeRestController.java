@@ -135,7 +135,7 @@ public class GradeRestController {
             String userId = studentGrade.getUserId();
             String grade = studentGrade.getGrade();
             //Here the user grade is sent to Banner
-            log.info("Send user {} grade {} to Banner", userId, grade);
+            log.debug("Send user {} grade {} to Banner", userId, grade);
             try {
                 String sectionId = studentSectionMap.get(userId);
                 if(StringUtils.isEmpty(sectionId)) {

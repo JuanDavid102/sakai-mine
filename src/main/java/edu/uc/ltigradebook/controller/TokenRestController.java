@@ -59,7 +59,7 @@ public class TokenRestController {
             throw new TokenException();
         }
 
-        log.info("Saving token by the user {}, token hidden for security reasons.", userId);
+        log.debug("Saving token by the user {}, token hidden for security reasons.", userId);
         oauthToken.setToken(token);
         oauthToken.setCreatedBy(userId);
         oauthToken.setCreatedDate(Instant.now());
@@ -84,7 +84,7 @@ public class TokenRestController {
             throw new TokenException();
         }
 
-        log.info("Deleting token by the user {}.", userId);
+        log.debug("Deleting token by the user {}.", userId);
         List<OauthToken> tokenList = tokenService.getOauthToken(token);
         if (tokenList.isEmpty()) {
             throw new TokenException();

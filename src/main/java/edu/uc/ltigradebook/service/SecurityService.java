@@ -24,7 +24,7 @@ public class SecurityService {
    private AccountService accountService;
 
    public boolean isAdminUser(String canvasLoginId, List<InstitutionRole> userRoles) {
-       log.info("The current admins of the application are {}.", ltiGradebookAdmins);
+       log.debug("The current admins of the application are {}.", ltiGradebookAdmins);
        // Better security check for admins
        // return userRoles.contains(InstitutionRole.Administrator) || (StringUtils.isNotEmpty(ltiGradebookAdmins) && ltiGradebookAdmins.contains(canvasLoginId));
        return StringUtils.isNotEmpty(ltiGradebookAdmins) && ltiGradebookAdmins.contains(canvasLoginId) && userRoles.contains(InstitutionRole.Administrator);
@@ -48,7 +48,7 @@ public class SecurityService {
    }
 
    public boolean isBannerEnabled(long accountId) {
-       log.info("Checking if banner is enabled for the accountId {}.", accountId);
+       log.debug("Checking if banner is enabled for the accountId {}.", accountId);
        Optional<AccountPreference> optionalAccountPreference = accountService.getAccountPreferences(accountId);
        if(optionalAccountPreference.isPresent()) {
            AccountPreference accountPreference = optionalAccountPreference.get();
