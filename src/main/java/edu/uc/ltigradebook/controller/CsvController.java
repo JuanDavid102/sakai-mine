@@ -95,7 +95,8 @@ public class CsvController {
     @Autowired
     private SecurityService securityService;
 
-    private static final char CSV_SEPARATOR = ';';
+    private static final char CSV_SEMICOLON_SEPARATOR = ';';
+    private static final char CSV_COMMA_SEPARATOR = ',';
     private static final String BOM = "\uFEFF";
     private static final String EXPORT_ALL_SECTION_VALUE = "all";
     private static final String GRADE_NOT_AVAILABLE = "-";
@@ -123,7 +124,7 @@ public class CsvController {
             //CSV separator is comma unless the comma is the decimal separator, then is ;
             try (OutputStreamWriter fstream = new OutputStreamWriter(new FileOutputStream(tempFile), StandardCharsets.UTF_8.name())){
                 fstream.write(BOM);
-                CSVWriter csvWriter = new CSVWriter(fstream, CSV_SEPARATOR, CSVWriter.DEFAULT_QUOTE_CHARACTER, CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.RFC4180_LINE_END);
+                CSVWriter csvWriter = new CSVWriter(fstream, CSV_SEMICOLON_SEPARATOR, CSVWriter.DEFAULT_QUOTE_CHARACTER, CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.RFC4180_LINE_END);
 
                 // Create csv header
                 List<String> header = new ArrayList<>();
@@ -157,7 +158,7 @@ public class CsvController {
                 ExecutorService executorService = Executors.newCachedThreadPool();
                 for (Assignment assignment : assignmentList) {
                     String assignmentId = String.valueOf(assignment.getId());
-                    header.add(messageSource.getMessage("csv_header_assignment", new Object[]{assignment.getName(), assignmentId}, LocaleContextHolder.getLocale()));
+                    header.add(messageSource.getMessage("csv_header_assignment", new Object[]{assignment.getName().replace(",","."), assignmentId}, LocaleContextHolder.getLocale()));
                     executorService.execute(new Runnable() {
                         @Override
                         public void run() {
@@ -169,7 +170,7 @@ public class CsvController {
                             }
                         });
                 }
-                
+
                 executorService.shutdown();
                 //Wait until all the submission requests end.
                 try {
@@ -195,8 +196,8 @@ public class CsvController {
                     String nrc = StringUtils.EMPTY;
                     boolean exportSection = false;
                     if(user.getEnrollments() != null && !user.getEnrollments().isEmpty()) {
-                        StringJoiner joiner = new StringJoiner(",");
-                        StringJoiner joinerNrc = new StringJoiner(",");
+                        StringJoiner joiner = new StringJoiner(". ");
+                        StringJoiner joinerNrc = new StringJoiner(". ");
                         for(Enrollment enrollment : user.getEnrollments()) {
                             joiner.add(sectionNameMap.get(enrollment.getCourseSectionId()));
                             joinerNrc.add(sectionNrcMap.get(enrollment.getCourseSectionId()));
@@ -210,10 +211,10 @@ public class CsvController {
                         String sisUserId = user.getSisUserId();
                         String userId = String.valueOf(user.getId());
                         final List<String> line = new ArrayList<>();
-                        line.add(user.getSortableName());
+                        line.add(user.getSortableName().replace(",","."));
                         line.add(String.valueOf(user.getId()));
                         line.add(StringUtils.isNotBlank(sisUserId) ? sisUserId : userId);
-                        line.add(section);
+                        line.add(section.replace(",","."));
                         line.add(nrc);
                         for (Assignment assignment : assignmentList) {
                             String assignmentId = String.valueOf(assignment.getId());
@@ -229,7 +230,7 @@ public class CsvController {
                                 Optional<Submission> optionalGrade = submissionsForAssignment.stream()
                                         .filter(submission -> submission.getUserId() != null && userId.equals(submission.getUserId().toString()))
                                         .findAny();
-                                grade = optionalGrade.isPresent() ? optionalGrade.get().getGrade() : StringUtils.EMPTY;                                
+                                grade = optionalGrade.isPresent() ? optionalGrade.get().getGrade() : StringUtils.EMPTY;
 
                                 String assignmentConversionScale = coursePreference.getConversionScale();
                                 Optional<AssignmentPreference> assignmentPreference = assignmentService.getAssignmentPreference(assignmentId);
@@ -286,7 +287,8 @@ public class CsvController {
     }
 
     @PostMapping("/import_csv")
-    public ResponseEntity<String> importCsv(@RequestParam MultipartFile file, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) {
+    public ResponseEntity<String> importCsv(@RequestParam MultipartFile file, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, Character csvSeparator) {
+        if (csvSeparator == null) csvSeparator = CSV_SEMICOLON_SEPARATOR;
         String courseId = ltiSession.getCanvasCourseId();
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
         String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
@@ -299,16 +301,12 @@ public class CsvController {
         }
 
         CoursePreference coursePreference = courseService.getCoursePreference(courseId);
-        boolean validCsv = false;
+        boolean validCsv = true;
         boolean errors = false;
 
         try (BufferedReader br = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
-            Stream<String> lines = br.lines();
-            List<String> replaced = lines.map(line -> line.replaceAll(",", ";")).collect(Collectors.toList());
-            BufferedReader newBr = new BufferedReader(new StringReader(String.join("\n", replaced)));
-
-            CSVParser parser = new CSVParserBuilder().withSeparator(CSV_SEPARATOR).build();
-            CSVReader csvReader = new CSVReaderBuilder(newBr).withCSVParser(parser).build();
+            CSVParser parser = new CSVParserBuilder().withSeparator(csvSeparator).withStrictQuotes(false).build();
+            CSVReader csvReader = new CSVReaderBuilder(br).withCSVParser(parser).build();
             List<Assignment> assignmentList = canvasService.listCourseAssignments(courseId);
             Map<String, List<Submission>> submissionsMap = new HashMap<>();
             ExecutorService executorService = Executors.newCachedThreadPool();
@@ -336,6 +334,10 @@ public class CsvController {
 
             List<String[]> all = csvReader.readAll();
             String[] header = all.get(0);
+            // If cols are missing, try with other separator
+            if (header.length < 2 && csvSeparator == CSV_SEMICOLON_SEPARATOR) {
+                return this.importCsv(file, ltiPrincipal, ltiSession, CSV_COMMA_SEPARATOR);
+            }
             List<AssignmentGroup> assignmentGroupList = canvasService.listAssignmentGroups(courseId);
             int rightColsIgnore = assignmentGroupList.size() + 2;
             for (int i = 5; i < header.length - rightColsIgnore; i++) {
@@ -346,6 +348,8 @@ public class CsvController {
                     String studentId = all.get(z)[1];
                     try {
                         String newGrade = all.get(z)[i];
+
+                        newGrade = StringUtils.replace(newGrade, ",", ".");
                         JSONObject eventDetailsJson = new JSONObject().put("assignmentId", assignmentId).put("userId", studentId).put("grade", newGrade);
                         boolean saveGrade = false;
                         boolean deleteGrade = false;
