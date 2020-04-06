@@ -20,7 +20,7 @@
         <slf4j.version>1.7.30</slf4j.version>
         <lti.launch.version>1.7.2</lti.launch.version>
         <lombok.version>1.18.12</lombok.version>
-        <lang3.version>3.9</lang3.version>
+        <lang3.version>3.10</lang3.version>
         <org.json.version>20190722</org.json.version>
         <opencsv.version>5.1</opencsv.version>
         <commons-io.version>2.6</commons-io.version>
