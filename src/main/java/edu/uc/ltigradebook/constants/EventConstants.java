@@ -7,6 +7,7 @@ public class EventConstants {
     public static final String ADMIN_DELETE_BANNER = "admin.delete.banner";
     public static final String ADMIN_SAVE_TOKEN = "admin.save.token";
     public static final String ADMIN_DELETE_TOKEN = "admin.delete.token";
+    public static final String BANNER_SEND_GRADE = "banner.send.grade";
     public static final String IMPORT_POST_GRADE = "import.post.grade";
     public static final String IMPORT_DELETE_GRADE = "import.delete.grade";
     public static final String INSTRUCTOR_ACCESS = "instructor.access";
