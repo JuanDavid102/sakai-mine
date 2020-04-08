@@ -20,6 +20,33 @@
     </a>
   </div>
   <div th:if="${userIsCourseMainInstructor && !bannerGrades.isEmpty()}">
+    <div class="alert alert-info">
+      <p th:text="#{banner_info}"></p>
+      <p th:text="#{banner_info_note}"></p>
+    </div>
+    <div class="d-flex flex-row justify-content-end mb-3">
+      <button class="canvas-btn" id="sendGradesToBanner" disabled="disabled" data-toggle="modal" data-target="#bannerConfirmationModal">
+        <span class="fas fa-sync"></span>
+        <span class="d-none d-sm-inline-block" th:text="#{banner_button_send_grades_banner}">Send Grades to Banner</span>
+      </button>
+    </div>
+    <div class="modal fade" id="bannerConfirmationModal" tabindex="-1" role="dialog" aria-labelledby="sendGradesToBanner" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel" th:text="#{banner_view_title}"></h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body" th:text="#{banner_modal_text}"></div>
+          <div class="modal-footer">
+            <button id="modal-button-confirm" type="button" class="btn btn-primary" th:text="#{banner_modal_confirm}">Save changes</button>
+            <button id="modal-button-cancel" type="button" class="btn btn-secondary" data-dismiss="modal" th:text="#{banner_modal_cancel}">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
     <table class="table table-striped table-sm">
       <thead>
         <tr>
@@ -29,7 +56,7 @@
           <th rowspan="1" colspan="2" class="text-center" th:text="#{banner_header_grades}">Grades</th>
         </tr>
         <tr>
-          <th rowspan="1" th:text="#{banner_header_web_courses}">Web Courses</th>
+          <th rowspan="1" th:text="#{banner_header_canvas}">Canvas</th>
           <th rowspan="1" th:text="#{banner_header_banner}">Banner</th>
         </tr>
       </thead>
@@ -51,12 +78,6 @@
         </tr>
       </tbody>
     </table>
-    <div class="d-flex flex-row justify-content-end mt-3">
-      <button class="canvas-btn" id="sendGradesToBanner" disabled="disabled">
-        <span class="fas fa-sync"></span>
-        <span class="d-none d-sm-inline-block" th:text="#{banner_button_send_grades_banner}">Send Grades to Banner</span>
-      </button>
-    </div>
   </div>
 </div>
 
@@ -105,18 +126,33 @@
         $('#sendGradesToBanner').prop('disabled', false);
       });
 
-      $('#sendGradesToBanner').click(function() {
-        $('#sendGradesToBanner').prop('disabled', true);
-        $('#sendGradesToBanner').find('.fas').addClass('fa-spin');
-        $.ajax({
-          url: /*[[@{/sendGradesToBanner}]]*/,
-          data: JSON.stringify(sendGradesToBannerData),
-          type: 'POST',
-          contentType: 'application/json; charset=utf-8'
-
-        }).done(function(success) {
-          window.location = [[@{/send_to_banner}]];
+      var modalConfirm = function(callback) {
+        $("#modal-button-confirm").on("click", function() {
+          callback(true);
+          $("#bannerConfirmationModal").modal('hide');
         });
+
+        $("#modal-button-cancel").on("click", function(){
+          callback(false);
+          $("#bannerConfirmationModal").modal('hide');
+        });
+
+      };
+
+      modalConfirm( function(confirm) {
+        if(confirm) {
+          $('#sendGradesToBanner').prop('disabled', true);
+          $('#sendGradesToBanner').find('.fas').addClass('fa-spin');
+          $.ajax({
+            url: /*[[@{/sendGradesToBanner}]]*/,
+            data: JSON.stringify(sendGradesToBannerData),
+            type: 'POST',
+            contentType: 'application/json; charset=utf-8'
+
+          }).done( function(success) {
+            window.location = [[@{/send_to_banner}]];
+          });
+        }
       });
   });
   /*]]>*/
