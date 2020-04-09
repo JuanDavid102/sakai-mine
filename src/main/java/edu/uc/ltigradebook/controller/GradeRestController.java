@@ -146,9 +146,15 @@ public class GradeRestController {
                 String nrcCode = splittedSectionId[1];
                 /*String courseInitials = splittedSectionId[2];
                 String sectionNumber = splittedSectionId[3];*/
-                bannerServiceDao.sendGradeToBanner(nrcCode, grade, userId, sisUserId, academicPeriod);
-                String bannerEventDetails = new JSONObject().put("nrcCode", nrcCode).put("grade", grade).put("userId", userId).put("sisUserId", sisUserId).put("academicPeriod", academicPeriod).toString();
-                eventTrackingService.postEvent(EventConstants.BANNER_SEND_GRADE, canvasUserId, courseId, bannerEventDetails);
+                String errorCode = bannerServiceDao.sendGradeToBanner(nrcCode, grade, userId, sisUserId, academicPeriod);
+                JSONObject detailsObject = new JSONObject().put("nrcCode", nrcCode).put("grade", grade).put("userId", userId).put("sisUserId", sisUserId).put("academicPeriod", academicPeriod);
+                if (StringUtils.isNotBlank(errorCode)) {
+                    detailsObject = detailsObject.put("errorCode", errorCode);
+                    eventTrackingService.postEvent(EventConstants.BANNER_SEND_GRADE_FAIL, canvasUserId, courseId, detailsObject.toString());
+                } else {
+                    eventTrackingService.postEvent(EventConstants.BANNER_SEND_GRADE_SUCCESS, canvasUserId, courseId, detailsObject.toString());
+                }
+                
             } catch(Exception e) {
                 log.error("Cannot send the grade {} to the student {}.", userId, grade, e);
             }

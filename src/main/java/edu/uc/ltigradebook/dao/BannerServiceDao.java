@@ -10,6 +10,7 @@ import javax.annotation.PreDestroy;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.SqlOutParameter;
 import org.springframework.jdbc.core.SqlParameter;
@@ -52,7 +53,7 @@ public class BannerServiceDao {
     @PostConstruct
     public void init() {
         HikariConfig config = new HikariConfig();
-        if(!bannerEnabled) {
+        if (!bannerEnabled) {
             log.info("The banner integration is not enabled.");
             return;
         }
@@ -62,7 +63,7 @@ public class BannerServiceDao {
         config.setPassword(bannerPassword);
         config.setDriverClassName(bannerDriverClassName);
         try { 
-            if(hikariDataSource == null) {
+            if (hikariDataSource == null) {
                 hikariDataSource = new HikariDataSource(config);
             }
             jdbcTemplate = new JdbcTemplate();
@@ -75,7 +76,7 @@ public class BannerServiceDao {
     @PreDestroy
     public void destroy() {
         if(hikariDataSource != null) {
-        	hikariDataSource.close();
+            hikariDataSource.close();
         }
         hikariDataSource = null;
     }
@@ -140,7 +141,7 @@ public class BannerServiceDao {
                     .addValue(IN_PERIOD_ID_PARAMETER, periodId)
                     .addValue(IN_TEACHER_ID_PARAMETER, teacherId));
 
-            if(!result.isEmpty()){
+            if (!result.isEmpty()){
                 @SuppressWarnings("unchecked")
                 List<BannerUser> bannerUserList = (List<BannerUser>) result.get(OUT_BANNER_USER_LIST_PARAMETER);
                 log.debug("Found {} users associated to the course in banner.", bannerUserList.size());
@@ -150,17 +151,18 @@ public class BannerServiceDao {
                 }
             }
         } catch (Exception e) {
-           log.error("Fatal error getting users from banner. ", e);
+           log.error("Fatal error getting users from banner: {} ", e.getMessage());
         }
         return bannerGrades;
     }
 
     //Sends a grade to banner
-    public boolean sendGradeToBanner(String cod_ncr, String nota, String rut_alumno, String rut_profesor, String ano_periodo_banner) {
+    public String sendGradeToBanner(String cod_ncr, String nota, String rut_alumno, String rut_profesor, String ano_periodo_banner) {
         log.debug("sendGradesToBanner(cod_ncr={},nota={},rut_alumno={},rut_profesor={},ano_periodo_banner={})", cod_ncr, nota, rut_alumno, rut_profesor, ano_periodo_banner);
+        String returnString = StringUtils.EMPTY;
 
-        if(!bannerEnabled) {
-            return false;
+        if (!bannerEnabled) {
+            return "Banner is not enabled.";
         }
 
         try {
@@ -170,11 +172,20 @@ public class BannerServiceDao {
 
             //Call the procedure
             getJdbcTemplate().update(insertBannerString);
-            return true;
-        } catch (Exception e) {
-            log.error("Fatal error sending grade to banner. ", e);
+            return StringUtils.EMPTY;
+        } catch (DataAccessException e) {
+            log.error("Fatal error sending grade to banner: {} ", e.getMessage());
+            returnString = e.getCause().toString();
+            // Well, not pretty logic to display the Oracle error but may work.
+            try {
+                returnString = StringUtils.substringBefore(returnString, "\n");
+                returnString = StringUtils.remove(returnString, "java.sql.SQLException: ");
+            } catch(Exception ex) {
+                log.error("Error parsing the banner code error: ", e);
+            }
         }
-        return false;
+
+        return returnString;
     }
 
 }

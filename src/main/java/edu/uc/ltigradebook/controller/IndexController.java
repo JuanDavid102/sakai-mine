@@ -905,7 +905,7 @@ public class IndexController {
             model.addAttribute("courseUsers", courseUsers);
             model.addAttribute("userSections", userSections.toMap());
             model.addAttribute("bannerGrades", bannerGrades);
-            model.addAttribute("bannerEventList", eventTrackingService.getAllEventsByEventCourseAndEventTypes(courseId, Arrays.asList(EventConstants.BANNER_SEND_GRADE)));
+            model.addAttribute("bannerEventList", eventTrackingService.getAllEventsByEventCourseAndEventTypes(courseId, Arrays.asList(EventConstants.BANNER_SEND_GRADE_SUCCESS)));
             model.addAttribute("userIsCourseMainInstructor", userIsCourseMainInstructor);
 
             return new ModelAndView(TemplateConstants.SEND_TO_BANNER_TEMPLATE);
