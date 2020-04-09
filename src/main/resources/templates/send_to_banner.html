@@ -25,16 +25,61 @@
       <p th:text="#{banner_info_note}"></p>
     </div>
     <div class="d-flex flex-row justify-content-end mb-3">
+      <button class="canvas-btn" id="showBannerEventHistory" data-toggle="modal" data-target="#bannerHistoryModal">
+        <span class="fas fa-history"></span>
+        <span class="d-none d-sm-inline-block" th:text="#{banner_button_event_history}">Event History</span>
+      </button>
+      &nbsp;
       <button class="canvas-btn" id="sendGradesToBanner" disabled="disabled" data-toggle="modal" data-target="#bannerConfirmationModal">
         <span class="fas fa-sync"></span>
         <span class="d-none d-sm-inline-block" th:text="#{banner_button_send_grades_banner}">Send Grades to Banner</span>
       </button>
     </div>
-    <div class="modal fade" id="bannerConfirmationModal" tabindex="-1" role="dialog" aria-labelledby="sendGradesToBanner" aria-hidden="true">
+    <div class="modal fade" id="bannerHistoryModal" tabindex="-1" role="dialog" aria-labelledby="bannerHistoryModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="bannerHistoryModalLabel" th:text="#{banner_button_event_history}"></h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div th:if="${bannerEventList.isEmpty()}" class="alert alert-info" th:text="#{banner_no_events}">No events to display</div>
+            <table th:if="${!bannerEventList.isEmpty()}" id="bannerEventTable" class="table table-striped table-bordered table-hover">
+              <thead>
+                <tr>
+                  <th th:text="#{banner_modal_header_date}">Date</th>
+                  <th th:text="#{banner_modal_header_instructor}">Instructor</th>
+                  <th th:text="#{banner_modal_header_student}">Student</th>
+                  <th th:text="#{banner_modal_header_grade}">Grade</th>
+                  <th th:text="#{banner_modal_header_academic_period}">Period</th>
+                  <th th:text="#{banner_modal_header_nrc_code}">nrcCode</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr th:each="event : ${bannerEventList}">
+                  <td class="tableDate" th:text="${event.eventDate}"></td>
+                  <td class="eventDetail sisUserId" th:text="${event.eventDetails}"></td>
+                  <td class="eventDetail userId" th:text="${event.eventDetails}"></td>
+                  <td class="eventDetail grade" th:text="${event.eventDetails}"></td>
+                  <td class="eventDetail academicPeriod" th:text="${event.eventDetails}"></td>
+                  <td class="eventDetail nrcCode" th:text="${event.eventDetails}"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="modal-footer">
+            <button id="modal-button-close" type="button" class="btn btn-primary" data-dismiss="modal" th:text="#{banner_modal_close}">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal fade" id="bannerConfirmationModal" tabindex="-1" role="dialog" aria-labelledby="bannerConfirmationModalLabel" aria-hidden="true">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLabel" th:text="#{banner_view_title}"></h5>
+            <h5 class="modal-title" id="bannerConfirmationModalLabel" th:text="#{banner_view_title}"></h5>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">&times;</span>
             </button>
@@ -154,6 +199,33 @@
           });
         }
       });
+
+      // Provide pretty dates
+      $('.tableDate').each(function () {
+        var dateContent = $(this).html();
+        if (dateContent !== '') {
+          var prettyDate = moment(dateContent).format('lll');
+          $(this).html(prettyDate);
+        }
+      });
+
+      $('.eventDetail').each(function () {
+          var cellContent = $(this).html();
+          var eventDetailObject = JSON.parse(cellContent);
+          var tdClass = $(this).attr('class');
+          if (tdClass.includes('sisUserId')) {
+            $(this).html(eventDetailObject.sisUserId);
+          } else if (tdClass.includes('userId')) {
+            $(this).html(eventDetailObject.userId);
+          } else if (tdClass.includes('grade')) {
+            $(this).html(eventDetailObject.grade);
+          } else if (tdClass.includes('academicPeriod')) {
+            $(this).html(eventDetailObject.academicPeriod);
+          } else if (tdClass.includes('nrcCode')) {
+            $(this).html(eventDetailObject.nrcCode);
+          }
+        });
+
   });
   /*]]>*/
 </script>
