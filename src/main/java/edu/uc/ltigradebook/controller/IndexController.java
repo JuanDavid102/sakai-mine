@@ -906,6 +906,7 @@ public class IndexController {
             model.addAttribute("userSections", userSections.toMap());
             model.addAttribute("bannerGrades", bannerGrades);
             model.addAttribute("bannerEventList", eventTrackingService.getAllEventsByEventCourseAndEventTypes(courseId, Arrays.asList(EventConstants.BANNER_SEND_GRADE_SUCCESS)));
+            model.addAttribute("bannerErrorEventList", eventTrackingService.getAllEventsByEventCourseAndEventTypes(courseId, Arrays.asList(EventConstants.BANNER_SEND_GRADE_FAIL)));
             model.addAttribute("userIsCourseMainInstructor", userIsCourseMainInstructor);
 
             return new ModelAndView(TemplateConstants.SEND_TO_BANNER_TEMPLATE);

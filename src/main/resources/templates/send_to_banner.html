@@ -25,6 +25,11 @@
       <p th:text="#{banner_info_note}"></p>
     </div>
     <div class="d-flex flex-row justify-content-end mb-3">
+      <button class="canvas-btn" id="showBannerEventErrorHistory" data-toggle="modal" data-target="#bannerErrorHistoryModal">
+        <span class="fas fa-exclamation-circle"></span>
+        <span class="d-none d-sm-inline-block" th:text="#{banner_button_event_error_history}">Event Error History</span>
+      </button>
+      &nbsp;
       <button class="canvas-btn" id="showBannerEventHistory" data-toggle="modal" data-target="#bannerHistoryModal">
         <span class="fas fa-history"></span>
         <span class="d-none d-sm-inline-block" th:text="#{banner_button_event_history}">Event History</span>
@@ -34,6 +39,42 @@
         <span class="fas fa-sync"></span>
         <span class="d-none d-sm-inline-block" th:text="#{banner_button_send_grades_banner}">Send Grades to Banner</span>
       </button>
+    </div>
+    <div class="modal fade" id="bannerErrorHistoryModal" tabindex="-1" role="dialog" aria-labelledby="bannerErrorHistoryModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="bannerErrorHistoryModalLabel" th:text="#{banner_button_event_error_history}"></h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div th:if="${bannerErrorEventList.isEmpty()}" class="alert alert-info" th:text="#{banner_no_error_events}">No events to display</div>
+            <table th:if="${!bannerErrorEventList.isEmpty()}" id="bannerErrorEventTable" class="table table-striped table-bordered table-hover">
+              <thead>
+                <tr>
+                  <th th:text="#{banner_modal_header_date}">Date</th>
+                  <th th:text="#{banner_modal_header_instructor}">Instructor</th>
+                  <th th:text="#{banner_modal_header_student}">Student</th>
+                  <th th:text="#{banner_modal_header_error_detail}">Error Detail</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr th:each="event : ${bannerErrorEventList}">
+                  <td class="tableDate" th:text="${event.eventDate}"></td>
+                  <td class="eventDetail sisUserId" th:text="${event.eventDetails}"></td>
+                  <td class="eventDetail userId" th:text="${event.eventDetails}"></td>
+                  <td class="eventDetail error" th:text="${event.eventDetails}"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="modal-footer">
+            <button id="modal-error-button-close" type="button" class="btn btn-primary" data-dismiss="modal" th:text="#{banner_modal_close}">Close</button>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="modal fade" id="bannerHistoryModal" tabindex="-1" role="dialog" aria-labelledby="bannerHistoryModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-xl" role="document">
@@ -53,8 +94,6 @@
                   <th th:text="#{banner_modal_header_instructor}">Instructor</th>
                   <th th:text="#{banner_modal_header_student}">Student</th>
                   <th th:text="#{banner_modal_header_grade}">Grade</th>
-                  <th th:text="#{banner_modal_header_academic_period}">Period</th>
-                  <th th:text="#{banner_modal_header_nrc_code}">nrcCode</th>
                 </tr>
               </thead>
               <tbody>
@@ -63,8 +102,6 @@
                   <td class="eventDetail sisUserId" th:text="${event.eventDetails}"></td>
                   <td class="eventDetail userId" th:text="${event.eventDetails}"></td>
                   <td class="eventDetail grade" th:text="${event.eventDetails}"></td>
-                  <td class="eventDetail academicPeriod" th:text="${event.eventDetails}"></td>
-                  <td class="eventDetail nrcCode" th:text="${event.eventDetails}"></td>
                 </tr>
               </tbody>
             </table>
@@ -210,21 +247,51 @@
       });
 
       $('.eventDetail').each(function () {
-          var cellContent = $(this).html();
-          var eventDetailObject = JSON.parse(cellContent);
-          var tdClass = $(this).attr('class');
-          if (tdClass.includes('sisUserId')) {
-            $(this).html(eventDetailObject.sisUserId);
-          } else if (tdClass.includes('userId')) {
-            $(this).html(eventDetailObject.userId);
-          } else if (tdClass.includes('grade')) {
-            $(this).html(eventDetailObject.grade);
-          } else if (tdClass.includes('academicPeriod')) {
-            $(this).html(eventDetailObject.academicPeriod);
-          } else if (tdClass.includes('nrcCode')) {
-            $(this).html(eventDetailObject.nrcCode);
-          }
-        });
+        var cellContent = $(this).html();
+        var eventDetailObject = JSON.parse(cellContent);
+        var tdClass = $(this).attr('class');
+        if (tdClass.includes('sisUserId')) {
+          $(this).html(eventDetailObject.sisUserId);
+        } else if (tdClass.includes('userId')) {
+          $(this).html(eventDetailObject.userId);
+        } else if (tdClass.includes('grade')) {
+          $(this).html(eventDetailObject.grade);
+        } else if (tdClass.includes('error')) {
+          $(this).html(eventDetailObject.errorCode);
+        }
+      });
+
+      var search = /*[[#{instructor_datatables_records_search}]]*/ 'search';
+      var lengthMenu = /*[[#{instructor_datatables_records_lengthMenu}]]*/ 'lengthMenu';
+      var zeroRecords = /*[[#{instructor_datatables_records_zeroRecords}]]*/ 'zeroRecords';
+      var info = /*[[#{instructor_datatables_info}]]*/ 'info';
+      var infoEmpty = /*[[#{instructor_datatables_records_infoEmpty}]]*/ 'infoEmpty';
+      var infoFiltered = /*[[#{instructor_datatables_records_infoFiltered}]]*/ 'infoFiltered';
+      var emptyTable = /*[[#{instructor_datatables_emptyTable}]]*/ 'emptyTable';
+      var next = /*[[#{instructor_datatables_next}]]*/ 'next';
+      var previous = /*[[#{instructor_datatables_previous}]]*/ 'previous';
+      var sortAscending = /*[[#{instructor_datatables_sortAscending}]]*/ 'sortAscending';
+      var sortDescending = /*[[#{instructor_datatables_sortDescending}]]*/ 'sortDescending';
+
+      $('#bannerEventTable, #bannerErrorEventTable').DataTable({
+        language: {
+          'search': search,
+          'lengthMenu': lengthMenu,
+          'zeroRecords': zeroRecords,
+          'info': info,
+          'infoEmpty': infoEmpty,
+          'infoFiltered': infoFiltered,
+          'emptyTable': emptyTable,
+          'paginate': {
+            'next': next,
+            'previous': previous,
+           },
+          'aria': {
+            'sortAscending': sortAscending,
+            'sortDescending': sortDescending,
+           }
+        }
+      });
 
   });
   /*]]>*/

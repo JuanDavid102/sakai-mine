@@ -10,7 +10,6 @@ import javax.annotation.PreDestroy;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.SqlOutParameter;
 import org.springframework.jdbc.core.SqlParameter;
@@ -173,13 +172,13 @@ public class BannerServiceDao {
             //Call the procedure
             getJdbcTemplate().update(insertBannerString);
             return StringUtils.EMPTY;
-        } catch (DataAccessException e) {
+        } catch (Exception e) {
             log.error("Fatal error sending grade to banner: {} ", e.getMessage());
             returnString = e.getCause().toString();
             // Well, not pretty logic to display the Oracle error but may work.
             try {
-                returnString = StringUtils.substringBefore(returnString, "\n");
-                returnString = StringUtils.remove(returnString, "java.sql.SQLException: ");
+                String[] errorTokens = returnString.split(": ");
+                returnString = StringUtils.substringBefore(errorTokens[2], "\n");
             } catch(Exception ex) {
                 log.error("Error parsing the banner code error: ", e);
             }
