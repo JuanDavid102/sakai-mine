@@ -606,7 +606,7 @@
       if (properties === undefined) properties = [];
       if (properties.omitFromFinalGrade) html += document.getElementById('omitFromFinalGrade').firstElementChild.outerHTML;
       if (properties.assignmentIsMuted) html += document.getElementById('assignmentMuted').firstElementChild.outerHTML;
-      html += '<span>' + columns[col] + '</span>';
+      html += '<span title="' + columns[col] + '">' + columns[col] + '</span>';
       if (col >= LEFT_READ_ONLY_COLS && col < (TOTAL_COLUMNS - RIGHT_READ_ONLY_COLS)) {
         var toClone = document.getElementById('header-cell-dropdown').firstElementChild.outerHTML;
         toClone = toClone.replace('class="dropdown-menu"', 'class="dropdown-menu" data-col="' + col + '"');

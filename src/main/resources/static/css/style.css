@@ -219,6 +219,12 @@
   border-left: none;
 }
 
+#tableContainer .studentTable .handsontable th > div > span > span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 #tableContainer .studentTable .handsontable td {
   padding: 0;
 }
