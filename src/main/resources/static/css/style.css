@@ -219,6 +219,10 @@
   border-left: none;
 }
 
+#tableContainer .studentTable .handsontable th, #tableContainer .studentTable .handsontable td {
+  min-width: 75px;
+}
+
 #tableContainer .studentTable .handsontable th > div > span > span {
   white-space: nowrap;
   overflow: hidden;
