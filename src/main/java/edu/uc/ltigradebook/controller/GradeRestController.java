@@ -136,6 +136,11 @@ public class GradeRestController {
             String grade = studentGrade.getGrade();
             //Here the user grade is sent to Banner
             log.debug("Send user {} grade {} to Banner", userId, grade);
+            // Send an empty grade to banner, this will wipe the value in the banner side.
+            if(StringUtils.isBlank(grade) || "-".equals(grade)) {
+                grade = StringUtils.EMPTY;
+            }
+
             try {
                 String sectionId = studentSectionMap.get(userId);
                 if(StringUtils.isEmpty(sectionId)) {
