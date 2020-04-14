@@ -97,6 +97,7 @@ public class CsvController {
 
     private static final char CSV_SEMICOLON_SEPARATOR = ';';
     private static final char CSV_COMMA_SEPARATOR = ',';
+    private static final char CSV_TAB_SEPARATOR = '\t';
     private static final String BOM = "\uFEFF";
     private static final String EXPORT_ALL_SECTION_VALUE = "all";
     private static final String GRADE_NOT_AVAILABLE = "-";
@@ -337,6 +338,9 @@ public class CsvController {
             // If cols are missing, try with other separator
             if (header.length < 2 && csvSeparator == CSV_SEMICOLON_SEPARATOR) {
                 return this.importCsv(file, ltiPrincipal, ltiSession, CSV_COMMA_SEPARATOR);
+            }
+            if (header.length < 2 && csvSeparator == CSV_COMMA_SEPARATOR) {
+                return this.importCsv(file, ltiPrincipal, ltiSession, CSV_TAB_SEPARATOR);
             }
             List<AssignmentGroup> assignmentGroupList = canvasService.listAssignmentGroups(courseId);
             int rightColsIgnore = assignmentGroupList.size() + 2;
