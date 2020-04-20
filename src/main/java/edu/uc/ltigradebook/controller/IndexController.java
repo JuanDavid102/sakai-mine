@@ -879,9 +879,9 @@ public class IndexController {
                     String nrcCode = splittedSectionId[1];
                     /*String courseInitials = splittedSectionId[2];
                     String sectionNumber = splittedSectionId[3];*/
-                    userIsCourseMainInstructor = bannerServiceDao.isCourseMainInstructor(nrcCode, academicPeriod, sisUserId);
-                    if(userIsCourseMainInstructor) {
+                    if(bannerServiceDao.isCourseMainInstructor(nrcCode, academicPeriod, sisUserId)) {
                         bannerGrades.putAll(bannerServiceDao.getBannerUserListFromCourse(nrcCode, academicPeriod, sisUserId));
+                        userIsCourseMainInstructor = true;
                     }
                 } catch(Exception e) {
                     log.error("Cannot get the banner grades from the section {}.", section.getSisSectionId());
