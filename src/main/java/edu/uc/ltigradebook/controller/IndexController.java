@@ -144,12 +144,12 @@ public class IndexController {
                 }
             }
 
-            if(securityService.isStudent(lld.getRolesList())) {
-                return handleStudentView(ltiPrincipal, ltiSession, model);
-            }
-
             if (securityService.isFaculty(lld.getRolesList())) {
                 return handleInstructorView(ltiPrincipal, ltiSession, model);
+            }
+
+            if(securityService.isStudent(lld.getRolesList())) {
+                return handleStudentView(ltiPrincipal, ltiSession, model);
             }
 
         } catch(Exception ex) {
