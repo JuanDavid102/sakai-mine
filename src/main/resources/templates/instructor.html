@@ -346,6 +346,7 @@
     const RIGHT_READ_ONLY_COLS = /*[[${RIGHT_READ_ONLY_COLS}]]*/;
     const TOTAL_COLUMNS = /*[[${TOTAL_COLUMNS}]]*/;
     const INVALID_VALUES_ARRAY = ['', '-', 'A+', 'A', 'A-','B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'F'];
+    const FINAL_GRADE_VALID_VALUES = ['P', 'I', 'R', 'A', 'D'];
     const MIN_GRADE = 1;
     const MAX_GRADE = 7;
     const GRADE_NOT_AVAILABLE = '-';
@@ -356,6 +357,7 @@
     const MSG_TYPE_MORE_THAN = 3;
 
     var groupWeightsAre100 = /*[[${!groupWeightsNot100}]]*/;
+    var initialized = false;
 
     window.GbGradeTable = { _onReadyCallbacks: [] };
     var assignmentGroupArray = /*[[${assignmentGroupArray}]]*/;
@@ -372,6 +374,7 @@
       instructor_details_modal_total: /*[[#{instructor_details_modal_total}]]*/,
       instructor_group_details_modal_title: /*[[#{instructor_group_details_modal_title}]]*/,
       instructor_grade_out_range: /*[[#{instructor_grade_out_range}]]*/,
+      instructor_final_grade_out_range: /*[[#{instructor_final_grade_out_range}]]*/,
       instructor_no_points_possible: /*[[#{instructor_no_points_possible}]]*/,
       instructor_assignment_scale_modal_title: /*[[#{instructor_assignment_scale_modal_title}]]*/,
       instructor_dropdown_mute_assignment: /*[[#{instructor_dropdown_mute_assignment}]]*/,
@@ -464,7 +467,8 @@
               properties.renderer = cellRatingRenderer;
           }
 
-          if (col >= (TOTAL_COLUMNS - RIGHT_READ_ONLY_COLS)) {
+          //console.log("col: " + col + " TOTAL_COLUMNS: " + TOTAL_COLUMNS);
+          if (col >= (TOTAL_COLUMNS - RIGHT_READ_ONLY_COLS) && (col + 1 != TOTAL_COLUMNS)) {
             properties.editor = false;
           }
 
@@ -535,64 +539,105 @@
               var change = changes[i];
               var row = change[0];
               var col = change[1];
-              if (col >= (TOTAL_COLUMNS - RIGHT_READ_ONLY_COLS)) continue;
               var $cell = $(GbGradeTable.instance.getCell(row, col));
               var visualRow = GbGradeTable.instance.toVisualRow(row);
               var visualCol = GbGradeTable.instance.toVisualColumn(col);
               var physicalRow = GbGradeTable.instance.toPhysicalRow(row);
               var physicalCol = GbGradeTable.instance.toPhysicalColumn(col);
               var cellMeta = GbGradeTable.instance.getCellMeta(row, visualCol);
-
               var oldScore = cellMeta.score;
+              var newScore = change[3];
               if (oldScore === undefined) {
                 oldScore = change[2];
               }
-              var newScore = change[3];
-              var studentGrade = {};
-              studentGrade['assignmentId'] = cellMeta.assignmentId;
-              studentGrade['userId'] = cellMeta.userId;
-              studentGrade['grade'] = newScore;
-              studentGrade['oldGrade'] = oldScore;
-              console.debug('Assignment ' + cellMeta.assignmentId + ' changed to ' + newScore + ' for user '+cellMeta.userId);
 
-              if (oldScore+'' !== newScore+'') {
-                $.ajax({
-                  url: /*[[@{/postGrade}]]*/,
-                  type: 'POST',
-                  data: JSON.stringify(studentGrade),
-                  dataType: 'json',
-                  custom: {
-                    row: row,
-                    col: col,
-                    visualRow: visualRow,
-                    physicalRow: physicalRow,
-                    physicalCol: physicalCol
-                  },
-                  contentType: 'application/json; charset=utf-8'
+              if (col < (TOTAL_COLUMNS - RIGHT_READ_ONLY_COLS)) {
+                console.debug('Assignment ' + cellMeta.assignmentId + ' changed to ' + newScore + ' for user '+cellMeta.userId);
+                var studentGrade = {};
+                studentGrade['assignmentId'] = cellMeta.assignmentId;
+                studentGrade['userId'] = cellMeta.userId;
+                studentGrade['grade'] = newScore;
+                studentGrade['oldGrade'] = oldScore;
 
-                }).done(function() {
-                  console.debug('The grade has been saved successfully.');
-                  var settings = cellSettings[this.custom.physicalRow+1][this.custom.col];
-                  settings.renderer = cellSaveSuccessRenderer;
-                  settings.score = newScore;
-                  var groupId = settings.assignmentGroupId;
-                  var userId = settings.userId;
-                  if (!settings.omitFromFinalGrade && !settings.assignmentIsMuted && !settings.isZeroPoints) {
-                    calcGroupGrade(groupId, userId, this.custom.physicalRow, true);
-                    calcFinalGrade(userId, this.custom.physicalRow, true, true);
-                    if (groupWeightsAre100) {
-                      calcFinalGrade(userId, this.custom.physicalRow, false, true);
+                if (oldScore+'' !== newScore+'') {
+                  $.ajax({
+                    url: /*[[@{/postGrade}]]*/,
+                    type: 'POST',
+                    data: JSON.stringify(studentGrade),
+                    dataType: 'json',
+                    custom: {
+                      row: row,
+                      col: col,
+                      visualRow: visualRow,
+                      physicalRow: physicalRow,
+                      physicalCol: physicalCol
+                    },
+                    contentType: 'application/json; charset=utf-8'
+
+                  }).done(function() {
+                    console.debug('The grade has been saved successfully.');
+                    var settings = cellSettings[this.custom.physicalRow+1][this.custom.col];
+                    settings.renderer = cellSaveSuccessRenderer;
+                    settings.score = newScore;
+                    var groupId = settings.assignmentGroupId;
+                    var userId = settings.userId;
+                    if (!settings.omitFromFinalGrade && !settings.assignmentIsMuted && !settings.isZeroPoints) {
+                      calcGroupGrade(groupId, userId, this.custom.physicalRow, true);
+                      calcFinalGrade(userId, this.custom.physicalRow, true, true);
+                      if (groupWeightsAre100) {
+                        calcFinalGrade(userId, this.custom.physicalRow, false, true);
+                      }
                     }
-                  }
 
-                }).fail(function() {
-                  console.debug('The grade has not been saved.');
-                  cellSettings[this.custom.physicalRow+1][this.custom.col].renderer = cellSaveErrorRenderer;
+                  }).fail(function() {
+                    console.debug('The grade has not been saved.');
+                    cellSettings[this.custom.physicalRow+1][this.custom.col].renderer = cellSaveErrorRenderer;
 
-                }).always(function(){
-                  console.debug('After posting the grades to the tool.');
-                  GbGradeTable.instance.render();
-                });
+                  }).always(function(){
+                    console.debug('After posting the grades to the tool.');
+                    GbGradeTable.instance.render();
+                  });
+                }
+              } else if (col + 1 == TOTAL_COLUMNS) {
+                // Override final grade
+                var studentGrade = {};
+                studentGrade['courseId'] = [[${courseId}]];
+                studentGrade['userId'] = cellMeta.userId;
+                studentGrade['grade'] = newScore;
+                studentGrade['oldGrade'] = oldScore;
+
+                if (oldScore+'' !== newScore+'' && initialized) {
+                  console.debug('Final grade changed to ' + newScore + ' for user '+cellMeta.userId);
+
+                  $.ajax({
+                    url: /*[[@{/postFinalGrade}]]*/,
+                    type: 'POST',
+                    data: JSON.stringify(studentGrade),
+                    dataType: 'json',
+                    custom: {
+                      row: row,
+                      col: col,
+                      visualRow: visualRow,
+                      physicalRow: physicalRow,
+                      physicalCol: physicalCol
+                    },
+                    contentType: 'application/json; charset=utf-8'
+
+                  }).done(function() {
+                    console.debug('The grade has been saved successfully.');
+                    var settings = cellSettings[this.custom.physicalRow+1][this.custom.col];
+                    settings.renderer = cellSaveSuccessRenderer;
+                    settings.score = newScore;
+
+                  }).fail(function() {
+                    console.debug('The grade has not been saved.');
+                    cellSettings[this.custom.physicalRow+1][this.custom.col].renderer = cellFinalGradeSaveErrorRenderer;
+
+                  }).always(function(){
+                    console.debug('After posting the grades to the tool.');
+                    GbGradeTable.instance.render();
+                  });
+                }
               }
             }
           }
@@ -629,6 +674,7 @@
       } else {
         html += '<div>';
       }
+      console.log
       html += td.innerHTML;
       if (cellProperties.speedGraderUrl != undefined) {
         html += '<a title="' + messages.instructor_dropdown_speed_grader + '" class="fas fa-external-link-alt speed-grader" aria-hidden="true" href="' + cellProperties.speedGraderUrl + '" + target="_blank"></a>';
@@ -757,6 +803,16 @@
     function cellSaveErrorRenderer(instance, td, row, col, prop, value, cellProperties) {
       Handsontable.renderers.TextRenderer.apply(this, arguments);
       var html = '<div class="gb-save-error" title="' + messages.instructor_grade_out_range + '">' + td.innerHTML;
+      if (cellProperties.speedGraderUrl != undefined) {
+        html += '<a title="' + messages.instructor_dropdown_speed_grader + '" class="fas fa-external-link-alt speed-grader" aria-hidden="true" href="' + cellProperties.speedGraderUrl + '" + target="_blank"></a>';
+      }
+      html += '</div>';
+      $(td).html(html);
+    }
+
+    function cellFinalGradeSaveErrorRenderer(instance, td, row, col, prop, value, cellProperties) {
+      Handsontable.renderers.TextRenderer.apply(this, arguments);
+      var html = '<div class="gb-save-error" title="' + messages.instructor_final_grade_out_range + '">' + td.innerHTML;
       if (cellProperties.speedGraderUrl != undefined) {
         html += '<a title="' + messages.instructor_dropdown_speed_grader + '" class="fas fa-external-link-alt speed-grader" aria-hidden="true" href="' + cellProperties.speedGraderUrl + '" + target="_blank"></a>';
       }
@@ -1226,6 +1282,9 @@
           cellSettings[row+1][realCol].dropHighestAssignments = response.dropHighestAssignments;
           cellSettings[row+1][realCol].dropLowestAssignments = response.dropLowestAssignments;
           cellSettings[row+1][realCol].renderer = cellGroupGradeRenderer;
+          if (FINAL_GRADE_VALID_VALUES.includes(response.grade)) {
+            cellSettings[row+1][realCol].renderer = cellSaveSuccessRenderer;
+          }
           if (renderCell) {
             GbGradeTable.instance.setDataAtCell(realRow, realCol, response.grade)
           } else {
@@ -1262,6 +1321,7 @@
       while(arr.length) newArr.push(arr.splice(0, Object.keys(assignmentGroupArray).length + 2));
       GbGradeTable.instance.populateFromArray(0, TOTAL_COLUMNS - RIGHT_READ_ONLY_COLS, newArr);
       var columnSorting = GbGradeTable.instance.getPlugin('columnSorting');
+      initialized = true;
       columnSorting.sort(columnSorting.getSortConfig()[0]);
     });
     /**** END OF GROUP AND FINAL GRADES ****/

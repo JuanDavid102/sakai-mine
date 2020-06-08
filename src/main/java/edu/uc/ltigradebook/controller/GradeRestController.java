@@ -8,6 +8,7 @@ import edu.ksu.lti.launch.oauth.LtiPrincipal;
 import edu.uc.ltigradebook.constants.EventConstants;
 import edu.uc.ltigradebook.constants.LtiConstants;
 import edu.uc.ltigradebook.dao.BannerServiceDao;
+import edu.uc.ltigradebook.entity.StudentFinalGrade;
 import edu.uc.ltigradebook.entity.StudentGrade;
 import edu.uc.ltigradebook.exception.GradeException;
 import edu.uc.ltigradebook.service.CanvasAPIServiceWrapper;
@@ -30,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +55,8 @@ public class GradeRestController {
 
     @Autowired
     private SecurityService securityService;
+
+    private static final String[] FINAL_GRADE_VALID_VALUES = new String[]{"P", "I", "R", "A", "D"};
 
     @RequestMapping(value = "/postGrade", method = RequestMethod.POST)
     public boolean postGrade(@RequestBody StudentGrade studentGrade, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) throws GradeException {
@@ -87,7 +91,39 @@ public class GradeRestController {
             gradeService.saveGrade(studentGrade);
             return true;
         }
+    }
 
+    @RequestMapping(value = "/postFinalGrade", method = RequestMethod.POST)
+    public boolean postFinalGrade(@RequestBody StudentFinalGrade studentFinalGrade, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) throws GradeException {
+        String courseId = studentFinalGrade.getCourseId();
+        LtiLaunchData lld = ltiSession.getLtiLaunchData();
+        String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
+        String gradeString = StringUtils.replace(studentFinalGrade.getGrade(), ",", ".");
+        String eventDetails = new JSONObject().put("assignmentId", courseId).put("userId", studentFinalGrade.getUserId()).put("grade", gradeString).put("oldGrade", studentFinalGrade.getOldGrade()).toString();
+
+        if (!securityService.isFaculty(lld.getRolesList())) {
+            log.error("Security error when trying post a grade, reporting the issue.");
+            eventTrackingService.postEvent(EventConstants.ADMIN_ACCESS_FORBIDDEN, canvasUserId, courseId, eventDetails);
+            throw new GradeException();
+        }
+
+        if(StringUtils.isNotBlank(gradeString) && !Arrays.asList(FINAL_GRADE_VALID_VALUES).contains(gradeString)) {
+            log.warn("The grade {} is not valid, it will not be saved", gradeString);
+            throw new GradeException();
+        }
+
+        studentFinalGrade.setGrade(gradeString);
+        log.debug("Posting grade {} for the user {} in the course {}.", gradeString, studentFinalGrade.getUserId(), courseId);
+        if (StringUtils.isBlank(gradeString)) {
+            log.debug("The inserted grade is empty, deleting grade...");
+            eventTrackingService.postEvent(EventConstants.INSTRUCTOR_DELETE_GRADE, canvasUserId, courseId, eventDetails);
+            gradeService.deleteFinalGrade(studentFinalGrade);
+            return true;
+        } else {
+            eventTrackingService.postEvent(EventConstants.INSTRUCTOR_POST_GRADE, canvasUserId, courseId, eventDetails);
+            gradeService.saveFinalGrade(studentFinalGrade);
+            return true;
+        }
     }
 
     @RequestMapping(value = "/getStudentGroupGrade", method = RequestMethod.POST)
