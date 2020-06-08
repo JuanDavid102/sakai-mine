@@ -199,7 +199,9 @@
           var studentGrade = {};
           studentGrade['userId'] = courseUsers[i].sisUserId;
           studentGrade['grade'] = canvasGrade;
-          sendGradesToBannerData.push(studentGrade);
+          if (bannerGrade !== undefined) {
+            sendGradesToBannerData.push(studentGrade);
+          }
 
           var className = 'error';
           if (canvasGrade == bannerGrade) className = 'success';

@@ -470,6 +470,7 @@ public class IndexController {
                 }
             }
             model.addAttribute("isBannerEnabled", bannerEnabled);
+            model.addAttribute("sectionMap", sectionMap);
             //Add the course preferences
             model.addAttribute("coursePreference", coursePreference);
             stopwatch.stop();
@@ -845,7 +846,7 @@ public class IndexController {
     }
 
     @GetMapping("/" + TemplateConstants.SEND_TO_BANNER_TEMPLATE)
-    public ModelAndView sendToBanner(@ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, Model model) {
+    public ModelAndView sendToBanner(@RequestParam String sectionId, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, Model model) {
         Map<String, String> bannerGrades = new HashMap<String, String>();
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
         String courseId = ltiSession.getCanvasCourseId();
@@ -870,21 +871,23 @@ public class IndexController {
 
             StopWatch stopwatch = StopWatch.createStarted();
             for(Section section : sectionList) {
-                sectionMap.put(String.valueOf(section.getId()), section.getName());
-                try {
-                    String sisSectionId = section.getSisSectionId();
-                    log.debug("Getting banner grades for the section {}.", sisSectionId);
-                    String[] splittedSectionId = sisSectionId.split("-");
-                    String academicPeriod = splittedSectionId[0];
-                    String nrcCode = splittedSectionId[1];
-                    /*String courseInitials = splittedSectionId[2];
-                    String sectionNumber = splittedSectionId[3];*/
-                    if(bannerServiceDao.isCourseMainInstructor(nrcCode, academicPeriod, sisUserId)) {
-                        bannerGrades.putAll(bannerServiceDao.getBannerUserListFromCourse(nrcCode, academicPeriod, sisUserId));
-                        userIsCourseMainInstructor = true;
+                if ("all".equals(sectionId) || sectionId.equals(section.getId().toString())) {
+                    sectionMap.put(String.valueOf(section.getId()), section.getName());
+                    try {
+                        String sisSectionId = section.getSisSectionId();
+                        log.debug("Getting banner grades for the section {}.", sisSectionId);
+                        String[] splittedSectionId = sisSectionId.split("-");
+                        String academicPeriod = splittedSectionId[0];
+                        String nrcCode = splittedSectionId[1];
+                        /*String courseInitials = splittedSectionId[2];
+                        String sectionNumber = splittedSectionId[3];*/
+                        if(bannerServiceDao.isCourseMainInstructor(nrcCode, academicPeriod, sisUserId)) {
+                            bannerGrades.putAll(bannerServiceDao.getBannerUserListFromCourse(nrcCode, academicPeriod, sisUserId));
+                            userIsCourseMainInstructor = true;
+                        }
+                    } catch(Exception e) {
+                        log.error("Cannot get the banner grades from the section {}.", section.getSisSectionId());
                     }
-                } catch(Exception e) {
-                    log.error("Cannot get the banner grades from the section {}.", section.getSisSectionId());
                 }
             }
             stopwatch.stop();

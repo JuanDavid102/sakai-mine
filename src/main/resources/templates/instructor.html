@@ -54,7 +54,7 @@
         </button>
       </div>
       <div class="canvas-btn-group" th:if="${isBannerEnabled}">
-        <a class="canvas-btn" href="/send_to_banner" th:href="@{/send_to_banner}" th:title="#{instructor_send_grades_banner}">
+        <a class="canvas-btn" href="#" data-toggle="modal" data-target="#sendGrades" th:title="#{instructor_send_grades_banner}">
           <span class="fas fa-graduation-cap"></span>
           <span class="d-none d-sm-inline-block" th:text="#{instructor_send_grades_banner}">Send grades to banner</span>
         </a>
@@ -308,6 +308,37 @@
   </div>
 </div>
 
+  <!-- Modal Send Grades To Banner -->
+  <div class="modal fade" id="sendGrades" tabindex="-1" role="dialog" aria-labelledby="sendGradesModalLabel" aria-hidden="true" th:if="${isBannerEnabled}">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <form th:action="@{/send_to_banner}" method="GET">
+          <div class="modal-header">
+            <h5 class="modal-title" id="sendGradesModalLabel" th:text="#{instructor_send_grades_banner}">Send Grades to Banner</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="selectBannerSection" th:text="#{instructor_banner_modal_label_section}">Select a section</label>
+              <select class="form-control" name="sectionId" id="selectBannerSection">
+                <option value="all" th:text="#{instructor_export_modal_all_sections}">All sections</option>
+                <option th:each="section : ${sectionList}" th:value="${section.id}" th:text="${section.name}"></option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="canvas-btn rounded-btn" data-dismiss="modal" th:text="#{instructor_export_modal_close}">Close</button>
+            <button type="submit" id="export-button" class="canvas-btn rounded-btn primary-btn">
+              <span th:text="#{instructor_banner_modal_continue}">Continue</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
 <div id="omitFromFinalGrade" class="d-none">
   <span class="col-icon fas fa-exclamation-circle" th:title="#{instructor_header_omit_final_grade}"></span>
 </div>
@@ -361,6 +392,7 @@
 
     window.GbGradeTable = { _onReadyCallbacks: [] };
     var assignmentGroupArray = /*[[${assignmentGroupArray}]]*/;
+    var sectionMap = /*[[${sectionMap}]]*/;
     var columns = /*[[${tableHeaderList}]]*/;
     var data = /*[[${studentRowList}]]*/;
     var cellSettings = /*[[${cellRowListSettings}]]*/;
@@ -674,7 +706,6 @@
       } else {
         html += '<div>';
       }
-      console.log
       html += td.innerHTML;
       if (cellProperties.speedGraderUrl != undefined) {
         html += '<a title="' + messages.instructor_dropdown_speed_grader + '" class="fas fa-external-link-alt speed-grader" aria-hidden="true" href="' + cellProperties.speedGraderUrl + '" + target="_blank"></a>';
