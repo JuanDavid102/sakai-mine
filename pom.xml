@@ -10,7 +10,7 @@
     </parent>
     <groupId>edu.uc</groupId>
     <artifactId>lti-gradebook</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0</version>
     <packaging>war</packaging>
     <name>lti-gradebook</name>
     <description>LTI Gradebook</description>
