@@ -19,7 +19,7 @@
       <span class="d-none d-sm-inline-block" th:text="#{instructor_back_gradebook}">Back to Gradebook</span>
     </a>
   </div>
-  <div th:if="${userIsCourseMainInstructor && !bannerGrades.isEmpty()}">
+  <div>
     <div class="alert alert-info">
       <p th:text="#{banner_info}"></p>
       <p th:text="#{banner_info_note}"></p>
@@ -143,7 +143,7 @@
         </tr>
       </thead>
       <tbody id="table-body">
-        <tr th:each="user : ${courseUsers}" th:id="${'row' + user.id}">
+        <tr th:each="user : ${courseUsers}" th:id="${'row' + user.id}" th:if="${userSections.get(#strings.toString(user.id)) != 'null'}">
           <td><span>
             <th:block th:if="${user.sisUserId != ''}" th:text="${user.sisUserId}"></th:block>
             <th:block th:unless="${user.sisUserId != ''}" th:text="${user.id}"></th:block>
@@ -166,8 +166,9 @@
 <script th:inline="javascript">
   /*<![CDATA[*/
   $(document).ready(function() {
-      var courseUsers = /*[[${courseUsers}]]*/;
       var bannerGrades = /*[[${bannerGrades}]]*/;
+      var courseUsers = /*[[${courseUsers}]]*/;
+      var sectionId = /*[[${sectionId}]]*/;
 
       function calcFinalGrade(user, isCurrentGrade) {
         return new Promise((resolve, reject) => {
@@ -234,7 +235,7 @@
             contentType: 'application/json; charset=utf-8'
 
           }).done( function(success) {
-            window.location = [[@{/send_to_banner}]];
+            window.location = [[@{/send_to_banner}]] + "?sectionId=" + sectionId;
           });
         }
       });

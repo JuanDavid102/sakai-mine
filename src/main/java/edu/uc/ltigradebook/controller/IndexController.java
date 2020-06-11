@@ -846,7 +846,8 @@ public class IndexController {
     }
 
     @GetMapping("/" + TemplateConstants.SEND_TO_BANNER_TEMPLATE)
-    public ModelAndView sendToBanner(@RequestParam String sectionId, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, Model model) {
+    public ModelAndView sendToBanner(@RequestParam(required = false) String sectionId, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, Model model) {
+        if (sectionId == null) sectionId = "all";
         Map<String, String> bannerGrades = new HashMap<String, String>();
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
         String courseId = ltiSession.getCanvasCourseId();
@@ -883,7 +884,6 @@ public class IndexController {
                         String sectionNumber = splittedSectionId[3];*/
                         if(bannerServiceDao.isCourseMainInstructor(nrcCode, academicPeriod, sisUserId)) {
                             bannerGrades.putAll(bannerServiceDao.getBannerUserListFromCourse(nrcCode, academicPeriod, sisUserId));
-                            userIsCourseMainInstructor = true;
                         }
                     } catch(Exception e) {
                         log.error("Cannot get the banner grades from the section {}.", section.getSisSectionId());
@@ -911,6 +911,7 @@ public class IndexController {
             model.addAttribute("bannerEventList", eventTrackingService.getAllEventsByEventCourseAndEventTypes(courseId, Arrays.asList(EventConstants.BANNER_SEND_GRADE_SUCCESS)));
             model.addAttribute("bannerErrorEventList", eventTrackingService.getAllEventsByEventCourseAndEventTypes(courseId, Arrays.asList(EventConstants.BANNER_SEND_GRADE_FAIL)));
             model.addAttribute("userIsCourseMainInstructor", userIsCourseMainInstructor);
+            model.addAttribute("sectionId", sectionId);
 
             return new ModelAndView(TemplateConstants.SEND_TO_BANNER_TEMPLATE);
 
