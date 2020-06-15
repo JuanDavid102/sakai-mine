@@ -56,7 +56,7 @@ public class GradeRestController {
     @Autowired
     private SecurityService securityService;
 
-    private static final String[] FINAL_GRADE_VALID_VALUES = new String[]{"P", "I", "R", "A", "D"};
+    private static final String[] FINAL_GRADE_VALID_VALUES = new String[]{"P", "I", "R", "A"};
 
     @RequestMapping(value = "/postGrade", method = RequestMethod.POST)
     public boolean postGrade(@RequestBody StudentGrade studentGrade, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) throws GradeException {
