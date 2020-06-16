@@ -447,6 +447,10 @@
       }
     }
 
+    var scrollTop     = $(window).scrollTop(),
+        elementOffset = $('.studentTable').offset().top,
+        distance      = (elementOffset - scrollTop);
+    var handsontableHeight = window.innerHeight - distance;
     GbGradeTable.instance = new Handsontable(container, {
       data: data,
       colHeaders: columns,
@@ -463,7 +467,7 @@
       copyPaste: false,
       persistentState: true,
       width: '100%',
-      height: 320,
+      height: handsontableHeight,
       fixedColumnsLeft: LEFT_READ_ONLY_COLS-1,
       fixedColumnsRight: RIGHT_READ_ONLY_COLS,
       className: 'htCenter',
@@ -499,7 +503,6 @@
               properties.renderer = cellRatingRenderer;
           }
 
-          //console.log("col: " + col + " TOTAL_COLUMNS: " + TOTAL_COLUMNS);
           if (col >= (TOTAL_COLUMNS - RIGHT_READ_ONLY_COLS) && (col + 1 != TOTAL_COLUMNS)) {
             properties.editor = false;
           }
@@ -565,7 +568,48 @@
         $('.header-cell-dropdown.show').dropdown('toggle');
         $('body > .dropdown-menu.show').remove();
       },
+      afterInit: function() {
+        var _instance = this;
+        var ajaxRequests = [];
+        for (var i = 0; i < this.getData().length; i++) {
+          var physicalRow = this.toPhysicalRow(i);
+          var userId = cellSettings[physicalRow+1][0].userId;
+          var sortedArray = Object.keys(assignmentGroupArray).map(function(groupId) {
+            assignmentGroupArray[groupId].groupId = groupId;
+            return assignmentGroupArray[groupId];
+          });
+          sortedArray = sortedArray.sort((a,b) => (a.assignmentGroupColIndex > b.assignmentGroupColIndex) ? 1 : ((b.assignmentGroupColIndex > a.assignmentGroupColIndex) ? -1 : 0));
+          Object.keys(sortedArray).forEach(function(idx) {
+            ajaxRequests.push(calcGroupGrade(sortedArray[idx].groupId, userId, i, false, _instance));
+          });
+          ajaxRequests.push(calcFinalGrade(userId, i, true, false, _instance));
+          if (groupWeightsAre100) {
+            ajaxRequests.push(calcFinalGrade(userId, i, false, false, _instance));
+          } else {
+            ajaxRequests.push(GRADE_NOT_AVAILABLE);
+          }
+        }
+        Promise.all(ajaxRequests).then((arr) => {
+          var newArr = [];
+          while(arr.length) newArr.push(arr.splice(0, Object.keys(assignmentGroupArray).length + 2));
+          this.populateFromArray(0, TOTAL_COLUMNS - RIGHT_READ_ONLY_COLS, newArr);
+          var columnSorting = this.getPlugin('columnSorting');
+          initialized = true;
+          columnSorting.sort(columnSorting.getSortConfig()[0]);
+
+          var daWidth = $('.studentTable > .handsontable.ht_master > .wtHolder > .wtHider').width();
+          $('.div1').css('width', daWidth + 'px');
+        });
+
+        var daWidth = $('.studentTable > .handsontable.ht_master > .wtHolder > .wtHider').width();
+        $('.div1').css('width', daWidth + 'px');
+
+        if (_instance.getSettings().height > $('.handsontable.ht_master > .wtHolder > .wtHider')[0].offsetHeight) {
+          _instance.updateSettings({height:$('.handsontable.ht_master > .wtHolder > .wtHider')[0].offsetHeight + 17})
+        }
+      },
       afterChange: function(changes, source) {
+          var _instance = this;
           if (changes) {
             for (var i=0; i<changes.length; i++) {
               var change = changes[i];
@@ -614,10 +658,10 @@
                     var groupId = settings.assignmentGroupId;
                     var userId = settings.userId;
                     if (!settings.omitFromFinalGrade && !settings.assignmentIsMuted && !settings.isZeroPoints) {
-                      calcGroupGrade(groupId, userId, this.custom.physicalRow, true);
-                      calcFinalGrade(userId, this.custom.physicalRow, true, true);
+                      calcGroupGrade(groupId, userId, this.custom.physicalRow, true, _instance);
+                      calcFinalGrade(userId, this.custom.physicalRow, true, true, _instance);
                       if (groupWeightsAre100) {
-                        calcFinalGrade(userId, this.custom.physicalRow, false, true);
+                        calcFinalGrade(userId, this.custom.physicalRow, false, true, _instance);
                       }
                     }
 
@@ -638,7 +682,7 @@
                 studentGrade['grade'] = newScore;
                 studentGrade['oldGrade'] = oldScore;
 
-                if (oldScore+'' !== newScore+'' && initialized) {
+                if (oldScore+'' !== newScore+'' && newScore != '-' && initialized) {
                   console.debug('Final grade changed to ' + newScore + ' for user '+cellMeta.userId);
 
                   $.ajax({
@@ -1259,11 +1303,11 @@
     /**** END OF DROPDOWNS ****/
 
     /**** GROUP AND FINAL GRADES ****/
-    function calcGroupGrade(groupId, userId, row, renderCell) {
+    function calcGroupGrade(groupId, userId, row, renderCell, _instance) {
       return new Promise((resolve, reject) => {
         var assignmentGroupColIndex = assignmentGroupArray[groupId].assignmentGroupColIndex;
         var realCol = TOTAL_COLUMNS-RIGHT_READ_ONLY_COLS+assignmentGroupColIndex;
-        var realRow = GbGradeTable.instance.toVisualRow(row) + 1;
+        var realRow = _instance.toVisualRow(row) + 1;
         cellSettings[row+1][realCol].renderer = cellLoadingRenderer;
 
         $.ajax({
@@ -1274,17 +1318,24 @@
         }).done(function(response) {
           var assignmentGroupColIndex = assignmentGroupArray[groupId].assignmentGroupColIndex;
           var realCol = TOTAL_COLUMNS-RIGHT_READ_ONLY_COLS+assignmentGroupColIndex;
-          var realRow = GbGradeTable.instance.toVisualRow(row);
-          cellSettings[row+1][realCol].omittedAssignments = response.omittedAssignments;
-          cellSettings[row+1][realCol].mutedAssignments = response.mutedAssignments;
-          cellSettings[row+1][realCol].dropHighestAssignments = response.dropHighestAssignments;
-          cellSettings[row+1][realCol].dropLowestAssignments = response.dropLowestAssignments;
-          cellSettings[row+1][realCol].renderer = cellGroupGradeRenderer;
+          var realRow = _instance.toVisualRow(row);
+          var physicalRow = _instance.toPhysicalRow(row);
+          var isPhysical = true;
+          var daRow = physicalRow+1;
+          if (cellSettings[row+1][realCol].userId == userId) {
+            isPhyshical = false;
+            daRow = row+1;
+          }
+          cellSettings[daRow][realCol].omittedAssignments = response.omittedAssignments;
+          cellSettings[daRow][realCol].mutedAssignments = response.mutedAssignments;
+          cellSettings[daRow][realCol].dropHighestAssignments = response.dropHighestAssignments;
+          cellSettings[daRow][realCol].dropLowestAssignments = response.dropLowestAssignments;
+          cellSettings[daRow][realCol].renderer = cellGroupGradeRenderer;
           if (renderCell) {
-            GbGradeTable.instance.setDataAtCell(realRow, realCol, response.grade)
+            _instance.setDataAtCell(realRow, realCol, response.grade)
           } else {
             // If cell is visible, avoid method 'setDataAtCell' to avoid table re-render on each cell value change
-            var cell = GbGradeTable.instance.getCell(realRow, realCol);
+            var cell = _instance.getCell(daRow, realCol);
             if (cell !== undefined) $(cell).find('.spinner').text(response.grade).removeClass('spinner');
           }
           resolve(response.grade);
@@ -1292,11 +1343,11 @@
       });
     }
 
-    function calcFinalGrade(userId, row, isCurrentGrade, renderCell) {
+    function calcFinalGrade(userId, row, isCurrentGrade, renderCell, _instance) {
       return new Promise((resolve, reject) => {
         var realCol = TOTAL_COLUMNS - 1;
         if (isCurrentGrade) realCol--;
-        var realRow = GbGradeTable.instance.toVisualRow(row);
+        var realRow = _instance.toVisualRow(row);
         cellSettings[row+1][realCol].renderer = cellLoadingRenderer;
 
         $.ajax({
@@ -1307,54 +1358,33 @@
         }).done(function(response) {
           var realCol = TOTAL_COLUMNS - 1;
           if (isCurrentGrade) realCol--;
-          var realRow = GbGradeTable.instance.toVisualRow(row);
-          cellSettings[row+1][realCol].omittedAssignments = response.omittedAssignments;
-          cellSettings[row+1][realCol].mutedAssignments = response.mutedAssignments;
-          cellSettings[row+1][realCol].dropHighestAssignments = response.dropHighestAssignments;
-          cellSettings[row+1][realCol].dropLowestAssignments = response.dropLowestAssignments;
-          cellSettings[row+1][realCol].renderer = cellGroupGradeRenderer;
-          if (FINAL_GRADE_VALID_VALUES.includes(response.grade)) {
-            cellSettings[row+1][realCol].renderer = cellSaveSuccessRenderer;
+          var realRow = _instance.toVisualRow(row);
+          var physicalRow = _instance.toPhysicalRow(row);
+          var isPhysical = true;
+          var daRow = physicalRow+1;
+          if (cellSettings[row+1][realCol].userId == userId) {
+            isPhyshical = false;
+            daRow = row+1;
+          }
+          cellSettings[daRow][realCol].omittedAssignments = response.omittedAssignments;
+          cellSettings[daRow][realCol].mutedAssignments = response.mutedAssignments;
+          cellSettings[daRow][realCol].dropHighestAssignments = response.dropHighestAssignments;
+          cellSettings[daRow][realCol].dropLowestAssignments = response.dropLowestAssignments;
+          cellSettings[daRow][realCol].renderer = cellGroupGradeRenderer;
+          if (!isCurrentGrade && FINAL_GRADE_VALID_VALUES.includes(response.grade)) {
+            cellSettings[daRow][realCol].renderer = cellSaveSuccessRenderer;
           }
           if (renderCell) {
-            GbGradeTable.instance.setDataAtCell(realRow, realCol, response.grade)
+            _instance.setDataAtCell(realRow, realCol, response.grade)
           } else {
             // If cell is visible, avoid method 'setDataAtCell' to avoid table re-render on each cell value change
-            var cell = GbGradeTable.instance.getCell(realRow, realCol);
+            var cell = _instance.getCell(daRow, realCol);
             if (cell !== undefined) $(cell).find('.spinner').text(response.grade).removeClass('spinner');
           }
           resolve(response.grade);
         });
       });
     }
-
-    var ajaxRequests = [];
-    for (var i = 0; i < GbGradeTable.instance.getData().length; i++) {
-      var physicalRow = GbGradeTable.instance.toPhysicalRow(i);
-      var userId = cellSettings[physicalRow+1][0].userId;
-      var sortedArray = Object.keys(assignmentGroupArray).map(function(groupId) {
-        assignmentGroupArray[groupId].groupId = groupId;
-        return assignmentGroupArray[groupId];
-      });
-      sortedArray = sortedArray.sort((a,b) => (a.assignmentGroupColIndex > b.assignmentGroupColIndex) ? 1 : ((b.assignmentGroupColIndex > a.assignmentGroupColIndex) ? -1 : 0));
-      Object.keys(sortedArray).forEach(function(idx) {
-        ajaxRequests.push(calcGroupGrade(sortedArray[idx].groupId, userId, i, false));
-      });
-      ajaxRequests.push(calcFinalGrade(userId, i, true, false));
-      if (groupWeightsAre100) {
-        ajaxRequests.push(calcFinalGrade(userId, i, false, false));
-      } else {
-        ajaxRequests.push(GRADE_NOT_AVAILABLE);
-      }
-    }
-    Promise.all(ajaxRequests).then((arr) => {
-      var newArr = [];
-      while(arr.length) newArr.push(arr.splice(0, Object.keys(assignmentGroupArray).length + 2));
-      GbGradeTable.instance.populateFromArray(0, TOTAL_COLUMNS - RIGHT_READ_ONLY_COLS, newArr);
-      var columnSorting = GbGradeTable.instance.getPlugin('columnSorting');
-      initialized = true;
-      columnSorting.sort(columnSorting.getSortConfig()[0]);
-    });
     /**** END OF GROUP AND FINAL GRADES ****/
 
     /**** SELECT THE WHOLE TEXTAREA ON CELL EDIT ****/
@@ -1469,3 +1499,4 @@
 </script>
 </body>
 </html>
+

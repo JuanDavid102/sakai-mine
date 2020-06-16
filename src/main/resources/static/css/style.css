@@ -94,17 +94,17 @@
 }
 
 #tableContainer .studentTable.handsontable {
-  height: initial !important;
+  /*height: initial !important;*/
 }
 
 #tableContainer .studentTable .ht_clone_top .wtHolder {
-  height: initial !important;
-  min-width: inherit !important;
+  /*height: initial !important;
+  min-width: inherit !important;*/
 }
 
 #tableContainer .studentTable .ht_master .wtHolder {
-  height: initial !important;
-  width: initial !important;
+  /*height: initial !important;
+  width: initial !important;*/
 }
 
 #tableContainer .studentTable .handsontable thead th {
@@ -118,16 +118,16 @@
 }
 
 #tableContainer .studentTable .ht_clone_top.handsontable {
-  min-width: 100% !important;
-  overflow: initial !important;
+  /*min-width: 100% !important;
+  overflow: initial !important;*/
 }
 
 #tableContainer .studentTable .ht_clone_left.handsontable {
-  height: initial !important;
+  /*height: initial !important;*/
 }
 
 #tableContainer .studentTable .ht_clone_left.handsontable .wtHolder {
-  height: initial !important;
+  /*height: initial !important;*/
 }
 
 #tableContainer .studentTable .handsontable tbody tr:nth-child(even) td {
@@ -357,8 +357,8 @@
 }
 
 .wtHolder::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 17px;
+  height: 17px;
 }
 .wtHolder::-webkit-scrollbar-track {
   background-color: #EEE;
@@ -366,6 +366,7 @@
 .wtHolder::-webkit-scrollbar-thumb {
   border-radius: 10px;
   background-color: rgba(170,170,170,0.5);
+  border: 3px solid rgba(238, 238, 238, 1);
 }
 .wtHolder::-webkit-scrollbar-thumb:hover {
   background-color: #AAA;
@@ -664,3 +665,17 @@ body .dropzone.dz-drag-hover {
   border-style: dashed;
   border-color: #cccccc;
 }
+
+.wrapper1{
+position: fixed;
+    bottom: 0;
+    z-index: 105;
+    display: none;
+}
+.wrapper1, .wrapper2{width: 100%; border: none 0px RED;
+overflow-x: scroll; overflow-y:hidden;}
+.wrapper1{height: 20px; }
+.wrapper2{height: 200px; }
+.div1 {width:1000px; height: 20px; }
+.div2 {width:1000px; height: 200px; background-color: #88FF88;
+overflow: auto;}
