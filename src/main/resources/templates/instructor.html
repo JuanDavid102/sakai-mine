@@ -707,7 +707,12 @@
 
                   }).fail(function() {
                     console.debug('The grade has not been saved.');
-                    cellSettings[this.custom.physicalRow+1][this.custom.col].renderer = cellFinalGradeSaveErrorRenderer;
+                    var prevRenderer = cellSettings[this.custom.physicalRow+1][this.custom.col].renderer;
+                    if (prevRenderer === cellBlankRenderer) {
+                      cellSettings[this.custom.physicalRow+1][this.custom.col].renderer = cellGroupGradeRenderer;
+                    } else {
+                      cellSettings[this.custom.physicalRow+1][this.custom.col].renderer = cellFinalGradeSaveErrorRenderer;
+                    }
 
                   }).always(function(){
                     console.debug('After posting the grades to the tool.');
@@ -1375,7 +1380,11 @@
             cellSettings[daRow][realCol].renderer = cellSaveSuccessRenderer;
           }
           if (renderCell) {
-            _instance.setDataAtCell(realRow, realCol, response.grade)
+            _instance.setDataAtCell(realRow, realCol, response.grade);
+            if (!isCurrentGrade) {
+              cellSettings[daRow][realCol].renderer = cellBlankRenderer;
+            }
+
           } else {
             // If cell is visible, avoid method 'setDataAtCell' to avoid table re-render on each cell value change
             var cell = _instance.getCell(daRow, realCol);
