@@ -657,7 +657,7 @@
                     settings.score = newScore;
                     var groupId = settings.assignmentGroupId;
                     var userId = settings.userId;
-                    if (!settings.omitFromFinalGrade && !settings.assignmentIsMuted && !settings.isZeroPoints) {
+                    if (!settings.omitFromFinalGrade && !settings.assignmentIsMuted) {
                       calcGroupGrade(groupId, userId, this.custom.physicalRow, true, _instance);
                       calcFinalGrade(userId, this.custom.physicalRow, true, true, _instance);
                       if (groupWeightsAre100) {
