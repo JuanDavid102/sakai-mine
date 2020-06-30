@@ -182,10 +182,7 @@ public class GradeService {
                     }
 
                     if (!gradeTypeNotSupported) {
-                        if (StringUtils.isBlank(grade)) {
-                            calculateFinalGrade = false;
-                            break;
-                        } else {
+                        if (StringUtils.isNotBlank(grade)) {
                             BigDecimal assignmentGrade = new BigDecimal(grade);
                             groupMeanSum = groupMeanSum.add(assignmentGrade);
                             gradesLength = gradesLength.add(BigDecimal.ONE);
