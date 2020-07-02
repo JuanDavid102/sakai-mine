@@ -1460,11 +1460,11 @@
           var eventDetails = JSON.parse(elem.eventDetails);
           var jsonElement = {
             'date': '<div>' + moment(elem.eventDate).format('lll') + '<span class="hiddenValue d-none">' + elem.eventDate + '</span></div>',
-            'studentName': eventDetails.studentName,
-            'assignmentName': eventDetails.assignmentName,
-            'oldGrade': eventDetails.oldGrade,
-            'newGrade': eventDetails.grade,
-            'teacherName': eventDetails.teacherName
+            'studentName': eventDetails.studentName ? eventDetails.studentName : '',
+            'assignmentName': eventDetails.assignmentName ? eventDetails.assignmentName : '',
+            'oldGrade': eventDetails.oldGrade ? eventDetails.oldGrade : '',
+            'newGrade': eventDetails.grade ? eventDetails.grade : '',
+            'teacherName': eventDetails.teacherName ? eventDetails.teacherName : ''
           };
           json.push(jsonElement);
         });
