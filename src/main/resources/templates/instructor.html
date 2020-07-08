@@ -586,6 +586,7 @@
           if (groupWeightsAre100) {
             ajaxRequests.push(calcFinalGrade(userId, i, false, false, _instance));
           } else {
+            cellSettings[i+1][TOTAL_COLUMNS-1].renderer = cellGroupGradeRenderer;
             ajaxRequests.push(GRADE_NOT_AVAILABLE);
           }
         }
