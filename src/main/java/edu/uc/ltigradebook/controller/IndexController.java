@@ -21,6 +21,7 @@ import edu.uc.ltigradebook.entity.AssignmentPreference;
 import edu.uc.ltigradebook.entity.AssignmentStatistic;
 import edu.uc.ltigradebook.entity.CoursePreference;
 import edu.uc.ltigradebook.entity.Event;
+import edu.uc.ltigradebook.entity.StudentFinalGrade;
 import edu.uc.ltigradebook.entity.StudentGrade;
 import edu.uc.ltigradebook.service.AccountService;
 import edu.uc.ltigradebook.service.AssignmentService;
@@ -317,9 +318,12 @@ public class IndexController {
                 }
                 userGrades.add(section);
 
+                Optional<StudentFinalGrade> studentFinalGradeOverride = gradeService.getStudentOverridedFinalGrade(courseId, userId);
                 List<Map<String, Object>> userSettings = new ArrayList<>();
                 Map<String, Object> emptyCellSettings = new HashMap<>();
                 emptyCellSettings.put("userId", userId);
+                emptyCellSettings.put("isFinalGradeOverride", studentFinalGradeOverride.isPresent());
+
                 //Add empty settings for the first three columns, userId, userName and sectionName.
                 for(int i = 0 ; i<LEFT_READ_ONLY_COLS; i++) {
                     userSettings.add(emptyCellSettings);

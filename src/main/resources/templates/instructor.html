@@ -573,6 +573,7 @@
         var ajaxRequests = [];
         for (var i = 0; i < this.getData().length; i++) {
           var physicalRow = this.toPhysicalRow(i);
+          var isFinalGradeOverride = cellSettings[physicalRow+1][0].isFinalGradeOverride;
           var userId = cellSettings[physicalRow+1][0].userId;
           var sortedArray = Object.keys(assignmentGroupArray).map(function(groupId) {
             assignmentGroupArray[groupId].groupId = groupId;
@@ -582,11 +583,11 @@
           Object.keys(sortedArray).forEach(function(idx) {
             ajaxRequests.push(calcGroupGrade(sortedArray[idx].groupId, userId, i, false, _instance));
           });
-          ajaxRequests.push(calcFinalGrade(userId, i, true, false, _instance));
-          if (groupWeightsAre100) {
-            ajaxRequests.push(calcFinalGrade(userId, i, false, false, _instance));
+          ajaxRequests.push(calcFinalGrade(userId, physicalRow, true, false, _instance));
+          if (groupWeightsAre100 || isFinalGradeOverride) {
+            ajaxRequests.push(calcFinalGrade(userId, physicalRow, false, false, _instance));
           } else {
-            cellSettings[i+1][TOTAL_COLUMNS-1].renderer = cellGroupGradeRenderer;
+            cellSettings[physicalRow+1][TOTAL_COLUMNS-1].renderer = cellGroupGradeRenderer;
             ajaxRequests.push(GRADE_NOT_AVAILABLE);
           }
         }
@@ -597,13 +598,7 @@
           var columnSorting = this.getPlugin('columnSorting');
           initialized = true;
           columnSorting.sort(columnSorting.getSortConfig()[0]);
-
-          var daWidth = $('.studentTable > .handsontable.ht_master > .wtHolder > .wtHider').width();
-          $('.div1').css('width', daWidth + 'px');
         });
-
-        var daWidth = $('.studentTable > .handsontable.ht_master > .wtHolder > .wtHider').width();
-        $('.div1').css('width', daWidth + 'px');
 
         if (_instance.getSettings().height > $('.handsontable.ht_master > .wtHolder > .wtHider')[0].offsetHeight) {
           _instance.updateSettings({height:$('.handsontable.ht_master > .wtHolder > .wtHider')[0].offsetHeight + 17})
@@ -1353,6 +1348,7 @@
       return new Promise((resolve, reject) => {
         var realCol = TOTAL_COLUMNS - 1;
         if (isCurrentGrade) realCol--;
+
         var realRow = _instance.toVisualRow(row);
         cellSettings[row+1][realCol].renderer = cellLoadingRenderer;
 
