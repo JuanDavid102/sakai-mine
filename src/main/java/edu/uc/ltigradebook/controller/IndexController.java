@@ -286,7 +286,7 @@ public class IndexController {
                 assignmentGroupTotalWeight = assignmentGroupTotalWeight.add(new BigDecimal(assignmentGroup.getGroupWeight()));
                 RIGHT_READ_ONLY_COLS++;
             }
-            model.addAttribute("groupWeightsNot100", !assignmentGroupTotalWeight.equals(new BigDecimal(100)));
+            model.addAttribute("groupWeightsNot100", assignmentGroupTotalWeight.compareTo(new BigDecimal(100)) != 0);
 
             tableHeaderList.add(messageSource.getMessage("shared_current_grade", null, LocaleContextHolder.getLocale()));
             tableHeaderList.add(messageSource.getMessage("shared_final_grade", null, LocaleContextHolder.getLocale()));
