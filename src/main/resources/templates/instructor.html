@@ -761,8 +761,8 @@
 
     function cellGroupGradeRenderer(instance, td, row, col, prop, value, cellProperties) {
       Handsontable.renderers.TextRenderer.apply(this, arguments);
-      var physicalRow = GbGradeTable.instance.toPhysicalRow(row);
-      var physicalCol = GbGradeTable.instance.toPhysicalColumn(col);
+      var physicalRow = instance.toPhysicalRow(row);
+      var physicalCol = instance.toPhysicalColumn(col);
       var cellMeta = cellSettings[physicalRow+1][physicalCol];
 
       var html = '<div>';
