@@ -63,12 +63,12 @@ public class GradeUtils {
             if (earnedDecimalPoints.compareTo(passPoints) < 0) {
                 convertedGrade = (PASS_GRADE.subtract(MIN_GRADE))
                         .multiply(earnedDecimalPoints
-                        .divide(passPoints, 9, RoundingMode.HALF_UP)).setScale(2, RoundingMode.HALF_UP)
+                        .divide(passPoints, 9, RoundingMode.HALF_UP)).setScale(3, RoundingMode.HALF_UP)
                         .add(MIN_GRADE);
             } else {
                 convertedGrade = (PASS_GRADE.subtract(MIN_GRADE))
                         .multiply(earnedDecimalPoints.subtract(passPoints)
-                        .divide(totalDecimalPoints.subtract(passPoints), 9, RoundingMode.HALF_UP)).setScale(2, RoundingMode.HALF_UP)
+                        .divide(totalDecimalPoints.subtract(passPoints), 9, RoundingMode.HALF_UP)).setScale(3, RoundingMode.HALF_UP)
                         .add(PASS_GRADE);
             }
         } catch(Exception ex) {
