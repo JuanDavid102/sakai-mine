@@ -469,7 +469,7 @@ public class IndexController {
             Optional<Course> courseOptional = canvasService.getSingleCourse(courseId);
             if (courseOptional.isPresent()) {
                 Optional<Account> mainSubAccount = canvasService.getSubAccountForCourseAccount(String.valueOf(courseOptional.get().getAccountId()));
-                if (mainSubAccount.isPresent()) {
+                if (mainSubAccount.isPresent() && !securityService.isTeachingAssistant(lld.getRolesList())) {
                     bannerEnabled = securityService.isBannerEnabled(mainSubAccount.get().getId());
                 }
             }
@@ -864,7 +864,7 @@ public class IndexController {
             Optional<User> optionalUser = canvasService.getTeachersInCourse(courseId).stream().filter(user -> user.getId() == Integer.valueOf(canvasUserId)).findFirst();
             if (!optionalUser.isPresent()) {
                 log.error("Fatal error locating user sis identifier using canvas id {}.", canvasUserId);
-                return new ModelAndView(TemplateConstants.ERROR_TEMPLATE);
+                return new ModelAndView(TemplateConstants.FORBIDDEN_BANNER_TEMPLATE);
             }
             String sisUserId = optionalUser.get().getSisUserId();
 

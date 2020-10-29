@@ -47,6 +47,13 @@ public class SecurityService {
        return false;
    }
 
+   public boolean isTeachingAssistant(List<InstitutionRole> userRoles) {
+       if(userRoles != null && !userRoles.isEmpty()) {
+           return userRoles.contains(InstitutionRole.TeachingAssistant);
+           }
+       return false;
+   }
+
    public boolean isBannerEnabled(long accountId) {
        log.debug("Checking if banner is enabled for the accountId {}.", accountId);
        Optional<AccountPreference> optionalAccountPreference = accountService.getAccountPreferences(accountId);

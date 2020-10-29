@@ -35,7 +35,7 @@
         <span class="d-none d-sm-inline-block" th:text="#{banner_button_event_history}">Event History</span>
       </button>
       &nbsp;
-      <button class="canvas-btn" id="sendGradesToBanner" disabled="disabled" data-toggle="modal" data-target="#bannerConfirmationModal">
+      <button class="canvas-btn" id="sendGradesToBanner" disabled="disabled" data-toggle="modal" data-target="#bannerConfirmationModal" th:if="${userIsCourseMainInstructor}">
         <span class="fas fa-sync"></span>
         <span class="d-none d-sm-inline-block" th:text="#{banner_button_send_grades_banner}">Send Grades to Banner</span>
       </button>
