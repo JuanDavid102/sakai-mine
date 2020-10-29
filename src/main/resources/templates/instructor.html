@@ -455,7 +455,22 @@
       data: data,
       colHeaders: columns,
       dropdownMenu: false,
-      columnSorting: true,
+      columnSorting: {
+        sortEmptyCells: false,
+        indicator: true,
+        headerAction: true,
+        compareFunctionFactory: function(sortOrder, columnMeta) {
+          return function(value, nextValue) {
+            var order = 1;
+            if (sortOrder == 'asc') order = -1;
+            value = value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            nextValue = nextValue.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            if(value < nextValue) { return order; }
+            if(value > nextValue) { return -order; }
+            return 0;
+          }
+        }
+      },
       manualColumnMove: true,
       manualColumnResize: true,
       filters: true,
