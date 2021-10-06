@@ -712,7 +712,7 @@ public class IndexController {
                     }
                     section = joiner.toString();
                 }
-                userSectionMap.put(Integer.toString(user.getId()), section);
+                userSectionMap.put(String.valueOf(user.getId()), section);
             }
 
             model.addAttribute("selectedIntegerCourse", Integer.valueOf(selectedCourse));
@@ -747,8 +747,8 @@ public class IndexController {
             model.addAttribute("userList", userList);
             new Long(selectedStudent);
 
-            model.addAttribute("selectedIntegerStudent", Integer.valueOf(selectedStudent));
-            Optional<User> user = userList.stream().filter(u -> u.getId() == Integer.valueOf(selectedStudent)).findFirst();
+            model.addAttribute("selectedStudent", selectedStudent);
+            Optional<User> user = userList.stream().filter(u -> selectedStudent.equals(String.valueOf(u.getId()))).findFirst();
             if (!user.isPresent()) {
                 return new ModelAndView(TemplateConstants.ADMIN_GRADES_STUDENTS_TEMPLATE);
             }
@@ -861,7 +861,7 @@ public class IndexController {
         try {
             List<User> courseUsers = canvasService.getUsersInCourse(courseId);
             // We need the SIS ID of the user because Banner use the RUT instead of the login or the ID.
-            Optional<User> optionalUser = canvasService.getTeachersInCourse(courseId).stream().filter(user -> user.getId() == Integer.valueOf(canvasUserId)).findFirst();
+            Optional<User> optionalUser = canvasService.getTeachersInCourse(courseId).stream().filter(user -> canvasUserId.equals(String.valueOf(user.getId()))).findFirst();
             if (!optionalUser.isPresent()) {
                 log.error("Fatal error locating user sis identifier using canvas id {}.", canvasUserId);
                 return new ModelAndView(TemplateConstants.FORBIDDEN_BANNER_TEMPLATE);
@@ -907,7 +907,7 @@ public class IndexController {
                     }
                     section = joiner.toString();
                 }
-                userSections.put(Integer.toString(user.getId()), section);
+                userSections.put(String.valueOf(user.getId()), section);
             }
 
             model.addAttribute("courseUsers", courseUsers);

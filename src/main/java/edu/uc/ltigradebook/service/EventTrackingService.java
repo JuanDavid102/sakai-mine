@@ -45,8 +45,8 @@ public class EventTrackingService {
             for (Event event : events) {
                 JSONObject jsonEvent = new JSONObject(event.getEventDetails());
                 Optional<Assignment> assignment = assignmentList.stream().filter(asn -> jsonEvent.getString("assignmentId").equals(Integer.toString(asn.getId()))).findFirst();
-                Optional<User> student = users.stream().filter(usr -> jsonEvent.getString("userId").equals(Integer.toString(usr.getId()))).findFirst();
-                Optional<User> teacher = users.stream().filter(usr -> event.getEventUser().equals(Integer.toString(usr.getId()))).findFirst();
+                Optional<User> student = users.stream().filter(usr -> jsonEvent.getString("userId").equals(String.valueOf(usr.getId()))).findFirst();
+                Optional<User> teacher = users.stream().filter(usr -> event.getEventUser().equals(String.valueOf(usr.getId()))).findFirst();
                 if (assignment.isPresent()) {
                     jsonEvent.put("assignmentName", assignment.get().getName());
                 }

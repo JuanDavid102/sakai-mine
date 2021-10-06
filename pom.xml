@@ -25,7 +25,7 @@
         <opencsv.version>5.1</opencsv.version>
         <commons-io.version>2.6</commons-io.version>
         <oracle.driver.version>19.3.0.0</oracle.driver.version>
-        <canvas.api.version>1.0.25</canvas.api.version><!--Unreleased version again-->
+        <canvas.api.version>1.5.6</canvas.api.version>
     </properties>
 
     <dependencies>
@@ -91,7 +91,7 @@
         </dependency>
         <!-- Canvas API library to interact with the API -->
         <dependency>
-            <groupId>edu.ksu.canvas</groupId>
+            <groupId>uk.ac.ox.ctl</groupId>
             <artifactId>canvas-api</artifactId>
             <version>${canvas.api.version}</version>
         </dependency>

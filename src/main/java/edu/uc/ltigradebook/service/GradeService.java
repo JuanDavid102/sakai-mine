@@ -99,7 +99,7 @@ public class GradeService {
         return gradeRepository.getGradedUserCount();
     }
 
-    public JSONObject getStudentGroupMean(LtiSession ltiSession, Long groupId, Integer studentId, String courseId) throws GradeException {
+    public JSONObject getStudentGroupMean(LtiSession ltiSession, Long groupId, long studentId, String courseId) throws GradeException {
         JSONObject json = new JSONObject();
         JSONArray omittedAssignments = new JSONArray();
         JSONArray mutedAssignments = new JSONArray();
@@ -108,11 +108,12 @@ public class GradeService {
 
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
         String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
+        String studentIdString = String.valueOf(studentId);
         if (StringUtils.isBlank(courseId)) {
             courseId = ltiSession.getCanvasCourseId();
         }
         CoursePreference coursePreference = courseService.getCoursePreference(courseId);
-        if (canvasUserId.equals(studentId.toString()) || securityService.isFaculty(lld.getRolesList())) {
+        if (canvasUserId.equals(studentIdString) || securityService.isFaculty(lld.getRolesList())) {
             BigDecimal groupMeanSum = BigDecimal.ZERO;
             BigDecimal gradesLength = BigDecimal.ZERO;
             boolean calculateFinalGrade = true;
@@ -144,7 +145,7 @@ public class GradeService {
 
                     boolean omitFromFinalGrade = assignment.isOmitFromFinalGrade();
                     boolean isZeroPoints = assignment.getPointsPossible() == null || assignment.getPointsPossible().equals(new Double(0));
-                    boolean isVisibleForUser = assignment.getAssignmentVisibility().stream().anyMatch(studentId.toString()::equals);
+                    boolean isVisibleForUser = assignment.getAssignmentVisibility().stream().anyMatch(studentIdString::equals);
 
                     // Skip if assignment is muted, grade is omitted from final grade or assignment possible points is zero
                     if (assignmentIsMuted) mutedAssignments.put(assignmentJson);
@@ -231,7 +232,7 @@ public class GradeService {
                 }
 
             } catch (IOException ex) {
-                log.error("Error getting student {} group {} mean", studentId, groupId);
+                log.error("Error getting student {} group {} mean", studentIdString, groupId);
             }
 
             if (calculateFinalGrade && !gradesLength.equals(BigDecimal.ZERO)) {
@@ -252,7 +253,7 @@ public class GradeService {
         }
     }
 
-    public JSONObject getStudentTotalMean(LtiSession ltiSession, Integer studentId, boolean isCurrentGrade, String courseId) throws GradeException {
+    public JSONObject getStudentTotalMean(LtiSession ltiSession, long studentId, boolean isCurrentGrade, String courseId) throws GradeException {
         JSONObject json = new JSONObject();
         JSONArray omittedAssignments = new JSONArray();
         JSONArray mutedAssignments = new JSONArray();
@@ -261,19 +262,20 @@ public class GradeService {
 
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
         String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
+        String studentIdString = String.valueOf(studentId);
         if (StringUtils.isBlank(courseId)) {
             courseId = ltiSession.getCanvasCourseId();
         }
         CoursePreference coursePreference = courseService.getCoursePreference(courseId);
         // If is final grade and the grade was overrided...
         if (!isCurrentGrade) {
-            Optional<StudentFinalGrade> studentFinalGradeOverride = this.getStudentOverridedFinalGrade(courseId, studentId.toString());
+            Optional<StudentFinalGrade> studentFinalGradeOverride = this.getStudentOverridedFinalGrade(courseId, studentIdString);
             if (studentFinalGradeOverride.isPresent()) {
                 json.put("grade", studentFinalGradeOverride.get().getGrade());
                 return json;
             }
         }
-        if (canvasUserId.equals(studentId.toString()) || securityService.isFaculty(lld.getRolesList())) {
+        if (canvasUserId.equals(studentIdString) || securityService.isFaculty(lld.getRolesList())) {
             boolean calculateFinalGrade = true;
             Map<Long, List<BigDecimal>> groupGrades = new HashMap<>();
             Map<Long, Map<Integer, BigDecimal>> groupAssignmentGrades = new HashMap<>();
@@ -302,7 +304,7 @@ public class GradeService {
 
                     boolean omitFromFinalGrade = assignment.isOmitFromFinalGrade();
                     boolean isZeroPoints = assignment.getPointsPossible() == null || assignment.getPointsPossible().equals(new Double(0));
-                    boolean isVisibleForUser = assignment.getAssignmentVisibility().stream().anyMatch(studentId.toString()::equals);
+                    boolean isVisibleForUser = assignment.getAssignmentVisibility().stream().anyMatch(studentIdString::equals);
 
                     // Skip if assignment is not in the group, assignment is muted and you are getting user current grade, grade is omitted from final grade or assignment possible points is zero
                     if (assignmentIsMuted) mutedAssignments.put(assignmentJson);
@@ -439,12 +441,12 @@ public class GradeService {
         }
     }
 
-    private Map<Integer, Submission> getAssignmentSubmissionsForStudent(List<Assignment> assignmentList, Integer studentId) throws IOException{
+    private Map<Integer, Submission> getAssignmentSubmissionsForStudent(List<Assignment> assignmentList, long studentId) throws IOException{
         Map<Integer, Submission> studentSubmissionMap = new HashMap<Integer, Submission>();
         for (Assignment assignment : assignmentList) {
             List<Submission> assignmentSubmissions = canvasService.getCourseSubmissions(assignment.getCourseId(), assignment.getId());
-            Optional<Submission> submissionOptional = assignmentSubmissions.stream().filter(submission -> submission.getUserId().equals(studentId)).findAny();
-            studentSubmissionMap.put(assignment.getId(), submissionOptional.isPresent() ? submissionOptional.get() : null);                	
+            Optional<Submission> submissionOptional = assignmentSubmissions.stream().filter(submission -> submission.getUserId().toString().equals(String.valueOf(studentId))).findAny();
+            studentSubmissionMap.put(assignment.getId(), submissionOptional.isPresent() ? submissionOptional.get() : null);
         }
         return studentSubmissionMap;
     }

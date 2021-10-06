@@ -24,7 +24,7 @@
               <label for="selectedStudent" th:text="#{admin_banner_select_student}">Select a student to see his grades:</label>
               <select id="selectedStudent" name="selectedStudent" class="form-control" onchange="this.form.submit();">
                   <option></option>
-                  <option th:each="user : ${userList}" th:value="${user.id}" th:text="${user.sortableName}" th:selected="${user.id.equals(selectedIntegerStudent)}"></option>
+                  <option th:each="user : ${userList}" th:value="${user.id}" th:text="${user.sortableName}" th:selected="${selectedStudent.equals(String.valueOf(user.id))}"></option>
               </select>
           </div>
       </form>
@@ -78,7 +78,7 @@
         /*<![CDATA[*/
         var assignmentGroupList = /*[[${assignmentGroupList}]]*/;
         var courseId = /*[[${selectedIntegerCourse}]]*/;
-        var userId = /*[[${selectedIntegerStudent}]]*/;
+        var userId = /*[[${selectedStudent}]]*/;
         var messages = {
           student_grade_not_available: /*[[#{student_grade_not_available}]]*/,
           instructor_header_omit_final_grade: /*[[#{instructor_header_omit_final_grade}]]*/,

@@ -127,12 +127,12 @@ public class GradeRestController {
     }
 
     @RequestMapping(value = "/getStudentGroupGrade", method = RequestMethod.POST)
-    public Map<String, Object> getStudentGroupMean(@ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, @RequestParam Long groupId, @RequestParam Integer studentId, @RequestParam(required = false) String courseId) throws GradeException {
+    public Map<String, Object> getStudentGroupMean(@ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, @RequestParam Long groupId, @RequestParam long studentId, @RequestParam(required = false) String courseId) throws GradeException {
         return gradeService.getStudentGroupMean(ltiSession, groupId, studentId, courseId).toMap();
     }
 
     @RequestMapping(value = "/getStudentFinalGrade", method = RequestMethod.POST)
-    public Map<String, Object> getStudentTotalMean(@ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, @RequestParam Integer studentId, @RequestParam boolean isCurrentGrade, @RequestParam(required = false) String courseId) throws GradeException {
+    public Map<String, Object> getStudentTotalMean(@ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, @RequestParam long studentId, @RequestParam boolean isCurrentGrade, @RequestParam(required = false) String courseId) throws GradeException {
         return gradeService.getStudentTotalMean(ltiSession, studentId, isCurrentGrade, courseId).toMap();
     }
 
@@ -150,7 +150,7 @@ public class GradeRestController {
         }
 
         // We need the SIS ID of the user because Banner use the RUT instead of the login or the ID.
-        Optional<User> optionalUser = canvasService.getTeachersInCourse(courseId).stream().filter(user -> user.getId() == Integer.valueOf(canvasUserId)).findFirst();
+        Optional<User> optionalUser = canvasService.getTeachersInCourse(courseId).stream().filter(user -> canvasUserId.equals(String.valueOf(user.getId()))).findFirst();
         if (!optionalUser.isPresent()) {
             log.error("Fatal error locating user sis identifier using canvas id {}.", canvasUserId);
             throw new GradeException();
@@ -224,7 +224,7 @@ public class GradeRestController {
             String subject = jsonObj.getString("sendMessageSubject");
             String message = jsonObj.getString("sendMessageTextarea");
             for (int i = 0; i < userIdsArr.length(); i++) {
-                userIds.add(Integer.toString(userIdsArr.getInt(i)));
+                userIds.add(String.valueOf(userIdsArr.getInt(i)));
             }
 
             canvasService.createConversation(userIds, subject, message);
