@@ -2,11 +2,11 @@
 
 La presente herramienta es un libro de calificaciones que se integra en Canvas via LTI desarrollado para la Pontificia Universidad Católica de Chile por parte de [Entornos de Formación](https://www.edf.global).
 
-La herramienta se apoya en la librería `lti-launch` desarrollada por Kansas State, en su variante utilizada por Oxford University. También se apoya en la librería `canvas-api` desarrollada por Kansas State con algunos añadidos por parte de [Entornos de Formación](https://www.edf.global).
+La herramienta se apoya en la librería `lti-launch` desarrollada por Kansas State, en su variante utilizada por Oxford University. También se apoya en la librería `canvas-api` desarrollada por Kansas State con algunos añadidos por parte de [Entornos de Formación](https://www.edf.global), actualmente se transicionó a la variante de Oxford University.
 
 ## Requisitos
-- Maven 3.6.2 o superior
-- Java 1.8.0_231 o superior
+- Maven 3.8.2 o superior
+- Java 11
 - Oracle 12c, usuario con permisos para generar y actualizar tablas en un esquema.
 
 ## Compilación
@@ -21,7 +21,11 @@ mvn clean install -DskipTests
 Recomendamos deshabilitar los tests si la aplicación no está correctamente configurada.
 
 ## Configuración
-La aplicación debe configurase utilizando el fichero de ejemplo "application.properties", situado en la carpeta src\main\resources. Recomendamos alojar dicho fichero fuera de la aplicación por cuestiones de seguridad.
+La aplicación debe configurarse utilizando el fichero de ejemplo "application.properties", situado en la carpeta src\main\resources. 
+
+Recomendamos alojar dicho fichero fuera de la aplicación por cuestiones de seguridad.
+
+Por defecto Spring Boot escanea la carpeta config por lo que alojar el fichero en la ruta 'config/application.properties' es una buena solución.
 
 Las propiedades más importantes a configurar son:
 
@@ -36,12 +40,11 @@ Las propiedades más importantes a configurar son:
 | datasource | SID de la base de datos Oracle | - | ORCL |
 | hibernate.dialect | Dialecto de Hibernate que se va a utilizar | org.hibernate.dialect.Oracle12cDialect | org.hibernate.dialect.Oracle12cDialect |
 | spring.datasource.url | Cadena de conexión a la base de datos incluyendo SID y puerto | - | jdbc:oracle:thin:@localhost:1521:ORCL |
-| server.port | Puerto donde se ejecutará la aplicación | 8443 | 8443 |
-| security.require-ssl| Habilitar modo seguro de la aplicación (HTTPS) | true | true |
+| server.port | Puerto donde se ejecutará la aplicación | 8080 | 8443 |
+| security.require-ssl| Habilitar modo seguro de la aplicación (HTTPS) | false | true |
 | server.ssl.key-store-type | Tipo de certificado a utilizar en modo seguro | - | PKCS12  |
 | server.ssl.key-store | Ruta del fichero de almacén de claves para ficheros autogenerados. | - | /home/user/keystore.p12 |
 | server.ssl.key-store-password | Password del almacén de claves | - | changeit |
-| server.ssl.key-alias | Alias del almacén de claves | - | keystore_alias |
 | lti-gradebook.canvas_api_token | Token de API que utilizará la aplicación para realizar llamadas cuando no encuentre ningún token en la base de datos. | - | - |
 | lti-gradebook.admins | Listado de usuarios de Canvas que son administradores de la aplicación, separados por comas. | - | mpellicer,jdoe,hsolo |
 | banner.enabled | Habilitar la integración con Banner. | false | false |
@@ -58,7 +61,22 @@ Para ejecutar el código necesitamos configurar correctamente la aplicación y l
 ```bash
 java -jar target/lti-gradebook.war -Dspring.config.location=/path/to/configuration/application.properties
 ```
-Donde `/path/to/configuration/application.properties` hace referencia a la ruta donde está alojado el fichero application.properties
+Donde `/path/to/configuration/application.properties` hace referencia a la ruta donde está alojado el fichero application.properties.
+
+A la hora de construir un entorno de desarrollo se puede utilizar la utilidad mkcert y configurar un certificado válido para localhost [MKCERT](https://github.com/FiloSottile/mkcert).
+
+Al usar un certificado mkcert alojado en la carpeta config, estas propiedades serían suficientes:
+```
+server.port=8443
+server.ssl.key-store=config/keystore.p12
+server.ssl.key-store-type=PKCS12
+server.ssl.key-store-password=changeit
+```
+
+Con esta configuración también podemos lanzar la aplicación directamente, recomendamos situar la configuración por defecto en config/application.properties.
+```bash
+mvn clean install -DskipTests spring-boot:run
+```
 
 ## Instalación en Canvas
 ----------------------
