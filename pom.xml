@@ -19,7 +19,7 @@
         <java.version>1.8</java.version>
         <slf4j.version>1.7.32</slf4j.version>
         <lti.launch.version>1.7.2</lti.launch.version>
-        <lombok.version>1.18.12</lombok.version>
+        <lombok.version>1.18.20</lombok.version>
         <lang3.version>3.10</lang3.version>
         <org.json.version>20190722</org.json.version>
         <opencsv.version>5.1</opencsv.version>
