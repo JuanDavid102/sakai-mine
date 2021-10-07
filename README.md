@@ -5,27 +5,25 @@ La presente herramienta es un libro de calificaciones que se integra en Canvas v
 La herramienta se apoya en la librería `lti-launch` desarrollada por Kansas State, en su variante utilizada por Oxford University. También se apoya en la librería `canvas-api` desarrollada por Kansas State con algunos añadidos por parte de [Entornos de Formación](https://www.edf.global), actualmente se transicionó a la variante de Oxford University.
 
 ## Requisitos
-- Maven 3.8.2 o superior
-- Java 11
-- Oracle 12c, usuario con permisos para generar y actualizar tablas en un esquema.
+- Maven 3.8.2 o superior.
+- Java 8 o 11.
+- Oracle o MySQL, usuario con permisos para generar y actualizar tablas en un esquema.
 
 ## Compilación
-Para compilar la herramienta debemos primero instalar la librería de Oracle que se distribuye por separado, en el código fuente viene una copia de dicha librería.
+Para compilar la herramienta debemos recurrir al siguiente comando de Maven:
+
 ```bash
-mvn install:install-file -Dfile=lib/ojdbc8-19.3.jar -DgroupId=com.oracle.jdbc -DartifactId=ojdbc8 -Dversion=19.3.0.0 -Dpackaging=jar
+mvn clean install
 ```
-Una vez instalada la librería, podemos compilar la aplicación sin problemas.
-```bash
-mvn clean install -DskipTests
-```
-Recomendamos deshabilitar los tests si la aplicación no está correctamente configurada.
+
+Esto generará un fichero .WAR en la carpeta target que puede ejecutarse directamente (Ver sección de ejecución) o bien desplegarse en un contenedor de servlets como Apache Tomcat.
 
 ## Configuración
 La aplicación debe configurarse utilizando el fichero de ejemplo "application.properties", situado en la carpeta src\main\resources. 
 
 Recomendamos alojar dicho fichero fuera de la aplicación por cuestiones de seguridad.
 
-Por defecto Spring Boot escanea la carpeta config por lo que alojar el fichero en la ruta 'config/application.properties' es una buena solución.
+Por defecto Spring Boot escanea la carpeta config por lo que alojar el fichero en la ruta 'config/application.properties' es una buena solución como entorno de desarrollo.
 
 Las propiedades más importantes a configurar son:
 
@@ -75,7 +73,7 @@ server.ssl.key-store-password=changeit
 
 Con esta configuración también podemos lanzar la aplicación directamente, recomendamos situar la configuración por defecto en config/application.properties.
 ```bash
-mvn clean install -DskipTests spring-boot:run
+mvn clean install spring-boot:run
 ```
 
 ## Instalación en Canvas
