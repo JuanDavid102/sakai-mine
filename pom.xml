@@ -24,7 +24,7 @@
         <org.json.version>20210307</org.json.version>
         <opencsv.version>5.5.2</opencsv.version>
         <commons-io.version>2.11.0</commons-io.version>
-        <oracle.driver.version>19.3.0.0</oracle.driver.version>
+        <oracle.driver.version>21.3.0.0</oracle.driver.version>
         <canvas.api.version>1.5.6</canvas.api.version>
     </properties>
 
