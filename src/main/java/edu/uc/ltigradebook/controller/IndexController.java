@@ -21,6 +21,7 @@ import edu.uc.ltigradebook.entity.AssignmentPreference;
 import edu.uc.ltigradebook.entity.AssignmentStatistic;
 import edu.uc.ltigradebook.entity.CoursePreference;
 import edu.uc.ltigradebook.entity.Event;
+import edu.uc.ltigradebook.entity.StudentCanvasGrade;
 import edu.uc.ltigradebook.entity.StudentFinalGrade;
 import edu.uc.ltigradebook.entity.StudentGrade;
 import edu.uc.ltigradebook.service.AccountService;
@@ -64,9 +65,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.StringJoiner;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Controller
@@ -214,7 +212,7 @@ public class IndexController {
 
             stopwatch.reset();
             stopwatch.start();
-            Map<String, List<Submission>> submissionsMap = new HashMap<String, List<Submission>>();
+            Map<String, List<StudentCanvasGrade>> canvasGradeMap = new HashMap<>();
             List<String> tableHeaderList = new ArrayList<>();
             List<List<Map<String, Object>>> cellRowListSettings = new ArrayList<>();
             tableHeaderList.add(messageSource.getMessage("instructor_header_login", null, LocaleContextHolder.getLocale()));
@@ -226,7 +224,7 @@ public class IndexController {
             colSettings.add(new HashMap<>());
             colSettings.add(new HashMap<>());
             Map<Integer, Boolean> assignmentMutedMap = new HashMap<>();
-            ExecutorService executorService = Executors.newCachedThreadPool();
+
             for (Assignment assignment : assignmentList) {
                 Map<String, Object> cellSettings = new HashMap<>();
                 String assignmentId = String.valueOf(assignment.getId());
@@ -249,29 +247,9 @@ public class IndexController {
                 cellSettings.put("assignmentId", assignment.getId());
                 cellSettings.put("speedGraderUrl", String.format(SPEED_GRADER_URL, canvasBaseUrl, courseId, assignmentId));
                 colSettings.add(cellSettings);
-                
-                //Get the assigment submissions in a separated thread.
-                executorService.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            submissionsMap.put(assignmentId, canvasService.getCourseSubmissions(courseId, assignment.getId()));
-                        } catch (IOException e) {
-                            log.error("Error getting assignment submissions for the course {} and the assignment {}.", courseId, assignmentId, e);
-                        }
-                    }
-                });
-
             }
             cellRowListSettings.add(colSettings);
-            
-            executorService.shutdown();
-            //Wait until all the submission requests end.
-            try {
-                executorService.awaitTermination(2, TimeUnit.MINUTES);
-            } catch (InterruptedException e) {
-                log.error("The submissions thread has been interrupted, aborting.", e);
-            }            
+         
             
             JSONObject assignmentGroupArray = new JSONObject();
             BigDecimal assignmentGroupTotalWeight = BigDecimal.ZERO;
@@ -291,9 +269,6 @@ public class IndexController {
             tableHeaderList.add(messageSource.getMessage("shared_current_grade", null, LocaleContextHolder.getLocale()));
             tableHeaderList.add(messageSource.getMessage("shared_final_grade", null, LocaleContextHolder.getLocale()));
             RIGHT_READ_ONLY_COLS = RIGHT_READ_ONLY_COLS + 2;
-
-            stopwatch.stop();
-            log.debug("Building all the gradebook table took {} for {} assignments.", stopwatch, submissionsMap.size());
 
             stopwatch.reset();
             stopwatch.start();
@@ -339,15 +314,9 @@ public class IndexController {
                     String grade = StringUtils.EMPTY;
                     Map<String, Object> cellSettings = new HashMap<>();
                     boolean gradeTypeNotSupported = false;
-
-                    List<Submission> submissionsForAssignment = submissionsMap.get(assignmentId);
-                    if (submissionsForAssignment == null) {
-                        submissionsForAssignment = canvasService.getCourseSubmissions(courseId, assignment.getId());
-                    }
-                    Optional<Submission> optionalGrade = submissionsForAssignment.stream()
-                            .filter(submission -> submission.getUserId() != null && userId.equals(submission.getUserId().toString()))
-                            .findAny();
-
+                    
+                    // Get the Canvas grade from the DB instead of polling Canvas.
+                    Optional<StudentCanvasGrade> optionalGrade = gradeService.getCanvasGradeByAssignmentAndUser(assignmentId, userId);                  
                     grade = optionalGrade.isPresent() ? optionalGrade.get().getGrade() : StringUtils.EMPTY;
 
                     String assignmentConversionScale = coursePreference.getConversionScale();
@@ -515,64 +484,43 @@ public class IndexController {
             stopwatch.start();
             Map<Integer, String> gradeMap = new HashMap<Integer, String>();
             Map<Integer, AssignmentStatistic> assignmentStats = new HashMap<>();
-            ExecutorService executorService = Executors.newCachedThreadPool();
+
             for (Assignment assignment : assignmentList) {
                 String assignmentId = String.valueOf(assignment.getId());
                 Optional<AssignmentPreference> assignmentPref = assignmentService.getAssignmentPreference(assignmentId);
                 Optional<AssignmentStatistic> assignmentStat = assignmentService.getAssignmentStatistic(assignmentId);
                 if (assignmentStat.isPresent()) assignmentStats.put(assignment.getId(), assignmentStat.get());
-                /*boolean assignmentIsMuted = "true".equals(assignment.getMuted());
-                boolean omitFromFinalGrade = assignment.isOmitFromFinalGrade();*/
 
-                //Get the assigment submissions in a separated thread.
-                executorService.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        String grade = StringUtils.EMPTY;
-                        //Get the grade from persistence, get the grade from the API otherwise.
-                        Optional<StudentGrade> overwrittenStudentGrade = gradeService.getGradeByAssignmentAndUser(assignmentId, canvasUserId);
-                        if (overwrittenStudentGrade.isPresent()) {
-                            grade = overwrittenStudentGrade.get().getGrade();
-                        } else {
-                            Optional<Submission> submission = Optional.empty();
-                            try {
-                                submission = canvasService.getSingleCourseSubmission(courseId, assignment.getId(), canvasUserId);
-                            } catch (IOException e) {
-                                log.error("Fatal error getting submission for the course {}, assignment {} and student {}.", courseId, assignmentId, canvasUserId);
-                            }
-                            grade = submission.isPresent() ? submission.get().getGrade() : StringUtils.EMPTY;
-
-                            String assignmentConversionScale = coursePreference.getConversionScale();
-                            Optional<AssignmentPreference> assignmentPreference = assignmentService.getAssignmentPreference(assignmentId);
-                            if (assignmentPreference.isPresent() && StringUtils.isNotBlank(assignmentPreference.get().getConversionScale())) {
-                                assignmentConversionScale = assignmentPreference.get().getConversionScale();
-                            }
-
-                            //Grade conversion logic
-                            if(GradeUtils.GRADE_TYPE_POINTS.equals(assignment.getGradingType())) {
-                                grade = GradeUtils.mapGradeToScale(assignmentConversionScale, grade, assignment.getPointsPossible());
-                            } else if(GradeUtils.GRADE_TYPE_PERCENT.equals(assignment.getGradingType())) { 
-                                grade = GradeUtils.mapPercentageToScale(assignmentConversionScale, grade);
-                            }
-                        }
-        
-                        if (assignmentPref.isPresent() && assignmentPref.get().getMuted() != null) {
-                            assignment.setMuted(assignmentPref.get().getMuted().toString());
-                        }
-
-                        String finalGrade = StringUtils.isNotBlank(grade) ? grade : GRADE_NOT_AVAILABLE;
-        
-                        gradeMap.put(assignment.getId(), finalGrade);
+                String grade = StringUtils.EMPTY;
+                //Get the grade from persistence, get the grade from the API otherwise.
+                Optional<StudentGrade> overwrittenStudentGrade = gradeService.getGradeByAssignmentAndUser(assignmentId, canvasUserId);
+                if (overwrittenStudentGrade.isPresent()) {
+                    grade = overwrittenStudentGrade.get().getGrade();
+                } else {
+                	// Get the student grade from the DB instead of polling Canvas.
+                    Optional<StudentCanvasGrade> submission = gradeService.getCanvasGradeByAssignmentAndUser(assignmentId, canvasUserId);
+                    grade = submission.isPresent() ? submission.get().getGrade() : StringUtils.EMPTY;
+                    String assignmentConversionScale = coursePreference.getConversionScale();
+                    Optional<AssignmentPreference> assignmentPreference = assignmentService.getAssignmentPreference(assignmentId);
+                    if (assignmentPreference.isPresent() && StringUtils.isNotBlank(assignmentPreference.get().getConversionScale())) {
+                        assignmentConversionScale = assignmentPreference.get().getConversionScale();
                     }
-                });
-            }
-            
-            executorService.shutdown();
-            //Wait until all the submission requests end.
-            try {
-                executorService.awaitTermination(2, TimeUnit.MINUTES);
-            } catch (InterruptedException e) {
-                log.error("The submissions thread has been interrupted, aborting.", e);
+
+                    //Grade conversion logic
+                    if(GradeUtils.GRADE_TYPE_POINTS.equals(assignment.getGradingType())) {
+                        grade = GradeUtils.mapGradeToScale(assignmentConversionScale, grade, assignment.getPointsPossible());
+                    } else if(GradeUtils.GRADE_TYPE_PERCENT.equals(assignment.getGradingType())) { 
+                        grade = GradeUtils.mapPercentageToScale(assignmentConversionScale, grade);
+                    }
+                }
+
+                if (assignmentPref.isPresent() && assignmentPref.get().getMuted() != null) {
+                    assignment.setMuted(assignmentPref.get().getMuted().toString());
+                }
+
+                String finalGrade = StringUtils.isNotBlank(grade) ? grade : GRADE_NOT_AVAILABLE;
+
+                gradeMap.put(assignment.getId(), finalGrade);
             }
 
             Map<String, String> assignmentGroupNameMap = new HashMap<String, String>();
@@ -758,61 +706,41 @@ public class IndexController {
             CoursePreference coursePreference = courseService.getCoursePreference(selectedCourse);
 
             Map<Integer, String> gradeMap = new HashMap<Integer, String>();
-            ExecutorService executorService = Executors.newCachedThreadPool();
             for (Assignment assignment : assignmentList) {
                 String assignmentId = String.valueOf(assignment.getId());
                 Optional<AssignmentPreference> assignmentPref = assignmentService.getAssignmentPreference(assignmentId);
-                /*boolean assignmentIsMuted = "true".equals(assignment.getMuted());
-                boolean omitFromFinalGrade = assignment.isOmitFromFinalGrade();*/
+                String grade = StringUtils.EMPTY;
+                //Get the grade from persistence, get the grade from the API otherwise.
+                Optional<StudentGrade> overwrittenStudentGrade = gradeService.getGradeByAssignmentAndUser(assignmentId, selectedStudent);
+                if (overwrittenStudentGrade.isPresent()) {
+                    grade = overwrittenStudentGrade.get().getGrade();
+                } else {
+                	// Get the Canvas grade from the DB instead of polling Canvas.
+                    Optional<StudentCanvasGrade> submission = gradeService.getCanvasGradeByAssignmentAndUser(assignmentId, selectedStudent);
+                    grade = submission.isPresent() ? submission.get().getGrade() : StringUtils.EMPTY;
 
-                //Get the assigment submissions in a separated thread.
-                executorService.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        String grade = StringUtils.EMPTY;
-                        //Get the grade from persistence, get the grade from the API otherwise.
-                        Optional<StudentGrade> overwrittenStudentGrade = gradeService.getGradeByAssignmentAndUser(assignmentId, selectedStudent);
-                        if (overwrittenStudentGrade.isPresent()) {
-                            grade = overwrittenStudentGrade.get().getGrade();
-                        } else {
-                            Optional<Submission> submission = Optional.empty();
-                            try {
-                                submission = canvasService.getSingleCourseSubmission(selectedCourse, assignment.getId(), selectedStudent);
-                            } catch (IOException e) {
-                                log.error("Fatal error getting submission for the course {}, assignment {} and student {}.", selectedCourse, assignmentId, selectedStudent);
-                            }
-                            grade = submission.isPresent() ? submission.get().getGrade() : StringUtils.EMPTY;
-
-                            String assignmentConversionScale = coursePreference.getConversionScale();
-                            Optional<AssignmentPreference> assignmentPreference = assignmentService.getAssignmentPreference(assignmentId);
-                            if (assignmentPreference.isPresent() && StringUtils.isNotBlank(assignmentPreference.get().getConversionScale())) {
-                                assignmentConversionScale = assignmentPreference.get().getConversionScale();
-                            }
-
-                            //Grade conversion logic
-                            if(GradeUtils.GRADE_TYPE_POINTS.equals(assignment.getGradingType())) {
-                                grade = GradeUtils.mapGradeToScale(assignmentConversionScale, grade, assignment.getPointsPossible());
-                            } else if(GradeUtils.GRADE_TYPE_PERCENT.equals(assignment.getGradingType())) { 
-                                grade = GradeUtils.mapPercentageToScale(assignmentConversionScale, grade);
-                            }
-                        }
-
-                        if (assignmentPref.isPresent() && assignmentPref.get().getMuted() != null) {
-                            assignment.setMuted(assignmentPref.get().getMuted().toString());
-                        }
-
-                        String finalGrade = StringUtils.isNotBlank(grade) ? grade : GRADE_NOT_AVAILABLE;
-        
-                        gradeMap.put(assignment.getId(), finalGrade);
+                    String assignmentConversionScale = coursePreference.getConversionScale();
+                    Optional<AssignmentPreference> assignmentPreference = assignmentService.getAssignmentPreference(assignmentId);
+                    if (assignmentPreference.isPresent() && StringUtils.isNotBlank(assignmentPreference.get().getConversionScale())) {
+                        assignmentConversionScale = assignmentPreference.get().getConversionScale();
                     }
-                });
-            }
-            executorService.shutdown();
-            //Wait until all the submission requests end.
-            try {
-                executorService.awaitTermination(2, TimeUnit.MINUTES);
-            } catch (InterruptedException e) {
-                log.error("The submissions thread has been interrupted, aborting.", e);
+
+                    //Grade conversion logic
+                    if(GradeUtils.GRADE_TYPE_POINTS.equals(assignment.getGradingType())) {
+                        grade = GradeUtils.mapGradeToScale(assignmentConversionScale, grade, assignment.getPointsPossible());
+                    } else if(GradeUtils.GRADE_TYPE_PERCENT.equals(assignment.getGradingType())) { 
+                        grade = GradeUtils.mapPercentageToScale(assignmentConversionScale, grade);
+                    }
+                }
+
+                if (assignmentPref.isPresent() && assignmentPref.get().getMuted() != null) {
+                    assignment.setMuted(assignmentPref.get().getMuted().toString());
+                }
+
+                String finalGrade = StringUtils.isNotBlank(grade) ? grade : GRADE_NOT_AVAILABLE;
+
+                gradeMap.put(assignment.getId(), finalGrade);
+
             }
 
             Map<String, String> assignmentGroupNameMap = new HashMap<String, String>();

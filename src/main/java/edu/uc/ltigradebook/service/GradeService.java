@@ -9,11 +9,13 @@ import edu.ksu.lti.launch.model.LtiSession;
 import edu.uc.ltigradebook.constants.LtiConstants;
 import edu.uc.ltigradebook.entity.AssignmentPreference;
 import edu.uc.ltigradebook.entity.CoursePreference;
+import edu.uc.ltigradebook.entity.StudentCanvasGrade;
 import edu.uc.ltigradebook.entity.StudentFinalGrade;
 import edu.uc.ltigradebook.entity.StudentFinalGradeId;
 import edu.uc.ltigradebook.entity.StudentGrade;
 import edu.uc.ltigradebook.entity.StudentGradeId;
 import edu.uc.ltigradebook.exception.GradeException;
+import edu.uc.ltigradebook.repository.CanvasGradeRepository;
 import edu.uc.ltigradebook.repository.FinalGradeRepository;
 import edu.uc.ltigradebook.repository.GradeRepository;
 import edu.uc.ltigradebook.util.GradeUtils;
@@ -44,6 +46,9 @@ public class GradeService {
     private GradeRepository gradeRepository;
 
     @Autowired
+    private CanvasGradeRepository canvasGradeRepository;
+
+    @Autowired
     private FinalGradeRepository finalGradeRepository;
 
     @Autowired
@@ -65,9 +70,20 @@ public class GradeService {
         return gradeRepository.findById(new StudentGradeId(assignmentId, userId));
     }
 
+    public Optional<StudentCanvasGrade> getCanvasGradeByAssignmentAndUser(String assignmentId, String userId) {
+        log.debug("Getting a student canvas grade by assignment {} and user {}.", assignmentId, userId);
+        return canvasGradeRepository.findById(new StudentGradeId(assignmentId, userId));
+    }
+
     public void saveGrade(StudentGrade studentGrade) {
         log.debug("Saving grade {} for the user {} and assignment {}.", studentGrade.getGrade(), studentGrade.getUserId(), studentGrade.getAssignmentId());
         gradeRepository.save(studentGrade);
+        log.debug("Grade saved successfully");
+    }
+
+    public void saveCanvasGrade(StudentCanvasGrade studentCanvasGrade) {
+        log.debug("Saving Canvas grade {} for the user {} and assignment {}.", studentCanvasGrade.getGrade(), studentCanvasGrade.getUserId(),studentCanvasGrade.getAssignmentId());
+        canvasGradeRepository.save(studentCanvasGrade);
         log.debug("Grade saved successfully");
     }
 

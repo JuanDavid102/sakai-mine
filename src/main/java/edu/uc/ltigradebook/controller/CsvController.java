@@ -14,6 +14,7 @@ import edu.uc.ltigradebook.constants.EventConstants;
 import edu.uc.ltigradebook.constants.LtiConstants;
 import edu.uc.ltigradebook.entity.AssignmentPreference;
 import edu.uc.ltigradebook.entity.CoursePreference;
+import edu.uc.ltigradebook.entity.StudentCanvasGrade;
 import edu.uc.ltigradebook.entity.StudentGrade;
 import edu.uc.ltigradebook.exception.GradeException;
 import edu.uc.ltigradebook.service.AssignmentService;
@@ -56,7 +57,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -64,11 +64,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.StringJoiner;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Slf4j
 @Controller
@@ -155,29 +150,9 @@ public class CsvController {
                 }
 
                 // build column header
-                Map<String, List<Submission>> submissionsMap = new HashMap<>();
-                ExecutorService executorService = Executors.newCachedThreadPool();
                 for (Assignment assignment : assignmentList) {
                     String assignmentId = String.valueOf(assignment.getId());
                     header.add(messageSource.getMessage("csv_header_assignment", new Object[]{assignment.getName().replace(",","."), assignmentId}, LocaleContextHolder.getLocale()));
-                    executorService.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                submissionsMap.put(assignmentId, canvasService.getCourseSubmissions(courseId, assignment.getId()));
-                            } catch (IOException ex) {
-                                log.error("Cannot get course submissions por course: {} and assignment: {}.", courseId, assignment.getId(), ex);
-                            }
-                            }
-                        });
-                }
-
-                executorService.shutdown();
-                //Wait until all the submission requests end.
-                try {
-                    executorService.awaitTermination(2, TimeUnit.MINUTES);
-                } catch (InterruptedException e) {
-                    log.error("The submissions thread has been interrupted, aborting.", e);
                 }
 
                 List<AssignmentGroup> assignmentGroupList = canvasService.listAssignmentGroups(courseId);
@@ -227,10 +202,8 @@ public class CsvController {
                                 grade = overwrittenStudentGrade.get().getGrade();
                                 cellSettings.put("overwrittenGrade", (overwrittenStudentGrade.isPresent() && StringUtils.isNotBlank(grade)));
                             } else {
-                                List<Submission> submissionsForAssignment = submissionsMap.get(assignmentId);
-                                Optional<Submission> optionalGrade = submissionsForAssignment.stream()
-                                        .filter(submission -> submission.getUserId() != null && userId.equals(submission.getUserId().toString()))
-                                        .findAny();
+                            	// Get the Canvas grade from the local DB instead of polling Canvas.
+                                Optional<StudentCanvasGrade> optionalGrade = gradeService.getCanvasGradeByAssignmentAndUser(assignmentId, userId);
                                 grade = optionalGrade.isPresent() ? optionalGrade.get().getGrade() : StringUtils.EMPTY;
 
                                 String assignmentConversionScale = coursePreference.getConversionScale();
@@ -309,30 +282,6 @@ public class CsvController {
             CSVParser parser = new CSVParserBuilder().withSeparator(csvSeparator).withStrictQuotes(false).build();
             CSVReader csvReader = new CSVReaderBuilder(br).withCSVParser(parser).build();
             List<Assignment> assignmentList = canvasService.listCourseAssignments(courseId);
-            Map<String, List<Submission>> submissionsMap = new HashMap<>();
-            ExecutorService executorService = Executors.newCachedThreadPool();
-            for (Assignment assignment : assignmentList) {
-                String assignmentId = String.valueOf(assignment.getId());
-                executorService.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            submissionsMap.put(assignmentId, canvasService.getCourseSubmissions(courseId, assignment.getId()));
-                         } catch (IOException ex) {
-                            log.error("Cannot get course submissions por course: {} and assignment: {}.", courseId, assignment.getId(), ex);
-                        }
-                        }
-                    });
-            }
-
-            executorService.shutdown();
-            //Wait until all the submission requests end.
-            try {
-                executorService.awaitTermination(2, TimeUnit.MINUTES);
-            } catch (InterruptedException e) {
-                log.error("The submissions thread has been interrupted, aborting.", e);
-            }
-
             List<String[]> all = csvReader.readAll();
             String[] header = all.get(0);
             // If cols are missing, try with other separator
@@ -347,7 +296,6 @@ public class CsvController {
             for (int i = 5; i < header.length - rightColsIgnore; i++) {
                 String assignmentId = StringUtils.substringBetween(header[i], "(", ")");
                 Assignment assignment = assignmentList.stream().filter(a -> assignmentId.equals(String.valueOf(a.getId()))).findFirst().get();
-                List<Submission> submissionsForAssignment = submissionsMap.get(assignmentId);
                 for (int z = 1; z < all.size(); z++) {
                     String studentId = all.get(z)[1];
                     try {
@@ -371,9 +319,8 @@ public class CsvController {
                             }
 
                         } else {
-                            Optional<Submission> optionalGrade = submissionsForAssignment.stream()
-                                    .filter(submission -> submission.getUserId() != null && studentId.equals(submission.getUserId().toString()))
-                                    .findAny();
+                        	// Get the Canvas grade from the DB instead of polling Canvas.
+                            Optional<StudentCanvasGrade> optionalGrade = gradeService.getCanvasGradeByAssignmentAndUser(assignmentId, studentId);
                             if (optionalGrade.isPresent()) {
                                 String grade = optionalGrade.get().getGrade();
 
