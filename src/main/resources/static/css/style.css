@@ -93,8 +93,8 @@
   border-right: 1px solid #eeeeee;
 }
 
-#tableContainer .studentTable.handsontable {
-  /*height: initial !important;*/
+.handsontable {
+  font-size: 1rem !important;
 }
 
 #tableContainer .studentTable .ht_clone_top .wtHolder {
@@ -203,6 +203,8 @@
 #tableContainer .studentTable .handsontable span.colHeader.columnSorting::after {
   position: absolute;
   right: 8px;
+  font-size: 1rem;
+  top: 3px;
 }
 
 #tableContainer .studentTable .handsontable span.colHeader.columnSorting.sortAction.descending::after {

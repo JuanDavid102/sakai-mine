@@ -452,6 +452,7 @@
         distance      = (elementOffset - scrollTop);
     var handsontableHeight = window.innerHeight - distance;
     GbGradeTable.instance = new Handsontable(container, {
+      licenseKey: "non-commercial-and-evaluation",
       data: data,
       colHeaders: columns,
       dropdownMenu: false,
@@ -462,9 +463,13 @@
         compareFunctionFactory: function(sortOrder, columnMeta) {
           return function(value, nextValue) {
             var order = 1;
-            if (sortOrder == 'asc') order = -1;
-            value = value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-            nextValue = nextValue.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            if (sortOrder === 'asc') order = -1;
+            if (value && (typeof value === 'string' || value instanceof String)) {
+                value = value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            }
+            if (nextValue && (typeof nextValue === 'string' || nextValue instanceof String)) {
+                nextValue = nextValue.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            }
             if(value < nextValue) { return order; }
             if(value > nextValue) { return -order; }
             return 0;
@@ -569,7 +574,10 @@
               changes[idx][3] = changes[idx][2];
               return;
             }
-            var input = elem[3].replace(/,/g, '.');
+            var input = elem[3];
+            if (input && (typeof input === 'string' || input instanceof String)) {
+                input = input.replace(/,/g, '.');
+            }
             if (isValidGrade(input)) {
               var value = parseFloat(input);
               value = math.round(value, 1);
