@@ -24,7 +24,7 @@ public class TokenRefresher {
     @Autowired
     CanvasAPIServiceWrapper canvasService;
 
-    @Scheduled(fixedDelay =  60 * 60 * 1000,  initialDelay = 500)
+    @Scheduled(fixedDelayString = "${cache.expiry.interval}", initialDelayString = "${cache.initial.delay}")
     public void refreshTokens() {
         log.info("Refreshing authentication Tokens, the tokens are refreshed every hour.");
         List<OauthToken> oauthTokenList = new ArrayList<OauthToken>();

@@ -52,6 +52,10 @@ Las propiedades más importantes a configurar son:
 | banner.datasource.url | URL de conexión al esquema de Banner. | - | jdbc:oracle:thin:@localhost:1521:ORCL |
 | banner.datasource.connectionInitSql | SQL de inicialización. | - | SET ROLE rol_banner_lms_carga_notas identified by rlms_carga1911 |
 | logging.level.edu.uc.ltigradebook | Modificar el nivel de logging, habilitar DEBUG para depuración. | INFO | DEBUG |
+| sync.grades.interval | Modificar el intervalo de ejecución de la sincronización de notas con Canvas. | PT1H | PT1H |
+| sync.grades.initial.delay | Modificar el retraso inicial de la primera ejecución de la sincronización de notas con Canvas. | PT1S | PT1S |
+| cache.expiry.interval | Modificar la duración de la caché del sistema. | PT10M | PT10M |
+| cache.initial.delay | Modificar el retraso inicial de la primera limpieza de caché del sistema. | PT1S | PT1S |
 
 ## Ejecución
 Para ejecutar el código necesitamos configurar correctamente la aplicación y lanzar el siguiente comando:

@@ -12,7 +12,6 @@ import com.google.common.collect.ImmutableList;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.servlet.i18n.SessionLocaleResolver;
 
@@ -20,7 +19,6 @@ import java.util.Locale;
 import java.util.List;
 
 @SpringBootApplication()
-@EnableCaching
 @Slf4j
 public class LtiGradebookApplication {
 

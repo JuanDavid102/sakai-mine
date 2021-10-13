@@ -23,7 +23,7 @@ public class SyncCanvasGradesJob {
     @Autowired
     private CanvasGradeRepository canvasGradeRepository;
 
-    @Scheduled(fixedDelay = 5 * 60 * 1000, initialDelay = 500)
+    @Scheduled(fixedDelayString = "${sync.grades.interval}", initialDelayString = "${sync.grades.initial.delay}")
     public void run() {
         log.info("Running Canvas Grades Synchronization process....");
         courseRepository.findAll().forEach(course -> {
