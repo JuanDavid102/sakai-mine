@@ -18,7 +18,7 @@ import org.springframework.web.servlet.i18n.SessionLocaleResolver;
 import java.util.Locale;
 import java.util.List;
 
-@SpringBootApplication()
+@SpringBootApplication
 @Slf4j
 public class LtiGradebookApplication {
 

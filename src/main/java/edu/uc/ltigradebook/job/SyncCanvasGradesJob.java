@@ -44,11 +44,11 @@ public class SyncCanvasGradesJob {
                             canvasGradeRepository.save(studentCanvasGrade);
                         });
                     } catch (Exception e) {
-                        log.error("Fatal error getting course submissions from course {} and assignment {}.", courseId, assignmentId);
+                        log.error("Fatal error getting course submissions from course {} and assignment {}. {}", courseId, assignmentId, e.getMessage());
                     }
                 });
             } catch (Exception e) {
-                log.error("Fatal error getting course {}, skipping.", courseId);
+                log.error("Fatal error getting course {}, skipping. {}", courseId, e.getMessage());
             }
         });
         log.info("The Canvas Grades Synchronization process has ended and dumped all the canvas grades to the local DB.");
