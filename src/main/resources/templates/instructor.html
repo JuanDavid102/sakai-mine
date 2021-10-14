@@ -569,15 +569,28 @@
       },
       // Fired by ManualColumnMove plugin before change order of the visual indexes. This hook is fired when Options#manualColumnMove option is enabled.
       beforeColumnMove: function(columnsMoving, target) {
-          //Ignore first columns when moving another column
-          if (columnsMoving[0] < LEFT_READ_ONLY_COLS || target < LEFT_READ_ONLY_COLS) {
-            return false;
+          // The columns selected to be moved.
+          const selectedColumns = columnsMoving.slice();
+          // Builds an array with the allowed positions.
+          // Example [0,1,2,3,4,5,6,7,8]
+          let allowedPositions = Array(TOTAL_COLUMNS).fill().map((x,i) => i);
+          // Removes the fixed left colums [3,4,5,6,7,8]
+          for (let i = 0 ; i < LEFT_READ_ONLY_COLS; i++) {
+              allowedPositions.shift();
           }
-          //Ignore last columns when moving another column
-          if (columnsMoving[0] >= (TOTAL_COLUMNS - RIGHT_READ_ONLY_COLS) || target > (TOTAL_COLUMNS - RIGHT_READ_ONLY_COLS)) {
-            return false;
+          // Removes the fixed right colums [3,4]
+          for (let i = 0 ; i < RIGHT_READ_ONLY_COLS; i++) {
+              allowedPositions.pop();
           }
-          return true;
+          // Now see if the position is valid, the column should be movable and the destination should be allowed.
+          const destinationAllowed = allowedPositions.includes(target);
+          let columnsAllowed = true;
+          selectedColumns.forEach(column => {
+            if (!allowedPositions.includes(column)) {
+              columnsAllowed = false;
+            }
+          });
+          return destinationAllowed && columnsAllowed;
       },
       // Fired after Handsontable's view-rendering engine updates the view.
       afterRender: function() {
