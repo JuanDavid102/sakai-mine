@@ -452,10 +452,14 @@
         distance      = (elementOffset - scrollTop);
     var handsontableHeight = window.innerHeight - distance;
     GbGradeTable.instance = new Handsontable(container, {
+      // See The configuration options here https://handsontable.com/docs/api/options/
+      // License key for commercial version of Handsontable.
       licenseKey: "non-commercial-and-evaluation",
+      // Initial data source that will be bound to the data grid by reference (editing data grid alters the data source).
       data: data,
-      colHeaders: columns,
+      // This plugin allows adding a configurable dropdown menu to the table's column headers.
       dropdownMenu: false,
+      // Turns on Column sorting. Can be either a boolean (true / false) or an object with a declared sorting options:
       columnSorting: {
         sortEmptyCells: false,
         indicator: true,
@@ -476,21 +480,31 @@
           }
         }
       },
+      // Turns on Manual column move, if set to a boolean or define initial column order (as an array of column indexes).
       manualColumnMove: true,
+      // Turns on Manual column resize, if set to a boolean or define initial column resized widths (an an array of widths).
       manualColumnResize: true,
+      // The Filters plugin allows filtering the table data either by the built-in component or with the API.
       filters: true,
+      // Enables or disables AutoRowSize plugin. Default value is undefined, which has the same effect as false (disabled). Enabling this plugin can decrease performance, as size-related calculations would be performed.
       autoRowSize: true,
-      autoColSize: false,
+      // Class name for all visible rows in the current selection.
       currentRowClassName: 'currentRow',
+      // Class name for all visible columns in the current selection.
       currentColClassName: 'currentCol',
-      multiSelect: false,
+      // Disables or enables the copy/paste functionality.
       copyPaste: false,
+      // Turns on saving the state of column sorting, column positions and column sizes in local storage.
       persistentState: true,
+      // Width of the grid. Can be a value or a function that returns a value.
       width: '100%',
+      // Height of the grid. Can be a number or a function that returns a number.
       height: handsontableHeight,
+      // Allows to specify the number of fixed (or frozen) columns on the left of the table.
       fixedColumnsLeft: LEFT_READ_ONLY_COLS-1,
-      fixedColumnsRight: RIGHT_READ_ONLY_COLS,
+      // Class name for the current element.
       className: 'htCenter',
+      // Fired when a column width is about to be modified by a callback function.
       modifyColWidth: function(width, col){
           // Max column width is the half of the screen less 20 pixels
           var maxWidth = window.innerWidth / 2 - 20;
@@ -498,9 +512,11 @@
             return maxWidth
           }
       },
+      // Setting true or false will enable or disable the default column headers (A, B, C). You can also define an array ['One', 'Two', 'Three', ...] or a function to define the headers. If a function is set, then the index of the column is passed as a parameter.
       colHeaders: function(col) {
           return columnRenderer(col);
       },
+      // Defines the cell properties for given row, col, prop coordinates. Any constructor or column option may be overwritten for a particular cell (row/column combination) using the cells property in the Handsontable constructor.
       cells: function(row, col, prop) {
           var properties = cellSettings[row+1][col];
           var prevRenderer = properties.renderer;
@@ -551,6 +567,7 @@
 
           return properties;
       },
+      // Fired by ManualColumnMove plugin before change order of the visual indexes. This hook is fired when Options#manualColumnMove option is enabled.
       beforeColumnMove: function(columnsMoving, target) {
           //Ignore first columns when moving another column
           if (columnsMoving[0] < LEFT_READ_ONLY_COLS || target < LEFT_READ_ONLY_COLS) {
@@ -562,9 +579,11 @@
           }
           return true;
       },
+      // Fired after Handsontable's view-rendering engine updates the view.
       afterRender: function() {
           filterTable();
       },
+      // Fired before one or more cells is changed. Its main purpose is to alter changes silently after input and before table rendering.
       beforeChange: function(changes, source) {
           $(changes).each(function(idx, elem) {
             var physicalRow = GbGradeTable.instance.toPhysicalRow(elem[0]);
@@ -587,10 +606,12 @@
           });
           return changes;
       },
+      // Fired by ColumnSorting and MultiColumnSorting plugins after sorting the column. This hook is fired when Options#columnSorting or Options#multiColumnSorting option is enabled.
       afterColumnSort: function() {
         $('.header-cell-dropdown.show').dropdown('toggle');
         $('body > .dropdown-menu.show').remove();
       },
+      // Fired after the Handsontable instance is initiated
       afterInit: function() {
         var _instance = this;
         var ajaxRequests = [];
@@ -627,6 +648,7 @@
           _instance.updateSettings({height:$('.handsontable.ht_master > .wtHolder > .wtHider')[0].offsetHeight + 17})
         }
       },
+      // Fired after one or more cells has been changed. The changes are triggered in any situation when the value is entered using an editor or changed using API (e.q setDataAtCell).
       afterChange: function(changes, source) {
           var _instance = this;
           if (changes) {
