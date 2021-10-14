@@ -376,6 +376,18 @@
     const LEFT_READ_ONLY_COLS = /*[[${LEFT_READ_ONLY_COLS}]]*/;
     const RIGHT_READ_ONLY_COLS = /*[[${RIGHT_READ_ONLY_COLS}]]*/;
     const TOTAL_COLUMNS = /*[[${TOTAL_COLUMNS}]]*/;
+
+    // Builds an array with the allowed positions.
+    // Example [0,1,2,3,4,5,6,7,8]
+    const writableColumns = Array(TOTAL_COLUMNS).fill().map((x,i) => i);
+    // Removes the fixed left colums [3,4,5,6,7,8]
+    for (let i = 0 ; i < LEFT_READ_ONLY_COLS; i++) {
+      writableColumns.shift();
+    }
+    // Removes the fixed right colums [3,4]
+    for (let i = 0 ; i < RIGHT_READ_ONLY_COLS; i++) {
+      writableColumns.pop();
+    }
     const INVALID_VALUES_ARRAY = ['', '-', 'A+', 'A', 'A-','B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'F'];
     const FINAL_GRADE_VALID_VALUES = ['P', 'I', 'R', 'A'];
     const MIN_GRADE = 1;
@@ -518,8 +530,8 @@
       },
       // Defines the cell properties for given row, col, prop coordinates. Any constructor or column option may be overwritten for a particular cell (row/column combination) using the cells property in the Handsontable constructor.
       cells: function(row, col, prop) {
-          var properties = cellSettings[row+1][col];
-          var prevRenderer = properties.renderer;
+          const properties = cellSettings[row+1][col];
+          const prevRenderer = properties.renderer;
           if (properties === undefined) properties = [];
 
           properties.renderer = cellBlankRenderer;
@@ -533,13 +545,11 @@
           }
 
           if (properties.overwrittenGrade) {
-            if (properties.gradedPreviously)
-              properties.renderer = cellConvertedRatingRenderer;
-            else
-              properties.renderer = cellRatingRenderer;
+            properties.renderer = properties.gradedPreviously ? cellConvertedRatingRenderer : cellRatingRenderer;
           }
 
-          if (col >= (TOTAL_COLUMNS - RIGHT_READ_ONLY_COLS) && (col + 1 != TOTAL_COLUMNS)) {
+          // This makes the cell not editable if the column is read only. 
+          if (!writableColumns.includes(col) && (col !== TOTAL_COLUMNS - 1)) {
             properties.editor = false;
           }
 
@@ -558,11 +568,7 @@
           }
 
           if (col < LEFT_READ_ONLY_COLS) {
-            properties.editor = false;
-            if (properties.className)
-              properties.className = properties.className + ' align-left';
-            else
-              properties.className = 'align-left';
+            properties.className = properties.className ? properties.className + ' align-left' : 'align-left';
           }
 
           return properties;
@@ -571,22 +577,11 @@
       beforeColumnMove: function(columnsMoving, target) {
           // The columns selected to be moved.
           const selectedColumns = columnsMoving.slice();
-          // Builds an array with the allowed positions.
-          // Example [0,1,2,3,4,5,6,7,8]
-          let allowedPositions = Array(TOTAL_COLUMNS).fill().map((x,i) => i);
-          // Removes the fixed left colums [3,4,5,6,7,8]
-          for (let i = 0 ; i < LEFT_READ_ONLY_COLS; i++) {
-              allowedPositions.shift();
-          }
-          // Removes the fixed right colums [3,4]
-          for (let i = 0 ; i < RIGHT_READ_ONLY_COLS; i++) {
-              allowedPositions.pop();
-          }
           // Now see if the position is valid, the column should be movable and the destination should be allowed.
-          const destinationAllowed = allowedPositions.includes(target);
+          const destinationAllowed = writableColumns.includes(target);
           let columnsAllowed = true;
           selectedColumns.forEach(column => {
-            if (!allowedPositions.includes(column)) {
+            if (!writableColumns.includes(column)) {
               columnsAllowed = false;
             }
           });
@@ -599,21 +594,24 @@
       // Fired before one or more cells is changed. Its main purpose is to alter changes silently after input and before table rendering.
       beforeChange: function(changes, source) {
           $(changes).each(function(idx, elem) {
-            var physicalRow = GbGradeTable.instance.toPhysicalRow(elem[0]);
-            var cellMeta = cellSettings[physicalRow+1][elem[1]];
+            const physicalRow = GbGradeTable.instance.toPhysicalRow(elem[0]);
+            const cellMeta = cellSettings[physicalRow+1][elem[1]];
+            const newValue = changes[idx][3];
             //If not editable, avoid the change
-            if (cellMeta.editor !== undefined && !cellMeta.editor && changes[idx][3] === '') {
+            if (cellMeta.editor !== undefined && !cellMeta.editor && !newValue) {
               changes[idx][3] = changes[idx][2];
               return;
             }
-            var input = elem[3];
+            let input = elem[3];
             if (input && (typeof input === 'string' || input instanceof String)) {
                 input = input.replace(/,/g, '.');
             }
             if (isValidGrade(input)) {
-              var value = parseFloat(input);
+              let value = parseFloat(input);
               value = math.round(value, 1);
-              if (Number.isInteger(value)) value = value + '.0';
+              if (Number.isInteger(value)) {
+                value = value + '.0';
+              }
               changes[idx][3] = value;
             }
           });
