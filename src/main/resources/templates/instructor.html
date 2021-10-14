@@ -1107,7 +1107,7 @@
       var visualCol = GbGradeTable.instance.toVisualColumn(col);
       $('#sendMessage .modal-title').text(messages.instructor_send_message_modal_title.replace('{0}', headerSettings.assignmentName));
       $('#send-message-assignment-name').val(headerSettings.assignmentName);
-      $('#send-message-assignment-id').val(headerSettings.id);
+      $('#send-message-assignment-id').val(headerSettings.assignmentId);
       $('#sendMessageSubject').val(messages.instructor_send_message_modal_subject_0.replace('{0}', headerSettings.assignmentName));
       $('#selected-column').val(visualCol);
       updateSendMessageUsers();
