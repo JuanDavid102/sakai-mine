@@ -1,5 +1,6 @@
 package edu.uc.ltigradebook.job;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -37,6 +38,9 @@ public class SyncCanvasGradesJob {
                             String userId = assignmentSubmission.getUserId().toString();
                             String grade = assignmentSubmission.getGrade();
                             log.debug("Dumping grades from submission {}, user {}, assignment {} and course {}, grade is {}.", assignmentSubmission.getId(), userId, assignmentId, courseId, grade);
+                            if (StringUtils.isBlank(grade)) {
+                                return;
+                            }
                             StudentCanvasGrade studentCanvasGrade = new StudentCanvasGrade();
                             studentCanvasGrade.setUserId(userId);
                             studentCanvasGrade.setGrade(grade);
