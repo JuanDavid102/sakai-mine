@@ -4,9 +4,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import edu.ksu.lti.launch.model.InstitutionRole;
@@ -17,17 +15,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SecurityService {
 
-   @Value("${lti-gradebook.admins:admin}")
-   private String ltiGradebookAdmins;
-
    @Autowired
    private AccountService accountService;
 
    public boolean isAdminUser(String canvasLoginId, List<InstitutionRole> userRoles) {
-       log.debug("The current admins of the application are {}.", ltiGradebookAdmins);
-       // Better security check for admins
-       // return userRoles.contains(InstitutionRole.Administrator) || (StringUtils.isNotEmpty(ltiGradebookAdmins) && ltiGradebookAdmins.contains(canvasLoginId));
-       return StringUtils.isNotEmpty(ltiGradebookAdmins) && ltiGradebookAdmins.contains(canvasLoginId) && userRoles.contains(InstitutionRole.Administrator);
+       return userRoles.contains(InstitutionRole.Administrator);
    }
 
    public boolean isFaculty(List<InstitutionRole> userRoles) {

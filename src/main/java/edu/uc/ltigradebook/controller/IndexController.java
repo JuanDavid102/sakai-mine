@@ -135,12 +135,8 @@ public class IndexController {
             }
 
             //Assume that the contextId should be a Long value, if not the tool is being executed in a special context.
-            try {
-                Long.parseLong(courseId);
-            } catch(Exception e) {
-                if(securityService.isAdminUser(canvasLoginId, lld.getRolesList())) {
-                    return adminMain(ltiPrincipal, ltiSession, model);
-                }
+            if (StringUtils.isBlank(courseId) && securityService.isAdminUser(canvasLoginId, lld.getRolesList())) {
+                return adminMain(ltiPrincipal, ltiSession, model);
             }
 
             if (securityService.isFaculty(lld.getRolesList())) {
@@ -443,7 +439,7 @@ public class IndexController {
                         bannerEnabled = securityService.isBannerEnabled(mainSubAccount.get().getId());
                     }
                 } catch (Exception accountException) {
-                    log.error("Fatal error getting subaccount {}, banner disabled. Error: {}", courseOptional.get().getAccountId(), accountException.getMessage());            		
+                    log.error("Fatal error getting subaccount {}, banner disabled. Error: {}", courseOptional.get().getAccountId(), accountException.getMessage());
                 }
             }
             model.addAttribute("isBannerEnabled", bannerEnabled);
