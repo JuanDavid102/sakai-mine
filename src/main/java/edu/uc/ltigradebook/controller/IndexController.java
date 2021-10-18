@@ -437,9 +437,13 @@ public class IndexController {
             boolean bannerEnabled = false;
             Optional<Course> courseOptional = canvasService.getSingleCourse(courseId);
             if (courseOptional.isPresent()) {
-                Optional<Account> mainSubAccount = canvasService.getSubAccountForCourseAccount(String.valueOf(courseOptional.get().getAccountId()));
-                if (mainSubAccount.isPresent() && !securityService.isTeachingAssistant(lld.getRolesList())) {
-                    bannerEnabled = securityService.isBannerEnabled(mainSubAccount.get().getId());
+                try {
+                    Optional<Account> mainSubAccount = canvasService.getSubAccountForCourseAccount(String.valueOf(courseOptional.get().getAccountId()));
+                    if (mainSubAccount.isPresent() && !securityService.isTeachingAssistant(lld.getRolesList())) {
+                        bannerEnabled = securityService.isBannerEnabled(mainSubAccount.get().getId());
+                    }
+                } catch (Exception accountException) {
+                    log.error("Fatal error getting subaccount {}, banner disabled. Error: {}", courseOptional.get().getAccountId(), accountException.getMessage());            		
                 }
             }
             model.addAttribute("isBannerEnabled", bannerEnabled);
