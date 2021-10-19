@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 
 import edu.ksu.canvas.CanvasApiFactory;
 import edu.ksu.canvas.interfaces.AccountReader;
+import edu.ksu.canvas.interfaces.AccountReportReader;
+import edu.ksu.canvas.interfaces.AccountReportWriter;
 import edu.ksu.canvas.interfaces.AssignmentGroupReader;
 import edu.ksu.canvas.interfaces.AssignmentReader;
 import edu.ksu.canvas.interfaces.ConversationWriter;
@@ -29,8 +31,10 @@ import edu.ksu.canvas.model.User;
 import edu.ksu.canvas.model.assignment.Assignment;
 import edu.ksu.canvas.model.assignment.AssignmentGroup;
 import edu.ksu.canvas.model.assignment.Submission;
+import edu.ksu.canvas.model.report.AccountReport;
 import edu.ksu.canvas.oauth.NonRefreshableOauthToken;
 import edu.ksu.canvas.oauth.OauthToken;
+import edu.ksu.canvas.requestOptions.AccountReportOptions;
 import edu.ksu.canvas.requestOptions.CreateConversationOptions;
 import edu.ksu.canvas.requestOptions.GetSingleAssignmentOptions;
 import edu.ksu.canvas.requestOptions.GetSingleCourseOptions;
@@ -39,6 +43,7 @@ import edu.ksu.canvas.requestOptions.GetUsersInCourseOptions;
 import edu.ksu.canvas.requestOptions.GetUsersInCourseOptions.EnrollmentType;
 import edu.ksu.canvas.requestOptions.ListAccountOptions;
 import edu.uc.ltigradebook.constants.CacheConstants;
+import edu.uc.ltigradebook.model.AccountReportType;
 import lombok.extern.slf4j.Slf4j;
 import edu.ksu.canvas.requestOptions.ListAssignmentGroupOptions;
 import edu.ksu.canvas.requestOptions.GetSubmissionsOptions;
@@ -56,6 +61,8 @@ public class CanvasAPIServiceWrapper {
 
     @Value("${lti-gradebook.canvas_api_token:secret}")
     private String canvasApiToken;
+
+    private final String SIS_ACCOUNT_ID = "self";
 
     public boolean validateToken(String token) {
         OauthToken oauthToken = new NonRefreshableOauthToken(token);
@@ -210,6 +217,35 @@ public class CanvasAPIServiceWrapper {
         CreateConversationOptions createConversationOptions = new CreateConversationOptions(userIds, bodyMessage).subject(subject).forceNew(true);
         conversationWriter.createConversation(createConversationOptions);
         return;
+    }
+
+    /**
+     * Requests an account report of the provided type.
+     * @param reportType The type of the report example: provisioning_csv.
+     * @returns Optional with the AccountReport object requested to Canvas.
+     * @throws IOException
+     */
+    public Optional<AccountReport> startAccountReport(AccountReportType reportType) throws IOException {
+        OauthToken oauthToken = this.getRandomOauthToken();
+        AccountReportOptions options = new AccountReportOptions(reportType.name(), SIS_ACCOUNT_ID);
+        options.enrollmentTermId("");
+        AccountReportWriter accountReportWriter = canvasApiFactory.getWriter(AccountReportWriter.class, oauthToken);
+        log.info("Account report of type {} requested for the account {}.", reportType.name(), SIS_ACCOUNT_ID);
+        return accountReportWriter.startReport(options);
+    }
+
+    /**
+     * Requests the status of an account report providing the report id.
+     * @param accountReportId The id of the account report.
+     * @param reportType The type of the report example: provisioning_csv.
+     * @returns Optional with the AccountReport object requested to Canvas.
+     * @throws IOException
+     */
+    public Optional<AccountReport> getAccountReportStatus(Integer accountReportId, AccountReportType reportType) throws IOException {
+        OauthToken oauthToken = this.getRandomOauthToken();
+        log.info("Getting the account report status of the report {}.", accountReportId);
+        AccountReportReader accountReportReader = canvasApiFactory.getReader(AccountReportReader.class, oauthToken);
+        return accountReportReader.reportStatus(SIS_ACCOUNT_ID, reportType.name(), accountReportId);
     }
 
 }
