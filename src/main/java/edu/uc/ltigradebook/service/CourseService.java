@@ -32,13 +32,16 @@ public class CourseService {
 
     public List<Course> getAllCourses() throws IOException {
         List<Course> courses = new ArrayList<>();
-        Iterable<CoursePreference> coursePreferences = (List<CoursePreference>) courseRepository.findAll();
-        for (CoursePreference coursePreference : coursePreferences) {
-            Optional<Course> optCourse = canvasService.getSingleCourse(Long.toString(coursePreference.getCourseId()));
-            if (optCourse.isPresent()) {
-                courses.add(optCourse.get());
+        courseRepository.findAll().forEach(coursePreference -> {
+            try {
+                Optional<Course> optCourse = canvasService.getSingleCourse(Long.toString(coursePreference.getCourseId()));
+                if (optCourse.isPresent()) {
+                    courses.add(optCourse.get());
+                }
+            } catch (Exception ex) {
+                log.error("Course {} not found, skipping it.", coursePreference.getCourseId());
             }
-        }
+        });
         return courses;
     }
 
