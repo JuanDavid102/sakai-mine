@@ -159,7 +159,11 @@ public class IndexController {
         String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
         String canvasLoginId = ltiPrincipal.getUser();
         String courseId = ltiSession.getCanvasCourseId();
+        String contextTitle = lld.getContextTitle();
+        String contextLabel = lld.getContextLabel();
         CoursePreference coursePreference = courseService.getCoursePreference(courseId);
+        // Update the course name to keep it updated.
+        courseService.updateCourseName(coursePreference, contextTitle);
         log.debug("The user {} with id {} is entering the instructor view.", canvasLoginId, canvasUserId);
 
         try {
@@ -178,21 +182,16 @@ public class IndexController {
             stopwatch.stop();
             log.debug("getSectionsInCourse took {} for {} sections.", stopwatch, sectionList.size());
 
-            stopwatch.reset();
-            stopwatch.start();
-            Optional<Course> course = canvasService.getSingleCourse(courseId);
-            String exportFileName, courseName = "";
-            if (course.isPresent()) {
+            // Get the export file name and thecourse name from the contextTitle and the contextLabel.
+            String exportFileName, courseName = contextTitle;
+            if (StringUtils.isNotBlank(contextLabel)) {
                 SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HHmm");
-                exportFileName = messageSource.getMessage("instructor_export_file_name", new String[] {format.format(new Date()), course.get().getCourseCode()}, LocaleContextHolder.getLocale());
-                courseName = course.get().getName();
+                exportFileName = messageSource.getMessage("instructor_export_file_name", new String[] {format.format(new Date()), contextLabel}, LocaleContextHolder.getLocale());
             } else {
                 exportFileName = messageSource.getMessage("instructor_export_file_name_default", null, LocaleContextHolder.getLocale());
             }
             model.addAttribute("exportFileName", exportFileName);
             model.addAttribute("courseName", courseName);
-            stopwatch.stop();
-            log.debug("getSingleCourse took {}.", stopwatch);
 
             stopwatch.reset();
             stopwatch.start();
@@ -636,7 +635,7 @@ public class IndexController {
 
         log.debug("The user {} with id {} is entering the grade courses administrator view.", canvasLoginId, canvasUserId);
         try {
-            model.addAttribute("courses", courseService.getAllCourses());
+            model.addAttribute("courses", courseService.getAllCoursePreferences());
             model.addAttribute("adminGradesCourses", true);
             new Long(selectedCourse);
         } catch(Exception ex) {
@@ -686,7 +685,7 @@ public class IndexController {
 
         log.debug("The user {} with id {} is entering the grade students administrator view.", canvasLoginId, canvasUserId);
         try {
-            model.addAttribute("courses", courseService.getAllCourses());
+            model.addAttribute("courses", courseService.getAllCoursePreferences());
             model.addAttribute("adminGradesStudents", true);
             new Long(selectedCourse);
 

@@ -23,4 +23,7 @@ public class CoursePreference {
     @Column(name = "course_scale", nullable = false)
     private String conversionScale;
 
+    @Column(name = "course_name")
+    private String courseName;
+
 }
