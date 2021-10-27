@@ -83,7 +83,7 @@ public class CanvasAPIServiceWrapper {
 
         // Return the default token is the list is empty.
         if (tokenList.isEmpty()) {
-            log.warn("The LTI tool needs more tokens to work properly, using the default. Please provide more authentication tokens using the administration area.");
+            log.debug("The LTI tool needs more tokens to work properly, using the default. Please provide more authentication tokens using the administration area.");
             return new NonRefreshableOauthToken(canvasApiToken);
         }
 
