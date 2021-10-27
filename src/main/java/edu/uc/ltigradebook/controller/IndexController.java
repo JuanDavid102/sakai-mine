@@ -161,6 +161,15 @@ public class IndexController {
         String contextTitle = lld.getContextTitle();
         String contextLabel = lld.getContextLabel();
         CoursePreference coursePreference = courseService.getCoursePreference(courseId);
+        // Identify if it's the first time the course is requested.
+        if (StringUtils.isBlank(coursePreference.getCourseName())) {
+            log.debug("The course {} has been created for the first time, sync grades.", courseId);
+            // Sync the grades in a new thread and display a message to the user.
+            new Thread(() -> {
+                gradeService.syncCourseGrades(courseId);
+            }).start();
+            model.addAttribute("isNewCourse", true);
+        }
         // Update the course name to keep it updated.
         courseService.updateCourseName(coursePreference, contextTitle);
         log.debug("The user {} with id {} is entering the instructor view.", canvasLoginId, canvasUserId);

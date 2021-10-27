@@ -3,6 +3,16 @@
   <title th:text="#{instructor_view_title}">LTI Gradebook Home</title>
 <body>
 
+<div class="alert alert-info" th:if="${isNewCourse != null && isNewCourse}">
+  <div class="spinner-border spinner-border-sm"></div>
+  <span th:text="#{instructor_sync_grades_in_progress}">The Gradebook is running in this course for the first time, it is synchronizing the grades right now, the tool will be refreshed in 30 seconds.</span>
+  <script>
+    window.setTimeout(function () {
+      window.location.reload();
+    }, 30000);
+  </script>
+</div>
+
 <div class="alert alert-info" th:if="${assignmentList.isEmpty()}" th:text="#{shared_no_assignments}">
   There are no assignments in this course.
 </div>
