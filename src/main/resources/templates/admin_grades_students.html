@@ -17,14 +17,14 @@
               <label for="selectedCourse" th:text="#{admin_banner_select_course_student}">Select the course to see its students:</label>
               <select id="selectedCourse" name="selectedCourse" class="form-control" onchange="this.form.submit();">
                   <option></option>
-                  <option th:each="course : ${courses}" th:value="${course.courseId}" th:text="${course.courseName != null ? course.courseName : course.courseId}" th:selected="${course.courseId.equals(selectedIntegerCourse)}"></option>
+                  <option th:each="course : ${courses}" th:value="${course.courseId}" th:text="${course.courseName != null ? course.courseName : course.courseId}" th:selected="${course.courseId.toString().equals(selectedCourse)}"></option>
               </select>
           </div>
           <div class="form-group" th:if="${userList != null}">
               <label for="selectedStudent" th:text="#{admin_banner_select_student}">Select a student to see his grades:</label>
               <select id="selectedStudent" name="selectedStudent" class="form-control" onchange="this.form.submit();">
                   <option></option>
-                  <option th:each="user : ${userList}" th:value="${user.id}" th:text="${user.sortableName}" th:selected="${selectedStudent.equals(String.valueOf(user.id))}"></option>
+                  <option th:each="user : ${userList}" th:value="${user.id}" th:text="${user.sortableName}" th:selected="${user.id.toString().equals(selectedStudent)}"></option>
               </select>
           </div>
       </form>
@@ -76,9 +76,13 @@
     <script th:inline="javascript">
       $(document).ready( function () {
         /*<![CDATA[*/
+        // Initialize the course selector to include search features
+        $('#selectedCourse').select2();
+        // Initialize the user selector to include search features
+        $('#selectedStudent').select2();
         var assignmentGroupList = /*[[${assignmentGroupList}]]*/;
-        var courseId = /*[[${selectedIntegerCourse}]]*/;
-        var userId = /*[[${selectedStudent}]]*/;
+        const courseId = /*[[${selectedCourse}]]*/;
+        const userId = /*[[${selectedStudent}]]*/;
         var messages = {
           student_grade_not_available: /*[[#{student_grade_not_available}]]*/,
           instructor_header_omit_final_grade: /*[[#{instructor_header_omit_final_grade}]]*/,

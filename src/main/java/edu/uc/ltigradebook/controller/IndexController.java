@@ -52,7 +52,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.i18n.SessionLocaleResolver;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
@@ -634,42 +633,36 @@ public class IndexController {
         }
 
         log.debug("The user {} with id {} is entering the grade courses administrator view.", canvasLoginId, canvasUserId);
-        try {
-            model.addAttribute("courses", courseService.getAllCoursePreferences());
-            model.addAttribute("adminGradesCourses", true);
-            new Long(selectedCourse);
-        } catch(Exception ex) {
-            return new ModelAndView(TemplateConstants.ADMIN_GRADES_COURSES_TEMPLATE);
-        }
-        try {
-            List<User> userList = canvasService.getUsersInCourse(selectedCourse);
-
-            List<Section> sectionList = canvasService.getSectionsInCourse(selectedCourse);
-            Map<String, String> sectionMap = new HashMap<>();
-            Map<String, String> userSectionMap = new HashMap<>();
-            for(Section section : sectionList) {
-                sectionMap.put(String.valueOf(section.getId()), section.getName());
-            }
-            for (User user : userList) {
-                String section = StringUtils.EMPTY;
-                if(user.getEnrollments() != null && !user.getEnrollments().isEmpty()) {
-                    StringJoiner joiner = new StringJoiner(",");
-                    for(Enrollment enrollment : user.getEnrollments()) {
-                        joiner.add(sectionMap.get(enrollment.getCourseSectionId()));
-                    }
-                    section = joiner.toString();
+        if (StringUtils.isNotBlank(selectedCourse)) {
+            try {
+                List<User> userList = canvasService.getUsersInCourse(selectedCourse);
+                List<Section> sectionList = canvasService.getSectionsInCourse(selectedCourse);
+                Map<String, String> sectionMap = new HashMap<>();
+                Map<String, String> userSectionMap = new HashMap<>();
+                for(Section section : sectionList) {
+                    sectionMap.put(String.valueOf(section.getId()), section.getName());
                 }
-                userSectionMap.put(String.valueOf(user.getId()), section);
+                for (User user : userList) {
+                    String section = StringUtils.EMPTY;
+                    if(user.getEnrollments() != null && !user.getEnrollments().isEmpty()) {
+                        StringJoiner joiner = new StringJoiner(",");
+                        for(Enrollment enrollment : user.getEnrollments()) {
+                            joiner.add(sectionMap.get(enrollment.getCourseSectionId()));
+                        }
+                        section = joiner.toString();
+                    }
+                    userSectionMap.put(String.valueOf(user.getId()), section);
+                }
+
+                model.addAttribute("selectedCourse", selectedCourse);
+                model.addAttribute("userList", userList);
+                model.addAttribute("userSectionMap", userSectionMap);
+            } catch (Exception ex) {
+                log.error("Cannot get users in course {}", selectedCourse);
             }
-
-            model.addAttribute("selectedIntegerCourse", Integer.valueOf(selectedCourse));
-            model.addAttribute("userList", userList);
-            model.addAttribute("userSectionMap", userSectionMap);
-
-        } catch (IOException ex) {
-            log.error("Cannot get users in course {}", selectedCourse);
-            return null;
         }
+        model.addAttribute("courses", courseService.getAllCoursePreferences());
+        model.addAttribute("adminGradesCourses", true);
         return new ModelAndView(TemplateConstants.ADMIN_GRADES_COURSES_TEMPLATE);
     }
 
@@ -685,79 +678,80 @@ public class IndexController {
 
         log.debug("The user {} with id {} is entering the grade students administrator view.", canvasLoginId, canvasUserId);
         try {
-            model.addAttribute("courses", courseService.getAllCoursePreferences());
-            model.addAttribute("adminGradesStudents", true);
-            new Long(selectedCourse);
-
-            List<User> userList = canvasService.getUsersInCourse(selectedCourse);
-            model.addAttribute("selectedIntegerCourse", Integer.valueOf(selectedCourse));
-            model.addAttribute("userList", userList);
-            new Long(selectedStudent);
-
-            model.addAttribute("selectedStudent", selectedStudent);
-            Optional<User> user = userList.stream().filter(u -> selectedStudent.equals(String.valueOf(u.getId()))).findFirst();
-            if (!user.isPresent()) {
-                return new ModelAndView(TemplateConstants.ADMIN_GRADES_STUDENTS_TEMPLATE);
-            }
-
-            List<Assignment> assignmentList = canvasService.listCourseAssignments(selectedCourse);
-            List<AssignmentGroup> assignmentGroupList = canvasService.listAssignmentGroups(selectedCourse);
-            CoursePreference coursePreference = courseService.getCoursePreference(selectedCourse);
-
-            Map<Integer, String> gradeMap = new HashMap<Integer, String>();
-            for (Assignment assignment : assignmentList) {
-                String assignmentId = String.valueOf(assignment.getId());
-                Optional<AssignmentPreference> assignmentPref = assignmentService.getAssignmentPreference(assignmentId);
-                String grade = StringUtils.EMPTY;
-                //Get the grade from persistence, get the grade from the API otherwise.
-                Optional<StudentGrade> overwrittenStudentGrade = gradeService.getGradeByAssignmentAndUser(assignmentId, selectedStudent);
-                if (overwrittenStudentGrade.isPresent()) {
-                    grade = overwrittenStudentGrade.get().getGrade();
-                } else {
-                	// Get the Canvas grade from the DB instead of polling Canvas.
-                    Optional<StudentCanvasGrade> submission = gradeService.getCanvasGradeByAssignmentAndUser(assignmentId, selectedStudent);
-                    grade = submission.isPresent() ? submission.get().getGrade() : StringUtils.EMPTY;
-
-                    String assignmentConversionScale = coursePreference.getConversionScale();
-                    Optional<AssignmentPreference> assignmentPreference = assignmentService.getAssignmentPreference(assignmentId);
-                    if (assignmentPreference.isPresent() && StringUtils.isNotBlank(assignmentPreference.get().getConversionScale())) {
-                        assignmentConversionScale = assignmentPreference.get().getConversionScale();
+            // A course has been selected in the admin area
+            if (StringUtils.isNotBlank(selectedCourse)) {
+                List<User> userList = canvasService.getUsersInCourse(selectedCourse);
+                model.addAttribute("selectedCourse", selectedCourse);
+                model.addAttribute("userList", userList);
+                // A user has been selected in the admin area.
+                if (StringUtils.isNotBlank(selectedStudent)) {
+                    model.addAttribute("selectedStudent", selectedStudent);
+                    Optional<User> user = userList.stream().filter(u -> selectedStudent.equals(String.valueOf(u.getId()))).findFirst();
+                    if (!user.isPresent()) {
+                        return new ModelAndView(TemplateConstants.ADMIN_GRADES_STUDENTS_TEMPLATE);
                     }
 
-                    //Grade conversion logic
-                    if(GradeUtils.GRADE_TYPE_POINTS.equals(assignment.getGradingType())) {
-                        grade = GradeUtils.mapGradeToScale(assignmentConversionScale, grade, assignment.getPointsPossible());
-                    } else if(GradeUtils.GRADE_TYPE_PERCENT.equals(assignment.getGradingType())) { 
-                        grade = GradeUtils.mapPercentageToScale(assignmentConversionScale, grade);
+                    List<Assignment> assignmentList = canvasService.listCourseAssignments(selectedCourse);
+                    List<AssignmentGroup> assignmentGroupList = canvasService.listAssignmentGroups(selectedCourse);
+                    CoursePreference coursePreference = courseService.getCoursePreference(selectedCourse);
+
+                    Map<Integer, String> gradeMap = new HashMap<Integer, String>();
+                    for (Assignment assignment : assignmentList) {
+                        String assignmentId = String.valueOf(assignment.getId());
+                        Optional<AssignmentPreference> assignmentPref = assignmentService.getAssignmentPreference(assignmentId);
+                        String grade = StringUtils.EMPTY;
+                        //Get the grade from persistence, get the grade from the API otherwise.
+                        Optional<StudentGrade> overwrittenStudentGrade = gradeService.getGradeByAssignmentAndUser(assignmentId, selectedStudent);
+                        if (overwrittenStudentGrade.isPresent()) {
+                            grade = overwrittenStudentGrade.get().getGrade();
+                        } else {
+                            // Get the Canvas grade from the DB instead of polling Canvas.
+                            Optional<StudentCanvasGrade> submission = gradeService.getCanvasGradeByAssignmentAndUser(assignmentId, selectedStudent);
+                            grade = submission.isPresent() ? submission.get().getGrade() : StringUtils.EMPTY;
+
+                            String assignmentConversionScale = coursePreference.getConversionScale();
+                            Optional<AssignmentPreference> assignmentPreference = assignmentService.getAssignmentPreference(assignmentId);
+                            if (assignmentPreference.isPresent() && StringUtils.isNotBlank(assignmentPreference.get().getConversionScale())) {
+                                assignmentConversionScale = assignmentPreference.get().getConversionScale();
+                            }
+
+                            //Grade conversion logic
+                            if(GradeUtils.GRADE_TYPE_POINTS.equals(assignment.getGradingType())) {
+                                grade = GradeUtils.mapGradeToScale(assignmentConversionScale, grade, assignment.getPointsPossible());
+                            } else if(GradeUtils.GRADE_TYPE_PERCENT.equals(assignment.getGradingType())) { 
+                                grade = GradeUtils.mapPercentageToScale(assignmentConversionScale, grade);
+                            }
+                        }
+
+                        if (assignmentPref.isPresent() && assignmentPref.get().getMuted() != null) {
+                            assignment.setMuted(assignmentPref.get().getMuted().toString());
+                        }
+
+                        String finalGrade = StringUtils.isNotBlank(grade) ? grade : GRADE_NOT_AVAILABLE;
+
+                        gradeMap.put(assignment.getId(), finalGrade);
+
                     }
+
+                    Map<String, String> assignmentGroupNameMap = new HashMap<String, String>();
+                    for(AssignmentGroup assignmentGroup : assignmentGroupList) {
+                        //If there is an empty grade, we don't need to calculate the mean of the group.
+                        //messageSource.getMessage("student_grade_not_available", null, LocaleContextHolder.getLocale())
+                        String groupName = String.format("%s (%s%%)", assignmentGroup.getName(), assignmentGroup.getGroupWeight());
+                        assignmentGroupNameMap.put(String.valueOf(assignmentGroup.getId()), groupName);
+                    }
+
+                    model.addAttribute("assignmentList", assignmentList);
+                    model.addAttribute("assignmentGroupList", assignmentGroupList);
+                    model.addAttribute("gradeMap", gradeMap);
+                    model.addAttribute("assignmentGroupNameMap", assignmentGroupNameMap);
                 }
-
-                if (assignmentPref.isPresent() && assignmentPref.get().getMuted() != null) {
-                    assignment.setMuted(assignmentPref.get().getMuted().toString());
-                }
-
-                String finalGrade = StringUtils.isNotBlank(grade) ? grade : GRADE_NOT_AVAILABLE;
-
-                gradeMap.put(assignment.getId(), finalGrade);
-
             }
-
-            Map<String, String> assignmentGroupNameMap = new HashMap<String, String>();
-            for(AssignmentGroup assignmentGroup : assignmentGroupList) {
-                //If there is an empty grade, we don't need to calculate the mean of the group.
-                //messageSource.getMessage("student_grade_not_available", null, LocaleContextHolder.getLocale())
-                String groupName = String.format("%s (%s%%)", assignmentGroup.getName(), assignmentGroup.getGroupWeight());
-                assignmentGroupNameMap.put(String.valueOf(assignmentGroup.getId()), groupName);
-            }
-
-            model.addAttribute("assignmentList", assignmentList);
-            model.addAttribute("assignmentGroupList", assignmentGroupList);
-            model.addAttribute("gradeMap", gradeMap);
-            model.addAttribute("assignmentGroupNameMap", assignmentGroupNameMap);
-            
         } catch(Exception ex) {
-            //return new ModelAndView(TemplateConstants.ADMIN_GRADES_STUDENTS_TEMPLATE);
+            log.error("Error rendering the student grades admin view. {}", ex.getMessage());
         }
+        model.addAttribute("courses", courseService.getAllCoursePreferences());
+        model.addAttribute("adminGradesStudents", true);
         return new ModelAndView(TemplateConstants.ADMIN_GRADES_STUDENTS_TEMPLATE);
     }
 
@@ -847,7 +841,7 @@ public class IndexController {
 
             return new ModelAndView(TemplateConstants.SEND_TO_BANNER_TEMPLATE);
 
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             log.error("Cannot get users in course {}", courseId);
             return null;
         }

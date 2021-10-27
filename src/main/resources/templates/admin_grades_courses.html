@@ -17,7 +17,7 @@
               <label for="selectedCourse" th:text="#{admin_banner_select_course}">Select the course to see the final student grades:</label>
               <select id="selectedCourse" name="selectedCourse" class="form-control" onchange="this.form.submit();">
                   <option></option>
-                  <option th:each="course : ${courses}" th:value="${course.courseId}" th:text="${course.courseName != null ? course.courseName : course.courseId}" th:selected="${course.courseId.equals(selectedIntegerCourse)}"></option>
+                  <option th:each="course : ${courses}" th:value="${course.courseId}" th:text="${course.courseName != null ? course.courseName : course.courseId}" th:selected="${course.courseId.toString().equals(selectedCourse)}"></option>
               </select>
           </div>
       </form>
@@ -48,7 +48,9 @@
     <script th:inline="javascript">
       /*<![CDATA[*/
         $(document).ready(function() {
-          var courseId = /*[[${selectedIntegerCourse}]]*/;
+          // Initialize the course selector to include search features
+          $('#selectedCourse').select2();
+          const courseId = /*[[${selectedCourse}]]*/;
           var courseUsers = /*[[${userList}]]*/;
           var table;
 
