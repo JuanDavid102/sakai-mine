@@ -62,6 +62,8 @@ Las propiedades más importantes a configurar son:
 | sync.submissions.initial.delay | Modificar el retraso inicial de la primera ejecución de sincronización de entregas basado en la descarga de informes de cuenta. | PT1S | PT1S |
 | canvas.accountreport.max.duration | Modificar el tiempo máximo que el proceso esperará a un informe de cuenta. | PT3H | PT3H |
 | canvas.accountreport.sleep.interval | Modificar el tiempo que el proceso esperará para hacer la siguiente petición al estado de un informe de cuenta. | PT10M | PT10M |
+| datastreams.jwt.issuer | Modificar el issuer de los live events. | https://live-events.canvas.instructure.com | https://live-events.canvas.instructure.com |
+| datastreams.jwt.jwks.uri | Modificar la URI del issuer de los live events. | https://8axpcl50e4.execute-api.us-east-1.amazonaws.com/main/jwks | https://8axpcl50e4.execute-api.us-east-1.amazonaws.com/main/jwks |
 
 ## Ejecución
 Para ejecutar el código necesitamos configurar correctamente la aplicación y lanzar el siguiente comando:
@@ -87,7 +89,23 @@ mvn clean install spring-boot:run
 ```
 
 ## Instalación en Canvas
-----------------------
 
 Para instalar la herramienta en Canvas, modifica el fichero `lti.xml` con la información y rutas públicas de la herramienta, usa ese fichero a la hora de [importar una herramienta LTI en Canvas](https://community.canvaslms.com/docs/DOC-10724-67952720325). 
+
+## Configuración de Live Events
+
+Una de las funcionalidades más importantes es la configuración de los data services de Canvas para recibir eventos en tiempo real cuando los profesores modifican una nota.
+
+Para ello en la instancia de Canvas hay que configurar los data services:
+
+https://community.canvaslms.com/t5/Admin-Guide/How-do-I-use-the-Data-Services-Portal/ta-p/258
+https://community.canvaslms.com/t5/Admin-Guide/How-do-I-subscribe-to-Live-Events-using-Canvas-Data-Services/ta-p/227
+https://community.canvaslms.com/t5/Admin-Guide/How-do-I-configure-and-test-Canvas-Live-Events-using-HTTPS/ta-p/151
+
+En el momento de crear el data stream, se debe seleccionar el método HTTPS, seleccionar la opción de firmar el evento y como endpoint definir la ruta de la aplicación, debe ser algo del estilo:
+```
+https://lti.application.url/datastream/post
+```
+
+`/datastream/post` es la parte importante al ser el endpoint de recepción de eventos.
 

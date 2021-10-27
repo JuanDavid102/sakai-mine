@@ -53,6 +53,10 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         // We have to disable CSRF on the LTI launch.
         http.csrf().requireCsrfProtectionMatcher(new LtiLaunchCsrfMatcher("/launch"));
 
+        http.authorizeRequests().antMatchers(
+            "/datastream/**" // Allow access to data streams, this is related to live events.
+        ).permitAll();
+
         // Setup spring security to require all requests to be authenticated.
         http.authorizeRequests()
             .anyRequest().authenticated()
