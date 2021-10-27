@@ -472,6 +472,7 @@ public class GradeService {
     }
 
     public void syncCourseGrades(String courseId) {
+        log.debug("Syncing grades from course {}", courseId);
         try {
             // This trick is a courseId checker, it fails if the course does not exist in the Canvas instance, ideally when mixing instances or when a course is deleted.
             canvasService.getSingleCourse(courseId);
@@ -501,5 +502,6 @@ public class GradeService {
         } catch (Exception e) {
             log.error("Fatal error getting course {}, skipping. {}", courseId, e.getMessage());
         }
+        log.debug("Syncing complete for course {}.", courseId);
     }
 }
