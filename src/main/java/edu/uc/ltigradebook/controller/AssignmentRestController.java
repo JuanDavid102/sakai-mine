@@ -14,7 +14,6 @@ import edu.uc.ltigradebook.service.SecurityService;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
-import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -37,7 +36,7 @@ public class AssignmentRestController {
     SecurityService securityService;
 
     @RequestMapping(value = "/saveAssignmentConversionScale", method = RequestMethod.POST)
-    public boolean saveAssignmentConversionScale(@RequestParam long assignmentId, @RequestParam String newConversionScale, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession)  {
+    public boolean saveAssignmentConversionScale(@RequestParam long assignmentId, @RequestParam String newConversionScale, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) throws Exception  {
         String courseId = ltiSession.getCanvasCourseId();
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
         String userId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
@@ -89,7 +88,7 @@ public class AssignmentRestController {
     }
 
     @RequestMapping(value = "/saveAssignmentMuted", method = RequestMethod.POST)
-    public boolean saveAssignmentMuted(@RequestParam long assignmentId, @RequestParam boolean muted, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession)  {
+    public boolean saveAssignmentMuted(@RequestParam long assignmentId, @RequestParam boolean muted, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) throws Exception  {
         String courseId = ltiSession.getCanvasCourseId();
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
         String userId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);

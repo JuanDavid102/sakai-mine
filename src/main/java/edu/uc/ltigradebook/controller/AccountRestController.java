@@ -1,6 +1,5 @@
 package edu.uc.ltigradebook.controller;
 
-import java.io.IOException;
 import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
@@ -21,7 +20,6 @@ import edu.uc.ltigradebook.constants.EventConstants;
 import edu.uc.ltigradebook.constants.LtiConstants;
 import edu.uc.ltigradebook.entity.AccountPreference;
 import edu.uc.ltigradebook.exception.AccountException;
-import edu.uc.ltigradebook.exception.TokenException;
 import edu.uc.ltigradebook.service.AccountService;
 import edu.uc.ltigradebook.service.CanvasAPIServiceWrapper;
 import edu.uc.ltigradebook.service.EventTrackingService;
@@ -46,7 +44,7 @@ public class AccountRestController {
     SecurityService securityService;
 
     @RequestMapping(value = "/saveAccountPreferences", method = RequestMethod.POST)
-    public boolean saveAccountPreferences(@RequestBody AccountPreference accountPreference, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) throws AccountException, IOException {
+    public boolean saveAccountPreferences(@RequestBody AccountPreference accountPreference, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) throws AccountException, Exception {
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
         String userId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
         String canvasLoginId = ltiPrincipal.getUser();
@@ -82,7 +80,7 @@ public class AccountRestController {
     }
 
     @PostMapping(value = "/deleteAccountPreferences")
-    public boolean deleteAccountPreferences(@RequestParam String accountId, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) throws AccountException, IOException {
+    public boolean deleteAccountPreferences(@RequestParam String accountId, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) throws AccountException, Exception {
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
         String userId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
         String canvasLoginId = ltiPrincipal.getUser();

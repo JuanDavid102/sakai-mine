@@ -29,7 +29,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -59,7 +58,7 @@ public class GradeRestController {
     private static final String[] FINAL_GRADE_VALID_VALUES = new String[]{"P", "I", "R", "A"};
 
     @RequestMapping(value = "/postGrade", method = RequestMethod.POST)
-    public boolean postGrade(@RequestBody StudentGrade studentGrade, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) throws GradeException {
+    public boolean postGrade(@RequestBody StudentGrade studentGrade, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) throws GradeException, Exception {
         String courseId = ltiSession.getCanvasCourseId();
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
         String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
@@ -94,7 +93,7 @@ public class GradeRestController {
     }
 
     @RequestMapping(value = "/postFinalGrade", method = RequestMethod.POST)
-    public boolean postFinalGrade(@RequestBody StudentFinalGrade studentFinalGrade, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) throws GradeException {
+    public boolean postFinalGrade(@RequestBody StudentFinalGrade studentFinalGrade, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) throws GradeException, Exception {
         String courseId = studentFinalGrade.getCourseId();
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
         String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
@@ -127,17 +126,17 @@ public class GradeRestController {
     }
 
     @RequestMapping(value = "/getStudentGroupGrade", method = RequestMethod.POST)
-    public Map<String, Object> getStudentGroupMean(@ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, @RequestParam Long groupId, @RequestParam long studentId, @RequestParam(required = false) String courseId) throws GradeException {
+    public Map<String, Object> getStudentGroupMean(@ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, @RequestParam Long groupId, @RequestParam long studentId, @RequestParam(required = false) String courseId) throws Exception {
         return gradeService.getStudentGroupMean(ltiSession, groupId, studentId, courseId).toMap();
     }
 
     @RequestMapping(value = "/getStudentFinalGrade", method = RequestMethod.POST)
-    public Map<String, Object> getStudentTotalMean(@ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, @RequestParam long studentId, @RequestParam boolean isCurrentGrade, @RequestParam(required = false) String courseId) throws GradeException {
+    public Map<String, Object> getStudentTotalMean(@ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, @RequestParam long studentId, @RequestParam boolean isCurrentGrade, @RequestParam(required = false) String courseId) throws Exception {
         return gradeService.getStudentTotalMean(ltiSession, studentId, isCurrentGrade, courseId).toMap();
     }
 
     @RequestMapping(value = "/sendGradesToBanner", method = RequestMethod.POST)
-    public boolean sendGradesToBanner(@RequestBody List<StudentGrade> studentGrades, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) throws GradeException, IOException {
+    public boolean sendGradesToBanner(@RequestBody List<StudentGrade> studentGrades, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) throws GradeException, Exception {
         String courseId = ltiSession.getCanvasCourseId();
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
         String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
@@ -205,7 +204,7 @@ public class GradeRestController {
     }
 
     @RequestMapping(value = "/sendMessageToUsers", method = RequestMethod.POST)
-    public boolean sendMessageToUsers(@RequestBody String jsonData, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) throws GradeException {
+    public boolean sendMessageToUsers(@RequestBody String jsonData, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) throws GradeException, Exception {
         String courseId = ltiSession.getCanvasCourseId();
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
         String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
@@ -232,7 +231,7 @@ public class GradeRestController {
             // Post an event
             eventTrackingService.postEvent(EventConstants.INSTRUCTOR_SEND_MESSAGE, canvasUserId, courseId, eventDetails);
 
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             log.warn("Conversation cannot be created");
             throw new GradeException();
         }

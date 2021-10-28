@@ -40,7 +40,7 @@ public class EventTrackingService {
         List<Event> events = eventRepository.findAllByEventCourseAndEventTypeIn(eventCourse, eventTypes);
         try {
             List<Assignment> assignmentList = canvasService.listCourseAssignments(eventCourse);
-            List<User> users = new ArrayList(canvasService.getUsersInCourse(eventCourse));
+            List<User> users = canvasService.getUsersInCourse(eventCourse);
             users.addAll(canvasService.getTeachersInCourse(eventCourse));
             for (Event event : events) {
                 JSONObject jsonEvent = new JSONObject(event.getEventDetails());

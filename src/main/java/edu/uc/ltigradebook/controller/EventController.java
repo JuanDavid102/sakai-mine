@@ -7,7 +7,6 @@ import edu.ksu.lti.launch.oauth.LtiPrincipal;
 import edu.uc.ltigradebook.constants.EventConstants;
 import edu.uc.ltigradebook.constants.LtiConstants;
 import edu.uc.ltigradebook.entity.Event;
-import edu.uc.ltigradebook.exception.GradeException;
 import edu.uc.ltigradebook.service.EventTrackingService;
 import edu.uc.ltigradebook.service.SecurityService;
 
@@ -33,7 +32,7 @@ public class EventController {
     private SecurityService securityService;
 
     @RequestMapping(value = "/getCourseGradeEvents", method = {RequestMethod.POST, RequestMethod.GET})
-    public List<Event> getCourseGradeEvents(@ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) throws GradeException {
+    public List<Event> getCourseGradeEvents(@ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) throws Exception {
         String courseId = ltiSession.getCanvasCourseId();
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
         String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);

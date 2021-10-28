@@ -5,7 +5,6 @@ import edu.ksu.canvas.model.Section;
 import edu.ksu.canvas.model.User;
 import edu.ksu.canvas.model.assignment.Assignment;
 import edu.ksu.canvas.model.assignment.AssignmentGroup;
-import edu.ksu.canvas.model.assignment.Submission;
 import edu.ksu.lti.launch.model.LtiLaunchData;
 import edu.ksu.lti.launch.model.LtiSession;
 import edu.ksu.lti.launch.oauth.LtiPrincipal;
@@ -98,7 +97,7 @@ public class CsvController {
     private static final String GRADE_NOT_AVAILABLE = "-";
 
     @GetMapping("/export_csv")
-    public ResponseEntity<Resource> exportToCsv(LtiSession ltiSession, @RequestParam String sectionId) throws GradeException {
+    public ResponseEntity<Resource> exportToCsv(LtiSession ltiSession, @RequestParam String sectionId) throws GradeException, Exception {
         String courseId = ltiSession.getCanvasCourseId();
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
         String canvasUserId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
@@ -261,7 +260,7 @@ public class CsvController {
     }
 
     @PostMapping("/import_csv")
-    public ResponseEntity<String> importCsv(@RequestParam MultipartFile file, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, Character csvSeparator) {
+    public ResponseEntity<String> importCsv(@RequestParam MultipartFile file, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession, Character csvSeparator) throws Exception {
         if (csvSeparator == null) csvSeparator = CSV_SEMICOLON_SEPARATOR;
         String courseId = ltiSession.getCanvasCourseId();
         LtiLaunchData lld = ltiSession.getLtiLaunchData();

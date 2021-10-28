@@ -115,7 +115,7 @@ public class GradeService {
         return gradeRepository.getGradedUserCount();
     }
 
-    public JSONObject getStudentGroupMean(LtiSession ltiSession, Long groupId, long studentId, String courseId) throws GradeException {
+    public JSONObject getStudentGroupMean(LtiSession ltiSession, Long groupId, long studentId, String courseId) throws Exception {
         JSONObject json = new JSONObject();
         JSONArray omittedAssignments = new JSONArray();
         JSONArray mutedAssignments = new JSONArray();
@@ -138,44 +138,42 @@ public class GradeService {
                 List<Assignment> assignmentList = canvasService.listCourseAssignments(courseId);
                 List<Assignment> assignmentsInGroup = assignmentList.stream().filter(asn -> groupId.equals(asn.getAssignmentGroupId())).collect(Collectors.toList());
                 Map<Integer, BigDecimal> assignmentGradesMap = new HashMap<>();
-                Map<Integer, Submission> studentSubmissionMap = getAssignmentSubmissionsForStudent(assignmentsInGroup, studentId);
+                Map<Integer, String> studentSubmissionMap = this.getAssignmentScoresForStudent(assignmentsInGroup, studentId);
                 List<AssignmentGroup> assignmentGroupList = canvasService.listAssignmentGroups(courseId);
                 Optional<AssignmentGroup> assignmentGroupOptional = assignmentGroupList.stream().filter(ag -> groupId.equals(Long.valueOf(ag.getId().toString()))).findAny();
                 GradingRules gradingRules = assignmentGroupOptional.isPresent() ? (assignmentGroupOptional.get().getGradingRules() != null ? assignmentGroupOptional.get().getGradingRules() : null) : null;
                 for (Assignment assignment : assignmentsInGroup) {
-                    Submission submission = studentSubmissionMap.get(assignment.getId());
-                    if(submission == null) continue;
+                    // Initialize Assignment Variables
+                    boolean gradeTypeNotSupported = false;
+                    String grade = studentSubmissionMap.get(assignment.getId());
                     String assignmentId = String.valueOf(assignment.getId());
-                    Optional<AssignmentPreference> assignmentPref = assignmentService.getAssignmentPreference(assignment.getId().toString());
+                    boolean omitFromFinalGrade = assignment.isOmitFromFinalGrade();
+                    boolean isVisibleForUser = assignment.getAssignmentVisibility().stream().anyMatch(studentIdString::equals);
+                    Optional<AssignmentPreference> assignmentPreference = assignmentService.getAssignmentPreference(assignmentId);
+
+                    // The conversion scale can be overriden by the assignment preferences.
+                    String assignmentConversionScale = coursePreference.getConversionScale();
+                    if (assignmentPreference.isPresent() && StringUtils.isNotBlank(assignmentPreference.get().getConversionScale())) {
+                        assignmentConversionScale = assignmentPreference.get().getConversionScale();
+                    }
+
+                    // The assignment can be muted by the assignment preferences.
                     boolean assignmentIsMuted = false;
                     if (StringUtils.isNotBlank(assignment.getMuted())) {
                         assignmentIsMuted = Boolean.valueOf(assignment.getMuted());
                     }
-                    if (assignmentPref.isPresent() && assignmentPref.get().getMuted() != null) {
-                        assignmentIsMuted = assignmentPref.get().getMuted();
+                    if (assignmentPreference.isPresent() && assignmentPreference.get().getMuted() != null) {
+                        assignmentIsMuted = assignmentPreference.get().getMuted();
                     }
 
                     JSONObject assignmentJson = new JSONObject();
                     assignmentJson.put("id", assignmentId);
                     assignmentJson.put("name", assignment.getName());
 
-                    boolean omitFromFinalGrade = assignment.isOmitFromFinalGrade();
-                    boolean isZeroPoints = assignment.getPointsPossible() == null || assignment.getPointsPossible().equals(Double.valueOf(0));
-                    boolean isVisibleForUser = assignment.getAssignmentVisibility().stream().anyMatch(studentIdString::equals);
-
                     // Skip if assignment is muted, grade is omitted from final grade or assignment possible points is zero
                     if (assignmentIsMuted) mutedAssignments.put(assignmentJson);
                     else if (omitFromFinalGrade) omittedAssignments.put(assignmentJson);
                     if (assignmentIsMuted || omitFromFinalGrade || !isVisibleForUser) continue;
-
-                    String grade = submission.getGrade();
-                    boolean gradeTypeNotSupported = false;
-
-                    String assignmentConversionScale = coursePreference.getConversionScale();
-                    Optional<AssignmentPreference> assignmentPreference = assignmentService.getAssignmentPreference(assignmentId);
-                    if (assignmentPreference.isPresent() && StringUtils.isNotBlank(assignmentPreference.get().getConversionScale())) {
-                        assignmentConversionScale = assignmentPreference.get().getConversionScale();
-                    }
 
                     //Grade conversion logic
                     switch (assignment.getGradingType()) {
@@ -269,7 +267,7 @@ public class GradeService {
         }
     }
 
-    public JSONObject getStudentTotalMean(LtiSession ltiSession, long studentId, boolean isCurrentGrade, String courseId) throws GradeException {
+    public JSONObject getStudentTotalMean(LtiSession ltiSession, long studentId, boolean isCurrentGrade, String courseId) throws Exception {
         JSONObject json = new JSONObject();
         JSONArray omittedAssignments = new JSONArray();
         JSONArray mutedAssignments = new JSONArray();
@@ -299,42 +297,39 @@ public class GradeService {
             try {
 
                 List<Assignment> assignmentList = canvasService.listCourseAssignments(courseId);
-                Map<Integer, Submission> studentSubmissionMap = getAssignmentSubmissionsForStudent(assignmentList, studentId);
+                Map<Integer, String> studentSubmissionMap = this.getAssignmentScoresForStudent(assignmentList, studentId);
                 for (Assignment assignment : assignmentList) {
-                    Submission submission = studentSubmissionMap.get(assignment.getId());
-                    if(submission == null) continue;
+                    // Initialize assignment values
+                    boolean gradeTypeNotSupported = false;
+                    String grade = studentSubmissionMap.get(assignment.getId());
                     String assignmentId = String.valueOf(assignment.getId());
-                    Optional<AssignmentPreference> assignmentPref = assignmentService.getAssignmentPreference(assignment.getId().toString());
+                    boolean omitFromFinalGrade = assignment.isOmitFromFinalGrade();
+                    boolean isVisibleForUser = assignment.getAssignmentVisibility().stream().anyMatch(studentIdString::equals);
+                    Optional<AssignmentPreference> assignmentPreference = assignmentService.getAssignmentPreference(assignmentId);
+                    
+                    // The conversion scale can be overriden by assignment preferences.
+                    String assignmentConversionScale = coursePreference.getConversionScale();
+                    if (assignmentPreference.isPresent() && StringUtils.isNotBlank(assignmentPreference.get().getConversionScale())) {
+                        assignmentConversionScale = assignmentPreference.get().getConversionScale();
+                    }
 
+                    // The assignment can be muted by assignment preferences.
                     boolean assignmentIsMuted = false;
                     if (StringUtils.isNotBlank(assignment.getMuted())) {
                         assignmentIsMuted = Boolean.valueOf(assignment.getMuted());
                     }
-                    if (assignmentPref.isPresent() && assignmentPref.get().getMuted() != null) {
-                        assignmentIsMuted = assignmentPref.get().getMuted();
+                    if (assignmentPreference.isPresent() && assignmentPreference.get().getMuted() != null) {
+                        assignmentIsMuted = assignmentPreference.get().getMuted();
                     }
 
                     JSONObject assignmentJson = new JSONObject();
                     assignmentJson.put("id", assignmentId);
                     assignmentJson.put("name", assignment.getName());
 
-                    boolean omitFromFinalGrade = assignment.isOmitFromFinalGrade();
-                    boolean isZeroPoints = assignment.getPointsPossible() == null || assignment.getPointsPossible().equals(Double.valueOf(0));
-                    boolean isVisibleForUser = assignment.getAssignmentVisibility().stream().anyMatch(studentIdString::equals);
-
                     // Skip if assignment is not in the group, assignment is muted and you are getting user current grade, grade is omitted from final grade or assignment possible points is zero
                     if (assignmentIsMuted) mutedAssignments.put(assignmentJson);
                     else if (omitFromFinalGrade) omittedAssignments.put(assignmentJson);
                     if ((assignmentIsMuted && isCurrentGrade) || omitFromFinalGrade || !isVisibleForUser) continue;
-
-                    String grade = submission.getGrade();
-                    boolean gradeTypeNotSupported = false;
-
-                    String assignmentConversionScale = coursePreference.getConversionScale();
-                    Optional<AssignmentPreference> assignmentPreference = assignmentService.getAssignmentPreference(assignmentId);
-                    if (assignmentPreference.isPresent() && StringUtils.isNotBlank(assignmentPreference.get().getConversionScale())) {
-                        assignmentConversionScale = assignmentPreference.get().getConversionScale();
-                    }
 
                     //Grade conversion logic
                     switch (assignment.getGradingType()) {
@@ -382,9 +377,10 @@ public class GradeService {
                     BigDecimal assignmentWeightSum = BigDecimal.ZERO;
                     List<AssignmentGroup> assignmentGroupList = canvasService.listAssignmentGroups(courseId);
                     for (AssignmentGroup assignmentGroup : assignmentGroupList) {
+                        Long assignmentGroupId = Long.valueOf(assignmentGroup.getId().toString());
                         GradingRules gradingRules = assignmentGroup.getGradingRules();
-                        List<BigDecimal> values = groupGrades.get(new Long(assignmentGroup.getId()));
-                        Map<Integer, BigDecimal> valuesGrades = groupAssignmentGrades.get(new Long(assignmentGroup.getId()));
+                        List<BigDecimal> values = groupGrades.get(assignmentGroupId);
+                        Map<Integer, BigDecimal> valuesGrades = groupAssignmentGrades.get(assignmentGroupId);
 
                         if (gradingRules != null && valuesGrades != null) {
                             if (gradingRules.getDropLowest() == null) gradingRules.setDropLowest(0);
@@ -457,12 +453,32 @@ public class GradeService {
         }
     }
 
-    private Map<Integer, Submission> getAssignmentSubmissionsForStudent(List<Assignment> assignmentList, long studentId) throws IOException{
-        Map<Integer, Submission> studentSubmissionMap = new HashMap<Integer, Submission>();
+    private Map<Integer, String> getAssignmentScoresForStudent(List<Assignment> assignmentList, long studentId) throws IOException{
+        Map<Integer, String> studentSubmissionMap = new HashMap<>();
         for (Assignment assignment : assignmentList) {
-            List<Submission> assignmentSubmissions = canvasService.getCourseSubmissions(assignment.getCourseId(), assignment.getId());
-            Optional<Submission> submissionOptional = assignmentSubmissions.stream().filter(submission -> submission.getUserId().toString().equals(String.valueOf(studentId))).findAny();
-            studentSubmissionMap.put(assignment.getId(), submissionOptional.isPresent() ? submissionOptional.get() : null);
+        	String assignmentScore = null;
+        	String assignmentId = String.valueOf(assignment.getId());
+        	String studentIdString = String.valueOf(studentId);
+        	// Look for the student record in the DB or make a Canvas request if it's not found.
+        	StudentCanvasGrade studentCanvasGrade = this.getCanvasGradeByAssignmentAndUser(assignmentId, studentIdString).orElse(null);        	
+        	if (studentCanvasGrade == null) {
+                Optional<Submission> submissionOptional = canvasService.getSingleCourseSubmission(assignment.getCourseId(), assignment.getId(), studentIdString);
+                if (submissionOptional.isPresent()) {
+                	assignmentScore = submissionOptional.get().getGrade();
+                	if (assignmentScore != null) {
+                    	// The grade was requested to the API, persist it to avoid future calls.
+                        StudentCanvasGrade newStudentCanvasGrade = new StudentCanvasGrade();
+                        newStudentCanvasGrade.setUserId(studentIdString);
+                        newStudentCanvasGrade.setGrade(assignmentScore);
+                        newStudentCanvasGrade.setAssignmentId(assignmentId);
+                        canvasGradeRepository.save(newStudentCanvasGrade);                		
+                	}
+                }
+        	} else {
+        		assignmentScore = studentCanvasGrade.getGrade();
+        	}
+
+            studentSubmissionMap.put(assignment.getId(), assignmentScore);
         }
         return studentSubmissionMap;
     }

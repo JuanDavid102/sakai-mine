@@ -16,7 +16,6 @@ import edu.uc.ltigradebook.constants.EventConstants;
 import edu.uc.ltigradebook.constants.LtiConstants;
 import edu.uc.ltigradebook.constants.ScaleConstants;
 import edu.uc.ltigradebook.entity.CoursePreference;
-import edu.uc.ltigradebook.exception.AccountException;
 import edu.uc.ltigradebook.service.CourseService;
 import edu.uc.ltigradebook.service.EventTrackingService;
 import edu.uc.ltigradebook.service.SecurityService;
@@ -36,7 +35,7 @@ public class CourseRestController {
     SecurityService securityService;
 
     @RequestMapping(value = "/saveCourseConversionScale", method = RequestMethod.POST)
-    public boolean saveCourseConversionScale(@RequestParam String newConversionScale, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession)  {
+    public boolean saveCourseConversionScale(@RequestParam String newConversionScale, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) throws Exception {
         String courseId = ltiSession.getCanvasCourseId();
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
         String userId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);

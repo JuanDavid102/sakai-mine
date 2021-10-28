@@ -41,7 +41,7 @@ public class TokenRestController {
     TokenService tokenService;
 
     @PostMapping(value = "/saveToken")
-    public boolean saveToken(@RequestParam String token, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) throws TokenException {
+    public boolean saveToken(@RequestParam String token, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) throws TokenException, Exception {
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
         String userId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
         String canvasLoginId = ltiPrincipal.getUser();
@@ -72,7 +72,7 @@ public class TokenRestController {
     }
 
     @PostMapping(value = "/deleteToken")
-    public boolean deleteToken(@RequestParam String token, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) throws TokenException {
+    public boolean deleteToken(@RequestParam String token, @ModelAttribute LtiPrincipal ltiPrincipal, LtiSession ltiSession) throws TokenException, Exception {
         LtiLaunchData lld = ltiSession.getLtiLaunchData();
         String userId = lld.getCustom().get(LtiConstants.CANVAS_USER_ID);
         String canvasLoginId = ltiPrincipal.getUser();
