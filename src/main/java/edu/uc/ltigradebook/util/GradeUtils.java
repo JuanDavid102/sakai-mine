@@ -42,22 +42,22 @@ public class GradeUtils {
             totalPoints = 0d;
         }
         String totalPointsStr = totalPoints.toString();
-        if(!isValidDouble(earnedPoints) || !isValidDouble(totalPointsStr)) {
+        if(!isValidDouble(earnedPoints) || !isValidDouble(totalPointsStr) || StringUtils.isBlank(scalePassPercent)) {
             return StringUtils.EMPTY;
         }
 
         BigDecimal convertedGrade = new BigDecimal(0);
         BigDecimal minimumPoints = new BigDecimal(0);
-        BigDecimal PASS_PERCENT = new BigDecimal(scalePassPercent);
 
         try {
+            BigDecimal passPercent = new BigDecimal(scalePassPercent);
             BigDecimal totalDecimalPoints = new BigDecimal(totalPointsStr);
             if(minimumPoints.compareTo(totalDecimalPoints) == 0) {
                 return StringUtils.EMPTY;
             }
 
             BigDecimal earnedDecimalPoints = new BigDecimal(earnedPoints);
-            BigDecimal passPoints = totalDecimalPoints.multiply(PASS_PERCENT);
+            BigDecimal passPoints = totalDecimalPoints.multiply(passPercent);
     
             // If earned points are less than passpoints...
             if (earnedDecimalPoints.compareTo(passPoints) < 0) {
@@ -72,12 +72,12 @@ public class GradeUtils {
                         .add(PASS_GRADE);
             }
         } catch(Exception ex) {
-            log.error("Fatal error mapping the grade to the {} scale, {} earnedPoints, {} totalPointsStr.", PASS_PERCENT, earnedPoints, totalPointsStr, ex);
+            log.error("Fatal error mapping the grade to the {} scale, {} earnedPoints, {} totalPointsStr.", scalePassPercent, earnedPoints, totalPointsStr, ex);
             return StringUtils.EMPTY;
         }
 
         convertedGrade = convertedGrade.setScale(1, RoundingMode.HALF_UP);
-        log.debug("Mapping grade to the {} scale, {} earnedPoints, {} totalPointsStr, converted grade {}.", PASS_PERCENT, earnedPoints, totalPointsStr, convertedGrade);
+        log.debug("Mapping grade to the {} scale, {} earnedPoints, {} totalPointsStr, converted grade {}.", scalePassPercent, earnedPoints, totalPointsStr, convertedGrade);
         return convertedGrade.toString();
     }
 
