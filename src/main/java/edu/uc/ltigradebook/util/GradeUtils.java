@@ -82,7 +82,7 @@ public class GradeUtils {
     }
 
     public static String mapPercentageToScale(String scalePassPercent, String earnedPercentage) {
-        return mapGradeToScale(scalePassPercent, StringUtils.replace(earnedPercentage, PERCENT_SYMBOL, StringUtils.EMPTY), new Double(MAX_PERCENT));
+        return mapGradeToScale(scalePassPercent, StringUtils.replace(earnedPercentage, PERCENT_SYMBOL, StringUtils.EMPTY), Double.valueOf(MAX_PERCENT));
     }
 
     public static String roundGrade(String gradeValue) {

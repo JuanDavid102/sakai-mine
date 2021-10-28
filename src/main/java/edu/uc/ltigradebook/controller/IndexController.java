@@ -313,7 +313,7 @@ public class IndexController {
                     boolean isVisibleForUser = assignment.getAssignmentVisibility().stream().anyMatch(userId::equals);
                     boolean assignmentIsMuted = assignmentMutedMap.get(assignment.getId());
                     boolean omitFromFinalGrade = assignment.isOmitFromFinalGrade();
-                    boolean isZeroPoints = assignment.getPointsPossible() == null || assignment.getPointsPossible().equals(new Double(0));
+                    boolean isZeroPoints = assignment.getPointsPossible() == null || assignment.getPointsPossible().equals(Double.valueOf(0));
                     String grade = StringUtils.EMPTY;
                     Map<String, Object> cellSettings = new HashMap<>();
                     boolean gradeTypeNotSupported = false;
@@ -397,7 +397,7 @@ public class IndexController {
                 BigDecimal gradesSum = BigDecimal.ZERO;
                 BigDecimal maximumGrade = BigDecimal.ZERO;
                 BigDecimal minimumGrade = BigDecimal.TEN;
-                List<BigDecimal> assignmentGrades = (ArrayList) assignmentStatisticsMap.getOrDefault(String.valueOf(assignment.getId()), new ArrayList<>());
+                List<BigDecimal> assignmentGrades = assignmentStatisticsMap.getOrDefault(String.valueOf(assignment.getId()), new ArrayList<>());
                 if (assignmentGrades.isEmpty()) {
                     assignmentStats.setAverageScore(GRADE_NOT_AVAILABLE);
                     assignmentStats.setHighestGrade(GRADE_NOT_AVAILABLE);

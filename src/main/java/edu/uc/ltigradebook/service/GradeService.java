@@ -160,7 +160,7 @@ public class GradeService {
                     assignmentJson.put("name", assignment.getName());
 
                     boolean omitFromFinalGrade = assignment.isOmitFromFinalGrade();
-                    boolean isZeroPoints = assignment.getPointsPossible() == null || assignment.getPointsPossible().equals(new Double(0));
+                    boolean isZeroPoints = assignment.getPointsPossible() == null || assignment.getPointsPossible().equals(Double.valueOf(0));
                     boolean isVisibleForUser = assignment.getAssignmentVisibility().stream().anyMatch(studentIdString::equals);
 
                     // Skip if assignment is muted, grade is omitted from final grade or assignment possible points is zero
@@ -319,7 +319,7 @@ public class GradeService {
                     assignmentJson.put("name", assignment.getName());
 
                     boolean omitFromFinalGrade = assignment.isOmitFromFinalGrade();
-                    boolean isZeroPoints = assignment.getPointsPossible() == null || assignment.getPointsPossible().equals(new Double(0));
+                    boolean isZeroPoints = assignment.getPointsPossible() == null || assignment.getPointsPossible().equals(Double.valueOf(0));
                     boolean isVisibleForUser = assignment.getAssignmentVisibility().stream().anyMatch(studentIdString::equals);
 
                     // Skip if assignment is not in the group, assignment is muted and you are getting user current grade, grade is omitted from final grade or assignment possible points is zero
