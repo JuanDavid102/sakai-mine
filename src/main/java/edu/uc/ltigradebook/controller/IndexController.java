@@ -7,7 +7,6 @@ import edu.ksu.canvas.model.Section;
 import edu.ksu.canvas.model.User;
 import edu.ksu.canvas.model.assignment.Assignment;
 import edu.ksu.canvas.model.assignment.AssignmentGroup;
-import edu.ksu.canvas.model.assignment.Submission;
 import edu.ksu.lti.launch.model.InstitutionRole;
 import edu.ksu.lti.launch.model.LtiLaunchData;
 import edu.ksu.lti.launch.model.LtiSession;
@@ -215,7 +214,6 @@ public class IndexController {
 
             stopwatch.reset();
             stopwatch.start();
-            Map<String, List<StudentCanvasGrade>> canvasGradeMap = new HashMap<>();
             List<String> tableHeaderList = new ArrayList<>();
             List<List<Map<String, Object>>> cellRowListSettings = new ArrayList<>();
             tableHeaderList.add(messageSource.getMessage("instructor_header_login", null, LocaleContextHolder.getLocale()));
