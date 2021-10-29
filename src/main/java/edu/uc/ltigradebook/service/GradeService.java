@@ -87,6 +87,22 @@ public class GradeService {
         log.debug("Grade saved successfully");
     }
 
+    public void saveCanvasGradeInBatch(List<StudentCanvasGrade> studentCanvasGradeList) {
+        log.info("Persisting {} Canvas Grades.", studentCanvasGradeList.size());
+        // saveAll takes many memory and is not optimal for a list of 2.8M items.
+        // canvasGradeRepository.saveAll(studentCanvasGradeList);
+        // save one by one opens more transactions than saveAll but performs way better for 2.8M records.
+        int pesistedCount = 0;
+        for (StudentCanvasGrade canvasGrade : studentCanvasGradeList) {
+            canvasGradeRepository.save(canvasGrade);
+            pesistedCount++;
+            if (pesistedCount % 10000 == 0) {
+                log.info("Persisted {} Canvas grades.", pesistedCount);
+            }
+        }
+        log.info("{} grades persisted successfully.");
+    }
+
     public void saveFinalGrade(StudentFinalGrade studentFinalGrade) {
         log.debug("Saving grade {} for the user {} and course {}.", studentFinalGrade.getGrade(), studentFinalGrade.getUserId(), studentFinalGrade.getCourseId());
         finalGradeRepository.save(studentFinalGrade);

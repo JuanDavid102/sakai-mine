@@ -3,7 +3,9 @@ package edu.uc.ltigradebook.job;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.csv.CSVFormat;
@@ -19,9 +21,9 @@ import org.springframework.stereotype.Component;
 
 import edu.uc.ltigradebook.entity.StudentCanvasGrade;
 import edu.uc.ltigradebook.model.CanvasGradeCsvRecord;
-import edu.uc.ltigradebook.repository.CanvasGradeRepository;
 import edu.uc.ltigradebook.repository.CourseRepository;
 import edu.uc.ltigradebook.service.AccountReportService;
+import edu.uc.ltigradebook.service.GradeService;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -38,7 +40,7 @@ public class SyncCanvasSubmissionsJob {
     private AccountReportService accountReportService;
 
     @Autowired
-    private CanvasGradeRepository canvasGradeRepository;
+    private GradeService gradeService;
 
     @Scheduled(fixedDelayString = "${sync.submissions.interval}", initialDelayString = "${sync.submissions.initial.delay}")
     public void run() throws Exception {
@@ -49,6 +51,7 @@ public class SyncCanvasSubmissionsJob {
 
         StopWatch stopwatch = StopWatch.createStarted();
 
+        List<StudentCanvasGrade> canvasGradeList = new ArrayList<>();
         // First let's collect all the courseIds to filter the account report by courseId.
         Set<String> courseSet = new HashSet<>();
         courseRepository.findAll().forEach(course -> {
@@ -79,7 +82,7 @@ public class SyncCanvasSubmissionsJob {
                         studentCanvasGrade.setUserId(userId);
                         studentCanvasGrade.setGrade(grade);
                         studentCanvasGrade.setAssignmentId(assignmentId);
-                        canvasGradeRepository.save(studentCanvasGrade);
+                        canvasGradeList.add(studentCanvasGrade);
                         log.debug("Dumping grades from submission {}, user {}, assignment {} and course {}, grade is {}.", submissionId, userId, assignmentId, courseId, grade);
                     });
                 }
@@ -87,6 +90,10 @@ public class SyncCanvasSubmissionsJob {
         } catch (Exception ex) {
             log.error("Fatal error getting the grades using account reports. {}", ex.getMessage());
         }
+        log.info("All the grades from the report have been dumped, {} grades in total.", canvasGradeList.size());
+        log.debug("Persisting all the Canvas grades in the DB...");
+        gradeService.saveCanvasGradeInBatch(canvasGradeList);
+        log.debug("Canvas grades persisted in the DB...");
         stopwatch.stop();
         log.info("The Canvas Submission Synchronization process has been completed in {}.", stopwatch);
     }
