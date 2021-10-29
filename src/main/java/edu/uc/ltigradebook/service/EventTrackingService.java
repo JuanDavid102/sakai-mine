@@ -4,7 +4,6 @@ import edu.ksu.canvas.model.User;
 import edu.ksu.canvas.model.assignment.Assignment;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -44,9 +43,12 @@ public class EventTrackingService {
             users.addAll(canvasService.getTeachersInCourse(eventCourse));
             for (Event event : events) {
                 JSONObject jsonEvent = new JSONObject(event.getEventDetails());
-                Optional<Assignment> assignment = assignmentList.stream().filter(asn -> jsonEvent.getString("assignmentId").equals(Integer.toString(asn.getId()))).findFirst();
-                Optional<User> student = users.stream().filter(usr -> jsonEvent.getString("userId").equals(String.valueOf(usr.getId()))).findFirst();
-                Optional<User> teacher = users.stream().filter(usr -> event.getEventUser().equals(String.valueOf(usr.getId()))).findFirst();
+                String assignmentId = jsonEvent.getString("assignmentId");
+                String userId = jsonEvent.getString("userId");
+                String eventUser = event.getEventUser();
+                Optional<Assignment> assignment = assignmentList.stream().filter(asn -> asn.getId().toString().equals(assignmentId)).findFirst();
+                Optional<User> student = users.stream().filter(usr ->  String.valueOf(usr.getId()).equals(userId)).findFirst();
+                Optional<User> teacher = users.stream().filter(usr -> String.valueOf(usr.getId()).equals(eventUser)).findFirst();
                 if (assignment.isPresent()) {
                     jsonEvent.put("assignmentName", assignment.get().getName());
                 }
