@@ -106,7 +106,7 @@ public class BannerServiceDao {
             //Call the procedure
             Integer result = getJdbcTemplate().queryForObject(readCourseMainInstructor, Integer.class);
 
-            return new Integer(1).equals(result);
+            return Integer.valueOf(1).equals(result);
         } catch (Exception e) {
             log.error("Fatal error checking the course main instructor.", e);
         }
