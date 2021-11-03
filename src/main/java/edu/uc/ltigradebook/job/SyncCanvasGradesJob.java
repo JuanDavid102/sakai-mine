@@ -23,6 +23,8 @@ public class SyncCanvasGradesJob {
     @Autowired
     private GradeService gradeService;
 
+    // This runs the job during startup, only for DEV purposes.
+    // @Scheduled(fixedDelayString="PT48H", initialDelayString = "PT1S")
     @Scheduled(cron = "${sync.grades.cron:0 0 1 * * *}")
     public void run() {
         if (!enableGradeSyncJob) {
