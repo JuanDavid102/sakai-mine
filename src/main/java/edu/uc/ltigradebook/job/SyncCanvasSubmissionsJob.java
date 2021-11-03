@@ -48,9 +48,7 @@ public class SyncCanvasSubmissionsJob {
             return;
         }
         log.info("Running Canvas Submission Synchronization process....");
-
         StopWatch stopwatch = StopWatch.createStarted();
-
         List<StudentCanvasGrade> canvasGradeList = new ArrayList<>();
         // First let's collect all the courseIds to filter the account report by courseId.
         Set<String> courseSet = new HashSet<>();
@@ -72,10 +70,8 @@ public class SyncCanvasSubmissionsJob {
                         String courseId = canvasGradeCsvRecord.getCanvasCourseId();
                         String assignmentId = canvasGradeCsvRecord.getAssignmentId();
                         String submissionId = canvasGradeCsvRecord.getSubmissionId();
-                        if (StringUtils.isBlank(grade)) {
-                            return;
-                        }
-                        if (!courseSet.contains(canvasGradeCsvRecord.getCanvasCourseId())) {
+                        // Do not save the grade if it's empty of the course is not in use.
+                        if (StringUtils.isBlank(grade) || !courseSet.contains(canvasGradeCsvRecord.getCanvasCourseId())) {
                             return;
                         }
                         StudentCanvasGrade studentCanvasGrade = new StudentCanvasGrade();
@@ -91,9 +87,7 @@ public class SyncCanvasSubmissionsJob {
             log.error("Fatal error getting the grades using account reports. {}", ex.getMessage());
         }
         log.info("All the grades from the report have been dumped, {} grades in total.", canvasGradeList.size());
-        log.debug("Persisting all the Canvas grades in the DB...");
         gradeService.saveCanvasGradeInBatch(canvasGradeList);
-        log.debug("Canvas grades persisted in the DB...");
         stopwatch.stop();
         log.info("The Canvas Submission Synchronization process has been completed in {}.", stopwatch);
     }

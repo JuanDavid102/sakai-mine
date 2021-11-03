@@ -3,7 +3,6 @@ package edu.uc.ltigradebook.service;
 import edu.ksu.canvas.model.assignment.Assignment;
 import edu.ksu.canvas.model.assignment.AssignmentGroup;
 import edu.ksu.canvas.model.assignment.GradingRules;
-import edu.ksu.canvas.model.assignment.Submission;
 import edu.ksu.lti.launch.model.LtiLaunchData;
 import edu.ksu.lti.launch.model.LtiSession;
 import edu.uc.ltigradebook.constants.LtiConstants;
@@ -22,7 +21,9 @@ import edu.uc.ltigradebook.util.GradeUtils;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -31,6 +32,8 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -63,6 +66,9 @@ public class GradeService {
     @Autowired
     private AssignmentService assignmentService;
 
+    @Value("${spring.jpa.properties.hibernate.jdbc.batch_size:30}")
+    private int batchSize = 30;
+
     private static final String GRADE_NOT_AVAILABLE = "-";
 
     public Optional<StudentGrade> getGradeByAssignmentAndUser(String assignmentId, String userId) {
@@ -85,22 +91,6 @@ public class GradeService {
         log.debug("Saving Canvas grade {} for the user {} and assignment {}.", studentCanvasGrade.getGrade(), studentCanvasGrade.getUserId(),studentCanvasGrade.getAssignmentId());
         canvasGradeRepository.save(studentCanvasGrade);
         log.debug("Grade saved successfully");
-    }
-
-    public void saveCanvasGradeInBatch(List<StudentCanvasGrade> studentCanvasGradeList) {
-        log.info("Persisting {} Canvas Grades.", studentCanvasGradeList.size());
-        // saveAll takes many memory and is not optimal for a list of 2.8M items.
-        // canvasGradeRepository.saveAll(studentCanvasGradeList);
-        // save one by one opens more transactions than saveAll but performs way better for 2.8M records.
-        int pesistedCount = 0;
-        for (StudentCanvasGrade canvasGrade : studentCanvasGradeList) {
-            canvasGradeRepository.save(canvasGrade);
-            pesistedCount++;
-            if (pesistedCount % 10000 == 0) {
-                log.info("Persisted {} Canvas grades.", pesistedCount);
-            }
-        }
-        log.info("{} grades persisted successfully.");
     }
 
     public void saveFinalGrade(StudentFinalGrade studentFinalGrade) {
@@ -475,25 +465,10 @@ public class GradeService {
         	String assignmentScore = null;
         	String assignmentId = String.valueOf(assignment.getId());
         	String studentIdString = String.valueOf(studentId);
-        	// Look for the student record in the DB or make a Canvas request if it's not found.
         	StudentCanvasGrade studentCanvasGrade = this.getCanvasGradeByAssignmentAndUser(assignmentId, studentIdString).orElse(null);        	
-        	if (studentCanvasGrade == null) {
-                Optional<Submission> submissionOptional = canvasService.getSingleCourseSubmission(assignment.getCourseId(), assignment.getId(), studentIdString);
-                if (submissionOptional.isPresent()) {
-                	assignmentScore = submissionOptional.get().getGrade();
-                	if (assignmentScore != null) {
-                    	// The grade was requested to the API, persist it to avoid future calls.
-                        StudentCanvasGrade newStudentCanvasGrade = new StudentCanvasGrade();
-                        newStudentCanvasGrade.setUserId(studentIdString);
-                        newStudentCanvasGrade.setGrade(assignmentScore);
-                        newStudentCanvasGrade.setAssignmentId(assignmentId);
-                        canvasGradeRepository.save(newStudentCanvasGrade);                		
-                	}
-                }
-        	} else {
+        	if (studentCanvasGrade != null) {
         		assignmentScore = studentCanvasGrade.getGrade();
         	}
-
             studentSubmissionMap.put(assignment.getId(), assignmentScore);
         }
         return studentSubmissionMap;
@@ -504,7 +479,9 @@ public class GradeService {
     }
 
     public void syncCourseGrades(String courseId) {
-        log.debug("Syncing grades from course {}", courseId);
+        log.info("Syncing grades from course {}", courseId);
+        StopWatch stopwatch = StopWatch.createStarted();
+        List<StudentCanvasGrade> canvasGradeList = new ArrayList<>();
         try {
             // This trick is a courseId checker, it fails if the course does not exist in the Canvas instance, ideally when mixing instances or when a course is deleted.
             canvasService.getSingleCourse(courseId);
@@ -525,7 +502,7 @@ public class GradeService {
                         studentCanvasGrade.setUserId(userId);
                         studentCanvasGrade.setGrade(grade);
                         studentCanvasGrade.setAssignmentId(assignment.getId().toString());
-                        canvasGradeRepository.save(studentCanvasGrade);
+                        canvasGradeList.add(studentCanvasGrade);
                     });
                 } catch (Exception e) {
                     log.error("Fatal error getting course submissions from course {} and assignment {}. {}", courseId, assignmentId, e.getMessage());
@@ -534,6 +511,23 @@ public class GradeService {
         } catch (Exception e) {
             log.error("Fatal error getting course {}, skipping. {}", courseId, e.getMessage());
         }
-        log.debug("Syncing complete for course {}.", courseId);
+        log.info("All the grades from the course {} have been dumped, {} grades in total.", courseId, canvasGradeList.size());
+        this.saveCanvasGradeInBatch(canvasGradeList);
+        stopwatch.stop();
+        log.info("Syncing complete for course {} in {}.", courseId, stopwatch);
     }
+
+    public void saveCanvasGradeInBatch(List<StudentCanvasGrade> studentCanvasGradeList) {
+        log.info("Persisting {} Canvas Grades in batches of {} elements.", studentCanvasGradeList.size(), batchSize);
+        StopWatch stopwatch = StopWatch.createStarted();
+        int listSize = studentCanvasGradeList.size();
+        IntStream.range(0, (listSize + batchSize - 1) / batchSize)
+            .mapToObj(i -> studentCanvasGradeList.subList(i * batchSize, Math.min(listSize, (i + 1) * batchSize)))
+            .forEach(batch -> {
+                canvasGradeRepository.saveAll(batch);
+            });
+        stopwatch.stop();
+        log.info("{} grades persisted successfully in {}.", studentCanvasGradeList.size(), stopwatch);
+    }
+
 }
