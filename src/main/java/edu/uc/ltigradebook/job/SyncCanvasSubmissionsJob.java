@@ -42,7 +42,7 @@ public class SyncCanvasSubmissionsJob {
     @Autowired
     private GradeService gradeService;
 
-    @Scheduled(fixedDelayString = "${sync.submissions.interval}", initialDelayString = "${sync.submissions.initial.delay}")
+    @Scheduled(cron = "${sync.submissions.cron:0 0 1 * * *}")
     public void run() throws Exception {
         if (!enableSubmissionsSyncJob) {
             return;

@@ -53,13 +53,11 @@ Las propiedades más importantes a configurar son:
 | banner.datasource.connectionInitSql | SQL de inicialización. | - | SET ROLE rol_banner_lms_carga_notas identified by rlms_carga1911 |
 | logging.level.edu.uc.ltigradebook | Modificar el nivel de logging, habilitar DEBUG para depuración. | INFO | DEBUG |
 | sync.grades.enabled | Permite habilitar el trabajo de sincronización de notas explorando los cursos del sistema LTI. | false | false |
-| sync.grades.interval | Modificar el intervalo de ejecución de la sincronización de notas con Canvas. | PT12H | PT12H |
-| sync.grades.initial.delay | Modificar el retraso inicial de la primera ejecución de la sincronización de notas con Canvas. | PT1S | PT1S |
+| sync.grades.cron | Modificar el cron de ejecución del trabajo de sincronización de notas. | 0 0 1 * * * | 0 0 1 * * * |
 | cache.expiry.interval | Modificar la duración de la caché del sistema. | PT10M | PT10M |
 | cache.initial.delay | Modificar el retraso inicial de la primera limpieza de caché del sistema. | PT1S | PT1S |
 | sync.submissions.enabled | Permite habilitar el trabajo de sincronización de entregas basado en la descarga de informes de cuenta. | false | false |
-| sync.submissions.interval | Modificar el intervalo de ejecución del trabajo de sincronización de entregas basado en la descarga de informes de cuenta. | PT12H | PT12H |
-| sync.submissions.initial.delay | Modificar el retraso inicial de la primera ejecución de sincronización de entregas basado en la descarga de informes de cuenta. | PT1S | PT1S |
+| sync.submissions.cron | Modificar el cron de ejecución del job de sincronización de entregas y notas. | 0 0 1 * * * | 0 0 1 * * * |
 | canvas.accountreport.max.duration | Modificar el tiempo máximo que el proceso esperará a un informe de cuenta. | PT3H | PT3H |
 | canvas.accountreport.sleep.interval | Modificar el tiempo que el proceso esperará para hacer la siguiente petición al estado de un informe de cuenta. | PT10M | PT10M |
 | datastreams.jwt.issuer | Modificar el issuer de los live events. | https://live-events.canvas.instructure.com | https://live-events.canvas.instructure.com |

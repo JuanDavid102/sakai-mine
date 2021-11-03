@@ -23,7 +23,7 @@ public class SyncCanvasGradesJob {
     @Autowired
     private GradeService gradeService;
 
-    @Scheduled(fixedDelayString = "${sync.grades.interval}", initialDelayString = "${sync.grades.initial.delay}")
+    @Scheduled(cron = "${sync.grades.cron:0 0 1 * * *}")
     public void run() {
         if (!enableGradeSyncJob) {
             return;
