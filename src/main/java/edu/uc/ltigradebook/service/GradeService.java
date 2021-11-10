@@ -462,13 +462,13 @@ public class GradeService {
     private Map<Integer, String> getAssignmentScoresForStudent(List<Assignment> assignmentList, long studentId) throws IOException{
         Map<Integer, String> studentSubmissionMap = new HashMap<>();
         for (Assignment assignment : assignmentList) {
-        	String assignmentScore = null;
-        	String assignmentId = String.valueOf(assignment.getId());
-        	String studentIdString = String.valueOf(studentId);
-        	StudentCanvasGrade studentCanvasGrade = this.getCanvasGradeByAssignmentAndUser(assignmentId, studentIdString).orElse(null);        	
-        	if (studentCanvasGrade != null) {
-        		assignmentScore = studentCanvasGrade.getGrade();
-        	}
+            String assignmentScore = null;
+            String assignmentId = String.valueOf(assignment.getId());
+            String studentIdString = String.valueOf(studentId);
+            StudentCanvasGrade studentCanvasGrade = this.getCanvasGradeByAssignmentAndUser(assignmentId, studentIdString).orElse(null);
+            if (studentCanvasGrade != null) {
+                assignmentScore = studentCanvasGrade.getGrade();
+            }
             studentSubmissionMap.put(assignment.getId(), assignmentScore);
         }
         return studentSubmissionMap;
@@ -493,7 +493,7 @@ public class GradeService {
                     canvasService.getCourseSubmissions(courseId, assignmentId).forEach(assignmentSubmission -> {
                         // For each grade present in the submission, stores the grade in the local DB.
                         String userId = assignmentSubmission.getUserId().toString();
-                        String grade = assignmentSubmission.getGrade();
+                        String grade = assignmentSubmission.getScore() != null ? assignmentSubmission.getScore().toString() : null;
                         log.debug("Dumping grades from submission {}, user {}, assignment {} and course {}, grade is {}.", assignmentSubmission.getId(), userId, assignmentId, courseId, grade);
                         if (StringUtils.isBlank(grade)) {
                             return;
