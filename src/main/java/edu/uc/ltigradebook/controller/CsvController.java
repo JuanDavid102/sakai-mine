@@ -318,7 +318,7 @@ public class CsvController {
                             }
 
                         } else {
-                        	// Get the Canvas grade from the DB instead of polling Canvas.
+                            // Get the Canvas grade from the DB instead of polling Canvas.
                             Optional<StudentCanvasGrade> optionalGrade = gradeService.getCanvasGradeByAssignmentAndUser(assignmentId, studentId);
                             if (optionalGrade.isPresent()) {
                                 String grade = optionalGrade.get().getGrade();
@@ -346,7 +346,10 @@ public class CsvController {
                                     saveGrade = true;
                                 else sameGrade = true;
 
-                            } else eventDetailsJson.put("oldGrade", GRADE_NOT_AVAILABLE);
+                            } else {
+                                eventDetailsJson.put("oldGrade", GRADE_NOT_AVAILABLE);
+                                saveGrade = true;
+                            }
                         }
 
                         //If new grade is invalid, skip saving process
