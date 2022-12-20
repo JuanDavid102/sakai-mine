@@ -96,3 +96,7 @@
 @import "modules/theme-switcher/base";
 @import "modules/multiselect/base";
 @import "modules/sakai-options-menu/sakai-options-menu";
+
+iframe[type="application/pdf"] {
+    width: 100%;
+}
