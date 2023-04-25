@@ -343,9 +343,9 @@ public class RWikiObjectServiceImpl implements RWikiObjectService
 				}
 				String[] groupIds = returnable.getPageGroupsAsArray();
 				String owner = returnable.getOwner();
-				if (user.equals(owner) || securityService.isSuperUser()) {
+				if ((user.equals(owner) || securityService.isSuperUser())) {
 					return returnable;
-				} else {
+				} else if (checkRead(returnable)) {
 					for (String groupId : groupIds) {
 						Group group = site.getGroup(groupId);
 						if (group != null) {
