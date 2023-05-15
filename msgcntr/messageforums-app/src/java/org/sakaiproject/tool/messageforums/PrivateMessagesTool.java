@@ -318,6 +318,8 @@ public class PrivateMessagesTool {
   private String composeSendAsPvtMsg=SET_AS_YES; // currently set as Default as change by user is allowed
   @Setter
   private boolean booleanEmailOut = ServerConfigurationService.getBoolean("mc.messages.ccEmailDefault", false);
+  @Getter @Setter
+  private boolean booleanReadReceipt = false;
   @Getter
   private String composeSubject;
   @Getter
@@ -1212,7 +1214,7 @@ public void processChangeSelectView(ValueChangeEvent eve)
 
       if (dMsg.getMsg().getId().equals(Long.valueOf(msgId)))
       {
-    	  
+       
         this.setDetailMsg(dMsg); 
         if(dMsg.getMsg().getDraft()){
         	return processPvtMsgDraft();
@@ -1742,7 +1744,9 @@ public void processChangeSelectView(ValueChangeEvent eve)
     }else{
     	pMsg= constructMessage(true, null) ;
     }
-    
+
+    pMsg.setReadReceipt(booleanReadReceipt);
+    setBooleanReadReceipt(false);
     pMsg.setExternalEmail(booleanEmailOut);
     Map<User, Boolean> recipients = getRecipients();
     
@@ -1861,6 +1865,10 @@ public void processChangeSelectView(ValueChangeEvent eve)
     }
     dMsg.setDraft(Boolean.TRUE);
     dMsg.setDeleted(Boolean.FALSE);
+
+    dMsg.setReadReceipt(booleanReadReceipt);
+    setBooleanReadReceipt(false);
+
     dMsg.setExternalEmail(booleanEmailOut);
 
     List<MembershipItem> draftRecipients = drDelegate.getDraftRecipients(getSelectedComposeToList(), courseMemberMap);

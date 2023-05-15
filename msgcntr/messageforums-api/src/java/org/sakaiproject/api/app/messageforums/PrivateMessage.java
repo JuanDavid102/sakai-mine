@@ -55,6 +55,8 @@ public interface PrivateMessage extends Message {
     
     public void setRecipientsAsTextBcc(String recipientsAsTextBcc) ;
         
-        
+    public Boolean getReadReceipt();
+
+    public void setReadReceipt(Boolean readReceipt);        
 
 }

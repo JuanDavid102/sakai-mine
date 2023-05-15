@@ -1207,44 +1207,52 @@ public class PrivateMessageManagerImpl extends HibernateDaoSupport implements Pr
    * @see org.sakaiproject.api.app.messageforums.ui.PrivateMessageManager#sendPrivateMessage(org.sakaiproject.api.app.messageforums.PrivateMessage, java.util.Set, boolean)
    */
   public void sendPrivateMessage(PrivateMessage message, Map<User, Boolean> recipients, boolean asEmail) {
-    sendPrivateMessage(message, recipients, asEmail, Collections.emptyList(), Collections.emptyList());
+    sendPrivateMessage(message, recipients, asEmail, Collections.emptyList(), Collections.emptyList(), false);
+  }
+
+  public void sendPrivateMessage(PrivateMessage message, Map<User, Boolean> recipients, boolean asEmail, 
+      List<MembershipItem> draftRecipients, List<MembershipItem> draftBccRecipients) 
+  {
+    sendPrivateMessage(message, recipients, asEmail, draftRecipients, draftBccRecipients, (message != null ? message.getReadReceipt() : false));
   }
 
   @Override
-  public void sendPrivateMessage(PrivateMessage message, Map<User, Boolean> recipients, boolean asEmail, List<MembershipItem> draftRecipients, List<MembershipItem> draftBccRecipients) {
+  public void sendPrivateMessage(PrivateMessage message, Map<User, Boolean> recipients, boolean asEmail, 
+      List<MembershipItem> draftRecipients, List<MembershipItem> draftBccRecipients, Boolean readReceipt) 
+  {
 
     try 
     {
       log.debug("sendPrivateMessage(message: " + message + ", recipients: "
           + recipients + ")");
 
-    if (message == null || recipients == null)
-    {
-      throw new IllegalArgumentException("Null Argument");
-    }
+      if (message == null || recipients == null)
+      {
+        throw new IllegalArgumentException("Null Argument");
+      }
 
-    if (recipients.size() == 0 && !message.getDraft().booleanValue())
-    {
-      /** for no just return out
-        throw new IllegalArgumentException("Empty recipient list");
-      **/
-      return;
-    }
+      if (recipients.size() == 0 && !message.getDraft().booleanValue())
+      {
+        /** for no just return out
+          throw new IllegalArgumentException("Empty recipient list");
+        **/
+        return;
+      }
 
-    String contextId="";
-    boolean isMailArchive = false;
-    try {
-        contextId = getContextId();
-    } catch (Exception e) {
-	    contextId = ((PrivateMessageRecipientImpl)message.getRecipients().get(0)).getContextId();
-	    isMailArchive = true;
-	}
-    String currentUserAsString = currentUserAsString(message, isMailArchive);
+      String contextId="";
+      boolean isMailArchive = false;
+      try {
+          contextId = getContextId();
+      } catch (Exception e) {
+        contextId = ((PrivateMessageRecipientImpl)message.getRecipients().get(0)).getContextId();
+        isMailArchive = true;
+	    }
+      String currentUserAsString = currentUserAsString(message, isMailArchive);
 
-    User currentUser = currentUser(message, isMailArchive);
-    List recipientList = new UniqueArrayList();
+      User currentUser = currentUser(message, isMailArchive);
+      List recipientList = new UniqueArrayList();
 
-    if (message.getDraft()) {
+      if (message.getDraft()) {
         PrivateMessageRecipient receiver = new PrivateMessageRecipientImpl(currentUserAsString, typeManager.getDraftPrivateMessageType(),
             contextId, Boolean.TRUE, false);
 
@@ -1257,19 +1265,19 @@ public class PrivateMessageManagerImpl extends HibernateDaoSupport implements Pr
         messageManager.saveDraftRecipients(savedMessage.getId(), allDraftRecipients);
 
         return;
-    }
+      }
 
-    //build the message body
-    List additionalHeaders = new ArrayList(1);
-    additionalHeaders.add("Content-Type: text/html; charset=utf-8");
+      //build the message body
+      List additionalHeaders = new ArrayList(1);
+      additionalHeaders.add("Content-Type: text/html; charset=utf-8");
     
 
-    /** determines if default in sakai.properties is set, if not will make a reasonable default */
-    String defaultEmail = serverConfigurationService.getString("setup.request","postmaster@" + serverConfigurationService.getServerName());
-    
-    Area currentArea = null;
-    List<PrivateForum> privateForums = null;
-    Map<String, PrivateForum> pfMap = null;
+      /** determines if default in sakai.properties is set, if not will make a reasonable default */
+      String defaultEmail = serverConfigurationService.getString("setup.request","postmaster@" + serverConfigurationService.getServerName());
+      
+      Area currentArea = null;
+      List<PrivateForum> privateForums = null;
+      Map<String, PrivateForum> pfMap = null;
     
     	currentArea = getAreaByContextIdAndTypeId(typeManager.getPrivateMessageAreaType(), contextId);
 
@@ -1281,67 +1289,64 @@ public class PrivateMessageManagerImpl extends HibernateDaoSupport implements Pr
     	    asEmail = false;
     	}
     	
-        //this is fairly inneficient and should realy be a convenience method to lookup
-        // the users who want to forward their messages
-        privateForums = currentArea.getPrivateForums();
+      //this is fairly inneficient and should realy be a convenience method to lookup
+      // the users who want to forward their messages
+      privateForums = currentArea.getPrivateForums();
 
-    	//create a map for efficient lookup for large sites
-    	pfMap = new HashMap<String, PrivateForum>();
-    	for (int i = 0; i < privateForums.size(); i++) {
-    		PrivateForum pf1 = (PrivateForum)privateForums.get(i);
-    		pfMap.put(pf1.getOwner(), pf1);
-    	}
+      //create a map for efficient lookup for large sites
+      pfMap = new HashMap<String, PrivateForum>();
+      for (int i = 0; i < privateForums.size(); i++) {
+        PrivateForum pf1 = (PrivateForum)privateForums.get(i);
+        pfMap.put(pf1.getOwner(), pf1);
+      }
 
-		List<InternetAddress> fAddresses = new ArrayList();
-		boolean forwardingEnabled = getForwardingEnabled(recipients, pfMap, currentUserAsString, contextId, recipientList, fAddresses, asEmail);
-		//this only needs to be done if the message is not being sent
+      List<InternetAddress> fAddresses = new ArrayList();
+      boolean forwardingEnabled = getForwardingEnabled(recipients, pfMap, currentUserAsString, contextId, recipientList, fAddresses, asEmail);
+      //this only needs to be done if the message is not being sent
     
-    /** add sender as a saved recipient */
-    PrivateMessageRecipientImpl sender = new PrivateMessageRecipientImpl(
+      /** add sender as a saved recipient */
+      PrivateMessageRecipientImpl sender = new PrivateMessageRecipientImpl(
     		currentUserAsString, typeManager.getSentPrivateMessageType(),
     		contextId, Boolean.TRUE, false);
 
-    recipientList.add(sender);
+      recipientList.add(sender);
 
-    message.setRecipients(recipientList);
+      message.setRecipients(recipientList);
 
-	Message savedMessage = saveMessage(message, isMailArchive, contextId, currentUserAsString);
+	    Message savedMessage = saveMessage(message, isMailArchive, contextId, currentUserAsString);
 
-    message.setId(savedMessage.getId());
+      message.setId(savedMessage.getId());
 
-    // clean up anything in the draftrecipients table since the message has now been sent
-    messageManager.deleteDraftRecipientsByMessageId(message.getId());
+      // clean up anything in the draftrecipients table since the message has now been sent
+      messageManager.deleteDraftRecipientsByMessageId(message.getId());
 
-    String bodyString = buildMessageBody(message);
-    List<InternetAddress> replyEmail  = new ArrayList<>();
-    String systemEmail = getSystemAndReplyEmail(defaultEmail, currentUser, savedMessage, replyEmail, contextId);
+      String bodyString = buildMessageBody(message);
+      List<InternetAddress> replyEmail  = new ArrayList<>();
+      String systemEmail = getSystemAndReplyEmail(defaultEmail, currentUser, savedMessage, replyEmail, contextId);
 
-	if (asEmail)
-	{
-	//send as 1 action to all recipients
-	//we need to add som headers
-	additionalHeaders.add("From: " + systemEmail);
-	additionalHeaders.add("Subject: " + message.getTitle());
-	if (!replyEmail.isEmpty()) {
-		additionalHeaders.add("Reply-To: " + replyEmail.get(0));
-	}
-	emailService.sendToUsers(recipients.keySet(), additionalHeaders, bodyString);
-	}   	
+      if (asEmail)
+      {
+        //send as 1 action to all recipients
+        //we need to add som headers
+        additionalHeaders.add("From: " + systemEmail);
+        additionalHeaders.add("Subject: " + message.getTitle());
+        if (!replyEmail.isEmpty()) {
+          additionalHeaders.add("Reply-To: " + replyEmail.get(0));
+        }
+        emailService.sendToUsers(recipients.keySet(), additionalHeaders, bodyString);
+      }   	
 
-	if (!isEmailForwardDisabled() && forwardingEnabled)
-	{
-		InternetAddress fAddressesArr[] = new InternetAddress[fAddresses.size()];
-		fAddressesArr = fAddresses.toArray(fAddressesArr);
-		emailService.sendMail(new InternetAddress(systemEmail), fAddressesArr, message.getTitle(), 
-				bodyString, null, replyEmail.toArray(new InternetAddress[replyEmail.size()]), additionalHeaders);
-	}
+      if (!isEmailForwardDisabled() && forwardingEnabled)
+      {
+        InternetAddress fAddressesArr[] = new InternetAddress[fAddresses.size()];
+        fAddressesArr = fAddresses.toArray(fAddressesArr);
+        emailService.sendMail(new InternetAddress(systemEmail), fAddressesArr, message.getTitle(), 
+            bodyString, null, replyEmail.toArray(new InternetAddress[replyEmail.size()]), additionalHeaders);
+      }
 
-
-  }
-    catch (MessagingException e) 
-    {
+    } catch (MessagingException e) {
     	log.warn("PrivateMessageManagerImpl.sendPrivateMessage: exception: " + e.getMessage(), e);
-	}
+	  }
   }
 
   public boolean isEmailForwardDisabled(){
@@ -1562,7 +1567,17 @@ public class PrivateMessageManagerImpl extends HibernateDaoSupport implements Pr
     for (int i  = 0; i < pvtMessage.getRecipients().size(); i++) {
     	if (((PrivateMessageRecipientImpl) pvtMessage.getRecipients().get(i)).getUserId().equals(searchRecipient.getUserId())){
     		recordIndex = i;
+        if (pvtMessage.getReadReceipt() != null && pvtMessage.getReadReceipt()) {
+          System.out.println("Recibo booleano");
+        } else {
+          System.out.println("Pos ya no");
+        }
     		if (! ((PrivateMessageRecipientImpl) recipientList.get(recordIndex)).getRead()) {
+          if (pvtMessage.getReadReceipt() != null && pvtMessage.getReadReceipt()) {
+            System.out.println("Pero si no lo he leido");
+          } else {
+            System.out.println("Sigo sin leerlo");
+          }
     			((PrivateMessageRecipientImpl) recipientList.get(recordIndex)).setRead(Boolean.TRUE);
     		}
     	}      

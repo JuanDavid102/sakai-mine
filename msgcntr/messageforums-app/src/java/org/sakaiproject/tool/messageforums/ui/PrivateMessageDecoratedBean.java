@@ -232,6 +232,10 @@ public class PrivateMessageDecoratedBean
   public void setReplied(boolean isReplied) {
 	  this.isReplied = isReplied;
   }
+  
+  public boolean getReadReceipt(){
+	  return this.msg.getReadReceipt();
+  }  
 
 }
 

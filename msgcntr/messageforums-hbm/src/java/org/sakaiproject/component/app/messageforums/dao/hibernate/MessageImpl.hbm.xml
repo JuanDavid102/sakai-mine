@@ -136,6 +136,9 @@
       <property name="recipientsAsTextBcc" type="materialized_clob" not-null="false" >
         <column name="RECIPIENTS_AS_TEXT_BCC"/>
       </property> 
+      <property name="readReceipt" not-null="false" >
+        <column name="READ_RECEIPT"/>
+      </property>
     </subclass>
     
   </class>

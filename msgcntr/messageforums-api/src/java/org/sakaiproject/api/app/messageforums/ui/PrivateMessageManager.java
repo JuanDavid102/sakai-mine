@@ -123,6 +123,7 @@ public interface PrivateMessageManager {
      */
     public void sendPrivateMessage(PrivateMessage message, Map<User, Boolean> recipients, boolean asEmail);
     public void sendPrivateMessage(PrivateMessage message, Map<User, Boolean> recipients, boolean asEmail, List<MembershipItem> draftRecipients, List<MembershipItem> draftBccRecipients);
+    public void sendPrivateMessage(PrivateMessage message, Map<User, Boolean> recipients, boolean asEmail, List<MembershipItem> draftRecipients, List<MembershipItem> draftBccRecipients, Boolean readReceipt);
     
     
     /**

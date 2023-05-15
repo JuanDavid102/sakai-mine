@@ -37,6 +37,7 @@ public class PrivateMessageImpl extends MessageImpl implements PrivateMessage {
     private String externalEmailAddress;
     private String recipientsAsText;
     private String recipientsAsTextBcc;
+    private Boolean readReceipt;
     
     public static Comparator RECIPIENT_LIST_COMPARATOR_ASC;
     public static Comparator RECIPIENT_LIST_COMPARATOR_DESC;
@@ -95,6 +96,13 @@ public class PrivateMessageImpl extends MessageImpl implements PrivateMessage {
 //    public void setTindex(int tindex) {
 //        this.tindex = tindex;        
 //    }
+	public Boolean getReadReceipt() {
+		return readReceipt;
+	}
+
+	public void setReadReceipt(Boolean readReceipt) {
+		this.readReceipt = readReceipt;
+	}
     
     ////////////////////////////////////////////////////////////////////////
     // helper methods for collections
