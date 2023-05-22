@@ -111,6 +111,9 @@ import org.sakaiproject.user.api.UserNotDefinedException;
 import org.sakaiproject.util.api.FormattedText;
 import org.sakaiproject.util.ResourceLoader;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+
 @Slf4j
 public class PrivateMessageManagerImpl extends HibernateDaoSupport implements PrivateMessageManager {
 
@@ -145,6 +148,7 @@ public class PrivateMessageManagerImpl extends HibernateDaoSupport implements Pr
   @Setter private PreferencesService preferencesService;
   @Setter private ServerConfigurationService serverConfigurationService;
   @Setter private FormattedText formattedText;
+  private NotificationService notificationService;
 
   private static final String MESSAGES_TITLE = "pvt_message_nav";// Mensajes-->Messages/need to be modified to support internationalization
   
@@ -1125,7 +1129,7 @@ public class PrivateMessageManagerImpl extends HibernateDaoSupport implements Pr
       return pmessage;
   }
 
-  private boolean getForwardingEnabled(Map<User, Boolean> recipients, Map<String, PrivateForum> pfMap, String currentUserAsString, String contextId, List recipientList, List<InternetAddress> fAddresses, boolean asEmail) throws MessagingException{
+  private boolean getForwardingEnabled(Map<User, Boolean> recipients, Map<String, PrivateForum> pfMap, String currentUserAsString, String contextId, List recipientList, List<InternetAddress> fAddresses, boolean asEmail, boolean readReceipt) throws MessagingException{
 	  boolean forwardingEnabled = false;
 	  //this only needs to be done if the message is not being sent
 	  int submitterEmailReceiptPref;
@@ -1179,6 +1183,7 @@ public class PrivateMessageManagerImpl extends HibernateDaoSupport implements Pr
 		  PrivateMessageRecipientImpl receiver = new PrivateMessageRecipientImpl(
 				  userId, typeManager.getReceivedPrivateMessageType(), contextId,
 				  isRecipientCurrentUser, bcc);
+      receiver.setReadReceipt(readReceipt);
 		  recipientList.add(receiver);
 		  }
 	  return forwardingEnabled;
@@ -1204,7 +1209,7 @@ public class PrivateMessageManagerImpl extends HibernateDaoSupport implements Pr
   }
 
   /**
-   * @see org.sakaiproject.api.app.messageforums.ui.PrivateMessageManager#sendPrivateMessage(org.sakaiproject.api.app.messageforums.PrivateMessage, java.util.Set, boolean)
+   * @see org.sakaiproject.api.app.messageforums.ui.PrivateMessageManager#sendPrivateMessage(org.sakaiproject.api.app.messageforums.PrivateMessage, java.util.Set, boolean, boolean)
    */
   public void sendPrivateMessage(PrivateMessage message, Map<User, Boolean> recipients, boolean asEmail) {
     sendPrivateMessage(message, recipients, asEmail, Collections.emptyList(), Collections.emptyList(), false);
@@ -1255,7 +1260,7 @@ public class PrivateMessageManagerImpl extends HibernateDaoSupport implements Pr
       if (message.getDraft()) {
         PrivateMessageRecipient receiver = new PrivateMessageRecipientImpl(currentUserAsString, typeManager.getDraftPrivateMessageType(),
             contextId, Boolean.TRUE, false);
-
+        receiver.setReadReceipt(readReceipt);
         recipientList.add(receiver);
         message.setRecipients(recipientList);
         Message savedMessage = saveMessage(message, isMailArchive, contextId, currentUserAsString);
@@ -1301,7 +1306,7 @@ public class PrivateMessageManagerImpl extends HibernateDaoSupport implements Pr
       }
 
       List<InternetAddress> fAddresses = new ArrayList();
-      boolean forwardingEnabled = getForwardingEnabled(recipients, pfMap, currentUserAsString, contextId, recipientList, fAddresses, asEmail);
+      boolean forwardingEnabled = getForwardingEnabled(recipients, pfMap, currentUserAsString, contextId, recipientList, fAddresses, asEmail, readReceipt);
       //this only needs to be done if the message is not being sent
     
       /** add sender as a saved recipient */
@@ -1573,10 +1578,11 @@ public class PrivateMessageManagerImpl extends HibernateDaoSupport implements Pr
           System.out.println("Pos ya no");
         }
     		if (! ((PrivateMessageRecipientImpl) recipientList.get(recordIndex)).getRead()) {
-          if (pvtMessage.getReadReceipt() != null && pvtMessage.getReadReceipt()) {
-            System.out.println("Pero si no lo he leido");
-          } else {
-            System.out.println("Sigo sin leerlo");
+          if (((PrivateMessageRecipientImpl) recipientList.get(recordIndex)).getReadReceipt() != null && ((PrivateMessageRecipientImpl) recipientList.get(recordIndex)).getReadReceipt()) {
+
+            this.sendConfirmationEmail(pvtMessage, (PrivateMessageRecipientImpl) recipientList.get(recordIndex));
+            ((PrivateMessageRecipientImpl) recipientList.get(recordIndex)).setReadReceipt(false);
+
           }
     			((PrivateMessageRecipientImpl) recipientList.get(recordIndex)).setRead(Boolean.TRUE);
     		}
@@ -1589,6 +1595,40 @@ public class PrivateMessageManagerImpl extends HibernateDaoSupport implements Pr
     }
   }
 
+  public void sendConfirmationEmail(PrivateMessage pvtMessage, PrivateMessageRecipientImpl pvtRecipient){
+    String defaultEmail = serverConfigurationService.getString("setup.request","postmaster@" + serverConfigurationService.getServerName());
+    String currentUserAsString = currentUserAsString(pvtMessage, false);
+    String contextId = getContextId();
+
+    Message savedMessage = saveMessage(pvtMessage, false, contextId, currentUserAsString);
+
+    String systemEmail = "";
+    try {
+      User currentUser = currentUser(pvtMessage, false);
+      List<InternetAddress> replyEmail  = new ArrayList<>();
+      systemEmail = getSystemAndReplyEmail(defaultEmail, currentUser, savedMessage, replyEmail, contextId);
+    } catch (MessagingException e) {
+      log.warn("PrivateMessageManagerImpl.sendConfirmationEmail: exception: " + e.getMessage(), e);
+    }
+
+    List additionalHeaders = new ArrayList(1);
+    additionalHeaders.add("Content-Type: text/html; charset=utf-8");
+    additionalHeaders.add("From: " + systemEmail);
+    additionalHeaders.add("Subject: " + rb.getFormattedMessage("pvt_read_receipt_email_subject", pvtMessage.getTitle()));
+
+    User user = null;
+    User messageCreator = null;
+    try {
+      user = userDirectoryService.getUser(pvtRecipient.getUserId());
+      messageCreator = userDirectoryService.getUser(pvtMessage.getCreatedBy());
+    } catch (UserNotDefinedException e) { }
+
+    DateFormat df = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+    String bodyString = rb.getFormattedMessage("pvt_read_receipt_email", user.getEid(), pvtMessage.getTitle(), df.format(new Date()));
+    
+    emailService.sendToUser(messageCreator, additionalHeaders, bodyString);
+    eventTrackingService.post(eventTrackingService.newEvent(DiscussionForumService.EVENT_MESSAGES_READ_RECEIPT, getEventMessage(pvtMessage), false));
+  }
   
   /**
    * @see org.sakaiproject.api.app.messageforums.ui.PrivateMessageManager#markMessageAsReadForUser(org.sakaiproject.api.app.messageforums.PrivateMessage)
@@ -2138,6 +2178,12 @@ return topicTypeUuid;
 	  return currentMessage;
   }
   
+  public PrivateMessage getPrivateMessageByDecryptedId(String id) throws MessagingException {
+	  PrivateMessage currentMessage = (PrivateMessage) messageManager.getMessageByIdWithAttachments(Long.parseLong(id));
+	  getHibernateTemplate().initialize(currentMessage.getRecipients());
+	  return currentMessage;
+  }
+  
   private PrivateMessage createResponseMessage(PrivateMessage currentMessage, MimeMessage msg, String from) throws MessagingException {
 	  PrivateMessage rrepMsg = messageManager.createPrivateMessage() ;
 
@@ -2296,7 +2342,7 @@ return topicTypeUuid;
 	  if (rrepMsg != null) {
 		  Map<User, Boolean> recipients = getRecipients(rrepMsg.getRecipients());
 
-		  sendPrivateMessage(rrepMsg, recipients, false);
+		  sendPrivateMessage(rrepMsg, recipients, false, false);
 
 		  if (!rrepMsg.getDraft()) {
 			  markMessageAsRepliedForUser(currentMessage, rrepMsg.getAuthorId());
