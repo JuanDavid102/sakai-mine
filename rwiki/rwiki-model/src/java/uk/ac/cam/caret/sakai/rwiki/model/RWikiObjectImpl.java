@@ -22,7 +22,11 @@
 package uk.ac.cam.caret.sakai.rwiki.model;
 
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -95,8 +99,8 @@ public abstract class RWikiObjectImpl implements RWikiObject
 	protected boolean m_publicwrite = false;
 
 	protected Integer m_revision = Integer.valueOf(0);
-	
-	protected String m_pageGroups = null;
+
+	protected Set<String> pageGroups = new HashSet();
 
 	// iebdelete protected List m_history = null;
 
@@ -767,40 +771,44 @@ public abstract class RWikiObjectImpl implements RWikiObject
 	}
 
 	/**
-	 * Set a new String of groups for this page
+	 * Set a new List of groups for this page
 	 * 
 	 * @param pageGroups
 	 */
-	public void setPageGroups(String pageGroups) {
-		m_pageGroups = pageGroups;
-	}
-
-	/**
-	 * Set a new String of groups for this page
-	 * 
-	 * @param pageGroups
-	 */
-	public void setPageGroupsAsString(String pageGroups) {
-		m_pageGroups = pageGroups;
-	}
-
-	/**
-	 * @return return the String of groups for this page
-	 */
-	public String getPageGroups() {
-		return m_pageGroups;
-	}
-
-	/**
-	 * @return return the list of groups for this page
-	 */
-	public String[] getPageGroupsAsArray() {
-		String[] groupsArray = null;
-		if (m_pageGroups != null){
-			groupsArray = m_pageGroups.split(",");
+	public void setPageGroupsAsList(List pageGroups) {
+		if (pageGroups != null) {
+			this.pageGroups = new HashSet<>(pageGroups);
+		} else {
+			this.pageGroups = new HashSet<>();
 		}
-		return groupsArray;
 	}
+
+	/**
+	 * @return return the List of groups for this page
+	 */
+	public List getPageGroupsAsList() {
+		if (pageGroups != null) {
+			return new ArrayList<>(pageGroups);
+		}
+		return null;
+	}
+
+	/**
+	 * Set a new Set of groups for this page
+	 * 
+	 * @param pageGroups
+	 */
+	public void setPageGroups(Set<String> pageGroups) {
+		this.pageGroups = pageGroups;
+	}
+
+	/**
+	 * @return return the Set of groups for this page
+	 */
+	public Set<String> getPageGroups() {
+		return pageGroups;
+	}
+
 }
 
 /*******************************************************************************
