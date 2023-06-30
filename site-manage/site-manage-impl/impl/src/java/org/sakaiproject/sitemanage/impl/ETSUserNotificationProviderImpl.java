@@ -428,7 +428,7 @@ public class ETSUserNotificationProviderImpl implements UserNotificationProvider
 			if (locale == null)
 			{
 				// use user's locale
-				template = emailTemplateService.getRenderedTemplateForUser(templateName, user!=null?user.getReference():"", replacementValues);
+				template = emailTemplateService.getRenderedTemplateForUser(templateName, user!=null?user.getId():"", replacementValues);
 			}
 			else
 			{
