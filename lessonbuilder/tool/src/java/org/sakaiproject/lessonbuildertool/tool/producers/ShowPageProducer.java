@@ -4287,6 +4287,11 @@ public class ShowPageProducer implements ViewComponentProducer, DefaultView, Nav
 		    decorate(new UITooltipDecorator(messageLocator.getMessage("simplepage.subpage-descrip")));
 		UIInternalLink.makeURL(tofill, "addcontent", "#").
 		    decorate(new UITooltipDecorator(messageLocator.getMessage("simplepage.add-item-page")));
+		// EDF-3786
+		String leyChileLink1 = messageLocator.getMessage("simplepage.leyChile-link1");
+		String leyChileLink2 = messageLocator.getMessage("simplepage.leyChile-link2");
+		String infoDerechosAutor = messageLocator.getMessage("simplepage.info-derechosAutor", new Object[] {leyChileLink1, leyChileLink2});
+		UIVerbatim.make(tofill, "info-derechosAutor", infoDerechosAutor);
 
 		createToolBarLink(EditPageProducer.VIEW_ID, tofill, "add-text", "simplepage.text", currentPage, "simplepage.text.tooltip").setItemId(null);
 		createFilePickerToolBarLink(ResourcePickerProducer.VIEW_ID, tofill, "add-multimedia", "simplepage.multimedia", true, false, currentPage, "simplepage.multimedia.tooltip");
