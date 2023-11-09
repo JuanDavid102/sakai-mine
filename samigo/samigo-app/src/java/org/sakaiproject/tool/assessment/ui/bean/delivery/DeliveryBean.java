@@ -350,6 +350,8 @@ public class DeliveryBean implements Serializable {
   private boolean hasTimeLimit;
   private boolean isMoreThanOneQuestion;
   @Getter @Setter
+  private boolean toolHidden;
+  @Getter @Setter
   private Integer scoringType;
   
   // daisyf added for servlet Login.java, to support anonymous login with publishedUrl
@@ -2003,6 +2005,19 @@ public class DeliveryBean implements Serializable {
     return hasAttachment;
   }
 
+  public boolean getShowFeedbackLink() {
+      return ("reviewAssessment".equals(getActionString())
+              || "takeAssessment".equals(getActionString())
+              || "takeAssessmentViaUrl".equals(getActionString())
+              || "previewAssessment".equals(getActionString())
+             ) && !"1".equals(getNavigation())
+               && getPageContents().getIsNoParts();
+  }
+
+  public boolean getShowReturnToAssessmentLink() {
+    return "reviewAssessment".equals(getActionString()) && !isAnonymousLogin() && !isToolHidden();
+  }
+
   public String checkBeforeProceed(boolean isSubmitForGrade, boolean isFromTimer, boolean isViaUrlLogin){
     // public method, who know if publishedAssessment is set, so check to be sure
     if (getPublishedAssessment() == null){
@@ -2169,6 +2184,8 @@ public class DeliveryBean implements Serializable {
         validateSecureDeliveryPhase(Phase.ASSESSMENT_START);
 
         if (PhaseStatus.FAILURE.equals(secureDeliveryStatus)) {
+          // For SEB, we expect the first validation to fail, because no validation data is provided yet
+          // Also, we need to set sebSetup. With sebSetup the beginDelivery page will refresh once the validation data is sent
           if(StringUtils.equals(secureDeliveryModuleId, SecureDeliverySeb.MODULE_NAME)) {
             setSebSetup(true);
           } else {
