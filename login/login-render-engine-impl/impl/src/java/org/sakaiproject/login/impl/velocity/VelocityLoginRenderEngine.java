@@ -100,11 +100,15 @@ public class VelocityLoginRenderEngine implements LoginRenderEngine {
 		vengine.init(p);
 		availableLoginSkins = new ArrayList();
 		Map m = new HashMap();
-		m.put("name", "defaultskin");
+		String skinName = "defaultskin";
+		if (serverConfigurationService.getString("skin.default", "").equals("morpheus-online")) {
+			skinName = "onlineskin";
+		}
+		m.put("name", skinName);
 		m.put("display", "Default");
 		availableLoginSkins.add(m);
 
-		vengine.getTemplate("/vm/defaultskin/macros.vm");
+		vengine.getTemplate("/vm/" + skinName + "/macros.vm");
 	}
 
 	public LoginRenderContext newRenderContext(HttpServletRequest request) {
@@ -114,9 +118,9 @@ public class VelocityLoginRenderEngine implements LoginRenderEngine {
 
 		rc.put("pageSkins", availableLoginSkins);
 		String loginSkin = "defaultskin";
-
-		if (request != null)
-		{
+		if (serverConfigurationService.getString("skin.default", "").equals("morpheus-online")) {
+			loginSkin = "onlineskin";
+		} else if (request != null) {
 
 			HttpSession session = request.getSession();
 			loginSkin = (String) session.getAttribute("loginskin");
@@ -142,7 +146,7 @@ public class VelocityLoginRenderEngine implements LoginRenderEngine {
 		else
 		{
 			log.debug("No Request Object Skin is default");
-			rc.put("pageCurrentSkin", "defaultskin");
+			rc.put("pageCurrentSkin", loginSkin);
 		}
 
 		try
@@ -168,7 +172,10 @@ public class VelocityLoginRenderEngine implements LoginRenderEngine {
 		{
 			skin = "defaultskin";
 		}
-		if (!"defaultskin".equals(skin))
+		if (serverConfigurationService.getString("skin.default", "").equals("morpheus-online")) {
+			skin = "onlineskin";
+		}
+		if (!"defaultskin".equals(skin) && !"onlineskin".equals(skin))
 		{
 			vengine.getTemplate("/vm/" + skin + "/macros.vm");
 		}
