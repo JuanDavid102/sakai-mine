@@ -454,12 +454,23 @@ public class SkinnableLogin extends HttpServlet implements Login {
 		String containerText = serverConfigurationService.getString("login.text.title", "Container Login");
 		String loginContainerUrl = serverConfigurationService.getString("login.container.url");
 
+		String loginHomeUrl = serverConfigurationService.getString("login.home.url", null);
+		String loginVirtualResourcesUrl = serverConfigurationService.getString("login.resources.url", null);
+		String loginPaymentPortalUrl = serverConfigurationService.getString("login.contact.url", null);
+		String loginContactUrl = serverConfigurationService.getString("login.payment.url", null);
+		
 		String eidWording = rb.getString("userid");
 		String pwWording = rb.getString("log.pass");
 		String loginRequired = rb.getString("log.logreq");
 		String loginWording = rb.getString("log.login");
 		String cancelWording = rb.getString("log.cancel");
 		String passwordResetWording = rb.getString("log.password.reset");
+		String loginPreText = rb.getString("log.pre.text");
+
+		String loginHomeText = rb.getString("log.home.text");
+		String loginVirtualResourcesText = rb.getString("log.virtual.resources.text");
+		String loginPaymentPortalText = rb.getString("log.payment.portal.text");
+		String loginContactText = rb.getString("log.contact.text");
 
 		rcontext.put("action", response.encodeURL(Web.returnUrl(request, null)));
 		rcontext.put("pageSkinRepo", skinRepo);
@@ -477,6 +488,15 @@ public class SkinnableLogin extends HttpServlet implements Login {
 		rcontext.put("xloginChoice", xloginChoice);
 		rcontext.put("containerText", containerText);
 		rcontext.put("loginContainerUrl", loginContainerUrl);
+		rcontext.put("loginPreText", loginPreText);
+		rcontext.put("loginHomeText", loginHomeText);
+		rcontext.put("loginHomeUrl", loginHomeUrl);
+		rcontext.put("loginVirtualResourcesText", loginVirtualResourcesText);
+		rcontext.put("loginVirtualResourcesUrl", loginVirtualResourcesUrl);
+		rcontext.put("loginPaymentPortalText", loginPaymentPortalText);
+		rcontext.put("loginPaymentPortalUrl", loginPaymentPortalUrl);
+		rcontext.put("loginContactText", loginContactText);
+		rcontext.put("loginContactUrl", loginContactUrl);
 
 		String eid = StringEscapeUtils.escapeHtml4(request.getParameter("eid"));
 		String pw = StringEscapeUtils.escapeHtml4(request.getParameter("pw"));
