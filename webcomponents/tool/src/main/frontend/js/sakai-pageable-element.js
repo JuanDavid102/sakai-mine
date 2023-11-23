@@ -1,4 +1,5 @@
 import { LitElement, css, html } from "./assets/lit-element/lit-element.js";
+import { ifDefined } from './assets/lit-html/directives/if-defined.js';
 import "./sakai-pager.js";
 import { loadProperties } from "./sakai-i18n.js";
 
@@ -98,7 +99,7 @@ export class SakaiPageableElement extends LitElement {
       <div id="wrapper">
       <div id="content">${this.content()}</div>
       ${this.showPager ? html`
-      <div id="pager"><sakai-pager count="${this.count}" current="1" @page-selected=${this.pageClicked}></sakai-pager></div>
+      <div id="pager"><sakai-pager count="${ifDefined(this.count)}" current="1" @page-selected=${this.pageClicked}></sakai-pager></div>
       ` : ""}
       </div>
     `;
