@@ -309,11 +309,11 @@ div#toolMenuWrap {
 // -- Login background Image
 #loginImage {
     background-image: url(#{$skin-path}images/login_fondo.png);
-    background-size: 90em;
+    background-size: cover;
     background-repeat: no-repeat;
     background-position: left top;
     transition: background-position 0.1s ease; 
-    height: 50.1em;
+    height: 66.35em;
 }
 @media screen and (max-width: 1250px) {
     #loginImage {

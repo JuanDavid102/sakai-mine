@@ -180,7 +180,7 @@ body.is-logged-out{
 	}
 	.#{$namespace}userNav__submenuitem--fullname-and-id{
 		padding-top: 1em;
-		color: var(--sakai-text-color-1);
+		color: var(--link-header-color);
 		display: inline-block;
 		margin-bottom: 5px;
 		width: 10em;
