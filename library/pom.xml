@@ -355,6 +355,9 @@
 				<sakai.skin.gateway.source>morpheus-gateway</sakai.skin.gateway.source>
 				<sakai.skin.gateway.target>morpheus-gateway</sakai.skin.gateway.target>
 				<sakai.skin.gateway.customization.file>src/${sakai.skin.gateway.source}/sass/customization/_customization.scss</sakai.skin.gateway.customization.file>
+				<sakai.skin.online.source>morpheus-online</sakai.skin.online.source>
+				<sakai.skin.online.target>morpheus-online</sakai.skin.online.target>
+				<sakai.skin.online.customization.file>src/${sakai.skin.online.source}/sass/customization/_customization.scss</sakai.skin.online.customization.file>
 			</properties>
 			<build>
 				<plugins>
@@ -372,22 +375,6 @@
 									<resources>
 										<resource>
 											<directory>src/${sakai.skin.source}/images/</directory>
-										</resource>
-									</resources>
-								</configuration>
-							</execution>
-							<execution>
-								<!-- Copy images from gateway skin -->
-								<id>copy-gateway-images</id>
-								<phase>compile</phase>
-								<goals>
-									<goal>copy-resources</goal>
-								</goals>
-								<configuration>
-									<outputDirectory>${basedir}/src/webapp/skin/${sakai.skin.gateway.target}/images/</outputDirectory>
-									<resources>
-										<resource>
-											<directory>src/${sakai.skin.gateway.source}/images/</directory>
 										</resource>
 									</resources>
 								</configuration>
@@ -412,26 +399,6 @@
 								</configuration>
 							</execution>
 							<execution>
-								<!-- Copy js from gateway skin -->
-								<id>copy-gateway-js</id>
-								<phase>generate-resources</phase>
-								<goals>
-									<goal>copy-resources</goal>
-								</goals>
-								<configuration>
-									<outputDirectory>${basedir}/src/webapp/skin/${sakai.skin.gateway.target}/js/</outputDirectory>
-									<resources>
-										<resource>
-											<directory>src/${sakai.skin.gateway.source}/js/</directory>
-											<includes>
-												<include>lib/**/*.js</include>
-												<include>ie/**/*.js</include>
-											</includes>
-										</resource>
-									</resources>
-								</configuration>
-							</execution>
-							<execution>
 								<id>copy-fonts</id>
 								<phase>generate-resources</phase>
 								<goals>
@@ -439,28 +406,6 @@
 								</goals>
 								<configuration>
 									<outputDirectory>${basedir}/src/webapp/skin/${sakai.skin.target}/fonts/</outputDirectory>
-									<resources>
-										<resource>
-											<directory>${basedir}/src/${sakai.skin.source}/font-awesome-sass-${font-awesome-version}/assets/fonts/</directory>
-										</resource>
-										<resource>
-										  <directory>${basedir}/src/${sakai.skin.source}/bootstrap-sass-${bootstrap-version}/assets/fonts/</directory>
-										</resource>
-										<resource>
-										  <directory>${basedir}/src/${sakai.skin.source}/fonts/</directory>
-										</resource>
-									</resources>
-								</configuration>
-							</execution>
-							<execution>
-								<!-- Copy fonts form DEFAULT skin -->
-								<id>copy-gateway-fonts</id>
-								<phase>generate-resources</phase>
-								<goals>
-									<goal>copy-resources</goal>
-								</goals>
-								<configuration>
-									<outputDirectory>${basedir}/src/webapp/skin/${sakai.skin.gateway.target}/fonts/</outputDirectory>
 									<resources>
 										<resource>
 											<directory>${basedir}/src/${sakai.skin.source}/font-awesome-sass-${font-awesome-version}/assets/fonts/</directory>
@@ -492,8 +437,63 @@
 									</resources>
 								</configuration>
 							</execution>
+							<!-- GATEWAY SKIN -->
 							<execution>
-								<!-- Copy font css form DEFAULT skin -->
+								<id>copy-gateway-images</id>
+								<phase>compile</phase>
+								<goals>
+									<goal>copy-resources</goal>
+								</goals>
+								<configuration>
+									<outputDirectory>${basedir}/src/webapp/skin/${sakai.skin.gateway.target}/images/</outputDirectory>
+									<resources>
+										<resource>
+											<directory>src/${sakai.skin.gateway.source}/images/</directory>
+										</resource>
+									</resources>
+								</configuration>
+							</execution>
+							<execution>
+								<id>copy-gateway-js</id>
+								<phase>generate-resources</phase>
+								<goals>
+									<goal>copy-resources</goal>
+								</goals>
+								<configuration>
+									<outputDirectory>${basedir}/src/webapp/skin/${sakai.skin.gateway.target}/js/</outputDirectory>
+									<resources>
+										<resource>
+											<directory>src/${sakai.skin.gateway.source}/js/</directory>
+											<includes>
+												<include>lib/**/*.js</include>
+												<include>ie/**/*.js</include>
+											</includes>
+										</resource>
+									</resources>
+								</configuration>
+							</execution>
+							<execution>
+								<id>copy-gateway-fonts</id>
+								<phase>generate-resources</phase>
+								<goals>
+									<goal>copy-resources</goal>
+								</goals>
+								<configuration>
+									<outputDirectory>${basedir}/src/webapp/skin/${sakai.skin.gateway.target}/fonts/</outputDirectory>
+									<resources>
+										<resource>
+											<directory>${basedir}/src/${sakai.skin.gateway.source}/font-awesome-sass-${font-awesome-version}/assets/fonts/</directory>
+										</resource>
+										<resource>
+										  <directory>${basedir}/src/${sakai.skin.gateway.source}/bootstrap-sass-${bootstrap-version}/assets/fonts/</directory>
+										</resource>
+										<resource>
+										  <directory>${basedir}/src/${sakai.skin.gateway.source}/fonts/</directory>
+										</resource>
+									</resources>
+								</configuration>
+							</execution>
+							<execution>
 								<id>copy-gateway-fonts-css</id>
 								<phase>generate-resources</phase>
 								<goals>
@@ -503,7 +503,81 @@
 									<outputDirectory>${basedir}/src/webapp/skin/${sakai.skin.gateway.target}/font-awesome/</outputDirectory>
 									<resources>
 										<resource>
-											<directory>src/${sakai.skin.source}/fonts/</directory>
+											<directory>src/${sakai.skin.gateway.source}/fonts/</directory>
+											<includes>
+												<include>*.css</include>
+											</includes>
+										</resource>
+									</resources>
+								</configuration>
+							</execution>
+							<!-- ONLINE SKIN -->
+							<execution>
+								<id>copy-online-images</id>
+								<phase>compile</phase>
+								<goals>
+									<goal>copy-resources</goal>
+								</goals>
+								<configuration>
+									<outputDirectory>${basedir}/src/webapp/skin/${sakai.skin.online.target}/images/</outputDirectory>
+									<resources>
+										<resource>
+											<directory>src/${sakai.skin.online.source}/images/</directory>
+										</resource>
+									</resources>
+								</configuration>
+							</execution>
+							<execution>
+								<id>copy-online-js</id>
+								<phase>generate-resources</phase>
+								<goals>
+									<goal>copy-resources</goal>
+								</goals>
+								<configuration>
+									<outputDirectory>${basedir}/src/webapp/skin/${sakai.skin.online.target}/js/</outputDirectory>
+									<resources>
+										<resource>
+											<directory>src/${sakai.skin.online.source}/js/</directory>
+											<includes>
+												<include>lib/**/*.js</include>
+												<include>ie/**/*.js</include>
+											</includes>
+										</resource>
+									</resources>
+								</configuration>
+							</execution>
+							<execution>
+								<id>copy-online-fonts</id>
+								<phase>generate-resources</phase>
+								<goals>
+									<goal>copy-resources</goal>
+								</goals>
+								<configuration>
+									<outputDirectory>${basedir}/src/webapp/skin/${sakai.skin.online.target}/fonts/</outputDirectory>
+									<resources>
+										<resource>
+											<directory>${basedir}/src/${sakai.skin.online.source}/font-awesome-sass-${font-awesome-version}/assets/fonts/</directory>
+										</resource>
+										<resource>
+										  <directory>${basedir}/src/${sakai.skin.online.source}/bootstrap-sass-${bootstrap-version}/assets/fonts/</directory>
+										</resource>
+										<resource>
+										  <directory>${basedir}/src/${sakai.skin.online.source}/fonts/</directory>
+										</resource>
+									</resources>
+								</configuration>
+							</execution>
+							<execution>
+								<id>copy-online-fonts-css</id>
+								<phase>generate-resources</phase>
+								<goals>
+									<goal>copy-resources</goal>
+								</goals>
+								<configuration>
+									<outputDirectory>${basedir}/src/webapp/skin/${sakai.skin.online.target}/font-awesome/</outputDirectory>
+									<resources>
+										<resource>
+											<directory>src/${sakai.skin.online.source}/fonts/</directory>
 											<includes>
 												<include>*.css</include>
 											</includes>
@@ -518,7 +592,15 @@
                         <groupId>com.samaxes.maven</groupId>
                         <artifactId>minify-maven-plugin</artifactId>
                         <version>1.7.6</version>
-                        <executions>
+						<dependencies>
+							<!-- Must override this dependency, even though not declared (see MNG-6965) -->
+							<dependency>
+								<groupId>org.codehaus.plexus</groupId>
+								<artifactId>plexus-utils</artifactId>
+								<version>3.5.1</version>
+							</dependency>
+						</dependencies>
+						<executions>
                             <execution>
                                 <id>default-minify</id>
                                 <configuration>
@@ -533,14 +615,26 @@
                                 <goals><goal>minify</goal></goals>
                             </execution>
                             <execution>
-                                <!-- Minify gateway js -->
-                                <id>default-minify-gateway</id>
+                                <id>gateway-minify</id>
                                 <configuration>
                                     <charset>UTF-8</charset>
                                     <webappSourceDir>${basedir}/src/${sakai.skin.gateway.source}</webappSourceDir>
                                     <jsSourceDir>js/src/</jsSourceDir>
                                     <jsIncludes>*.js</jsIncludes>
                                     <jsTargetDir>skin/${sakai.skin.gateway.target}/js</jsTargetDir>
+                                    <jsFinalFile>morpheus.scripts.js</jsFinalFile>
+                                    <jsEngine>CLOSURE</jsEngine>
+                                </configuration>
+                                <goals><goal>minify</goal></goals>
+                            </execution>
+                            <execution>
+                                <id>online-minify</id>
+                                <configuration>
+                                    <charset>UTF-8</charset>
+                                    <webappSourceDir>${basedir}/src/${sakai.skin.online.source}</webappSourceDir>
+                                    <jsSourceDir>js/src/</jsSourceDir>
+                                    <jsIncludes>*.js</jsIncludes>
+                                    <jsTargetDir>skin/${sakai.skin.online.target}/js</jsTargetDir>
                                     <jsFinalFile>morpheus.scripts.js</jsFinalFile>
                                     <jsEngine>CLOSURE</jsEngine>
                                 </configuration>
@@ -613,43 +707,58 @@
 							</execution>
 						</executions>
 					</plugin>
-                    <plugin>
-                        <groupId>com.gitlab.haynes</groupId>
-                        <artifactId>libsass-maven-plugin</artifactId>
-                        <version>0.2.26</version>
-                        <executions>
-                           <execution>
-                               <id>compile-sass-default</id>
-                               <phase>process-resources</phase>
-                               <goals>
-                                   <goal>compile</goal>
-                               </goals>
-                               <configuration>
-                                   <outputStyle>${sakai.skin.outputStyle}</outputStyle>
-                                   <imgPath>${basedir}/src/${sakai.skin.source}/images/</imgPath>
-                                   <inputPath>${basedir}/src/${sakai.skin.source}/sass/</inputPath>
-                                   <outputPath>${basedir}/src/webapp/skin/${sakai.skin.target}</outputPath>
-                                   <includePath>${basedir}/src/${sakai.skin.source}/bootstrap-sass-${bootstrap-version}/assets/stylesheets/${path.separator}${basedir}/src/${sakai.skin.source}/font-awesome-sass-${font-awesome-version}/assets/stylesheets/</includePath>
-                                   <sourceMapOutputPath>${basedir}/src/webapp/skin/${sakai.skin.target}</sourceMapOutputPath>
-                               </configuration>
-                           </execution>
-                           <execution>
-                               <id>compile-sass-gateway</id>
-                               <phase>process-resources</phase>
-                               <goals>
-                                   <goal>compile</goal>
-                               </goals>
-                               <configuration>
-                                   <outputStyle>${sakai.skin.outputStyle}</outputStyle>
-                                   <imgPath>${basedir}/src/${sakai.skin.gateway.source}/images/</imgPath>
-                                   <inputPath>${basedir}/src/${sakai.skin.gateway.source}/sass/</inputPath>
-                                   <outputPath>${basedir}/src/webapp/skin/${sakai.skin.gateway.target}</outputPath>
-                                   <includePath>${basedir}/src/${sakai.skin.gateway.source}/bootstrap-sass-${bootstrap-version}/assets/stylesheets/${path.separator}${basedir}/src/${sakai.skin.gateway.source}/font-awesome-sass-${font-awesome-version}/assets/stylesheets/</includePath>
-                                   <sourceMapOutputPath>${basedir}/src/webapp/skin/${sakai.skin.gateway.target}</sourceMapOutputPath>
-                               </configuration>
-                           </execution>
-                        </executions>
-                    </plugin>
+					<plugin>
+					   <groupId>com.gitlab.haynes</groupId>
+					   <artifactId>libsass-maven-plugin</artifactId>
+					   <version>0.2.26</version>
+					   <executions>
+					       <execution>
+					           <id>compile-sass</id>
+					           <phase>process-resources</phase>
+					           <goals>
+					               <goal>compile</goal>
+					           </goals>
+					           <configuration>
+					               <outputStyle>${sakai.skin.outputStyle}</outputStyle>
+					               <imgPath>${basedir}/src/${sakai.skin.source}/images/</imgPath>
+					               <inputPath>${basedir}/src/${sakai.skin.source}/sass/</inputPath>
+					               <outputPath>${basedir}/src/webapp/skin/${sakai.skin.target}</outputPath>
+					               <includePath>${basedir}/src/${sakai.skin.source}/bootstrap-sass-${bootstrap-version}/assets/stylesheets/${path.separator}${basedir}/src/${sakai.skin.source}/font-awesome-sass-${font-awesome-version}/assets/stylesheets/</includePath>
+					               <sourceMapOutputPath>${basedir}/src/webapp/skin/${sakai.skin.target}</sourceMapOutputPath>
+					           </configuration>
+					       </execution>
+					       <execution>
+					           <id>compile-gateway-sass</id>
+					           <phase>process-resources</phase>
+					           <goals>
+					               <goal>compile</goal>
+					           </goals>
+					           <configuration>
+					               <outputStyle>${sakai.skin.outputStyle}</outputStyle>
+					               <imgPath>${basedir}/src/${sakai.skin.gateway.source}/images/</imgPath>
+					               <inputPath>${basedir}/src/${sakai.skin.gateway.source}/sass/</inputPath>
+					               <outputPath>${basedir}/src/webapp/skin/${sakai.skin.gateway.target}</outputPath>
+					               <includePath>${basedir}/src/${sakai.skin.gateway.source}/bootstrap-sass-${bootstrap-version}/assets/stylesheets/${path.separator}${basedir}/src/${sakai.skin.gateway.source}/font-awesome-sass-${font-awesome-version}/assets/stylesheets/</includePath>
+					               <sourceMapOutputPath>${basedir}/src/webapp/skin/${sakai.skin.gateway.target}</sourceMapOutputPath>
+					           </configuration>
+					       </execution>
+					       <execution>
+					           <id>compile-online-sass</id>
+					           <phase>process-resources</phase>
+					           <goals>
+					               <goal>compile</goal>
+					           </goals>
+					           <configuration>
+					               <outputStyle>${sakai.skin.outputStyle}</outputStyle>
+					               <imgPath>${basedir}/src/${sakai.skin.online.source}/images/</imgPath>
+					               <inputPath>${basedir}/src/${sakai.skin.online.source}/sass/</inputPath>
+					               <outputPath>${basedir}/src/webapp/skin/${sakai.skin.online.target}</outputPath>
+					               <includePath>${basedir}/src/${sakai.skin.online.source}/bootstrap-sass-${bootstrap-version}/assets/stylesheets/${path.separator}${basedir}/src/${sakai.skin.online.source}/font-awesome-sass-${font-awesome-version}/assets/stylesheets/</includePath>
+					               <sourceMapOutputPath>${basedir}/src/webapp/skin/${sakai.skin.online.target}</sourceMapOutputPath>
+					           </configuration>
+					       </execution>
+					   </executions>
+					</plugin>
 					<plugin>
 						<artifactId>maven-clean-plugin</artifactId>
 						<version>3.1.0</version>
@@ -670,292 +779,8 @@
 								<fileset>
 									<directory>${basedir}/src/webapp/skin/${sakai.skin.gateway.target}</directory>
 								</fileset>
-							</filesets>
-						</configuration>
-					</plugin>
-					<plugin>
-						<groupId>com.coderplus.maven.plugins</groupId>
-						<artifactId>copy-rename-maven-plugin</artifactId>
-						<version>1.0</version>
-						<executions>
-							<execution>
-								<id>copy-customizations</id>
-								<phase>generate-resources</phase>
-								<goals>
-									<goal>copy</goal>
-								</goals>
-								<configuration>
-									<sourceFile>${sakai.skin.customization.file}</sourceFile>
-									<destinationFile>${basedir}/src/${sakai.skin.source}/sass/_customization.scss</destinationFile>
-								</configuration>
-							</execution>
-							<execution>
-								<!-- Copy customizations file from DEFAULT skin -->
-								<id>copy-gateway-master-customizations</id>
-								<phase>generate-resources</phase>
-								<goals>
-									<goal>copy</goal>
-								</goals>
-								<configuration>
-									<sourceFile>${sakai.skin.customization.file}</sourceFile>
-									<destinationFile>${basedir}/src/${sakai.skin.gateway.source}/sass/_master-customization.scss</destinationFile>
-								</configuration>
-							</execution>
-							<execution>
-								<!-- Copy customizations file from gateway skin -->
-								<id>copy-gateway-customizations</id>
-								<phase>generate-resources</phase>
-								<goals>
-									<goal>copy</goal>
-								</goals>
-								<configuration>
-									<sourceFile>${sakai.skin.gateway.customization.file}</sourceFile>
-									<destinationFile>${basedir}/src/${sakai.skin.gateway.source}/sass/_customization.scss</destinationFile>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-					<plugin>
-						<groupId>com.github.jknack</groupId>
-						<artifactId>handlebars-maven-plugin</artifactId>
-						<version>4.0.5</version>
-						<executions>
-							<execution>
-								<id>templates</id>
-								<phase>prepare-package</phase>
-								<goals>
-									<goal>precompile</goal>
-								</goals>
-								<configuration>
-									<output>${basedir}/src/webapp/templates.js</output>
-									<prefix>${basedir}/src/templates</prefix>
-									<amd>false</amd>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-		<profile>
-			<id>compile-unir-skin</id>
-			<activation>
-				<activeByDefault>true</activeByDefault>
-			</activation>
-			<properties>
-				<sakai.skin.source>morpheus-online</sakai.skin.source>
-				<sakai.skin.target>morpheus-online</sakai.skin.target>
-				<sakai.skin.customization.file>src/${sakai.skin.source}/sass/customization/_customization.scss</sakai.skin.customization.file>
-				<sakai.skin.outputStyle>compressed</sakai.skin.outputStyle>
-			</properties>
-			<build>
-				<plugins>
-					<plugin>
-						<artifactId>maven-resources-plugin</artifactId>
-						<executions>
-							<execution>
-								<id>copy-images</id>
-								<phase>compile</phase>
-								<goals>
-									<goal>copy-resources</goal>
-								</goals>
-								<configuration>
-									<outputDirectory>${basedir}/src/webapp/skin/${sakai.skin.target}/images/</outputDirectory>
-									<resources>
-										<resource>
-											<directory>src/${sakai.skin.source}/images/</directory>
-										</resource>
-									</resources>
-								</configuration>
-							</execution>
-							<execution>
-								<id>copy-js</id>
-								<phase>generate-resources</phase>
-								<goals>
-									<goal>copy-resources</goal>
-								</goals>
-								<configuration>
-									<outputDirectory>${basedir}/src/webapp/skin/${sakai.skin.target}/js/</outputDirectory>
-									<resources>
-										<resource>
-											<directory>src/${sakai.skin.source}/js/</directory>
-											<includes>
-												<include>lib/**/*.js</include>
-												<include>ie/**/*.js</include>
-											</includes>
-										</resource>
-									</resources>
-								</configuration>
-							</execution>
-							<execution>
-								<id>copy-fonts</id>
-								<phase>generate-resources</phase>
-								<goals>
-									<goal>copy-resources</goal>
-								</goals>
-								<configuration>
-									<outputDirectory>${basedir}/src/webapp/skin/${sakai.skin.target}/fonts/</outputDirectory>
-									<resources>
-										<resource>
-											<directory>${basedir}/src/${sakai.skin.source}/font-awesome-sass-${font-awesome-version}/assets/fonts/</directory>
-										</resource>
-										<resource>
-										  <directory>${basedir}/src/${sakai.skin.source}/bootstrap-sass-${bootstrap-version}/assets/fonts/</directory>
-										</resource>
-									</resources>
-								</configuration>
-							</execution>
-							<execution>
-								<id>copy-fonts-css</id>
-								<phase>generate-resources</phase>
-								<goals>
-									<goal>copy-resources</goal>
-								</goals>
-								<configuration>
-									<outputDirectory>${basedir}/src/webapp/skin/${sakai.skin.target}/font-awesome/</outputDirectory>
-									<resources>
-										<resource>
-											<directory>src/${sakai.skin.source}/fonts/</directory>
-											<includes>
-												<include>*.css</include>
-											</includes>
-										</resource>
-									</resources>
-								</configuration>
-							</execution>
-						</executions>
-                    </plugin>
-
-                    <plugin>
-                        <groupId>com.samaxes.maven</groupId>
-                        <artifactId>minify-maven-plugin</artifactId>
-                        <version>1.7.6</version>
-						<dependencies>
-							<!-- Must override this dependency, even though not declared (see MNG-6965) -->
-							<dependency>
-								<groupId>org.codehaus.plexus</groupId>
-								<artifactId>plexus-utils</artifactId>
-								<version>3.5.1</version>
-							</dependency>
-						</dependencies>
-						<executions>
-                            <execution>
-                                <id>default-minify</id>
-                                <configuration>
-                                    <charset>UTF-8</charset>
-                                    <webappSourceDir>${basedir}/src/${sakai.skin.source}</webappSourceDir>
-                                    <jsSourceDir>js/src/</jsSourceDir>
-                                    <jsIncludes>*.js</jsIncludes>
-                                    <jsTargetDir>skin/${sakai.skin.target}/js</jsTargetDir>
-                                    <jsFinalFile>morpheus.scripts.js</jsFinalFile>
-                                    <jsEngine>CLOSURE</jsEngine>
-                                </configuration>
-                                <goals><goal>minify</goal></goals>
-                            </execution>
-                            <execution>
-                                <id>elfinder-minify</id>
-                                <configuration>
-                                    <charset>UTF-8</charset>
-                                    <webappSourceDir>${basedir}/src/webapp</webappSourceDir>
-                                    <jsSourceDir>editor/elfinder/sakai/js/src/</jsSourceDir>
-                                    <jsSourceFiles>
-										<jsSourceFile>sakai.js</jsSourceFile>
-										<jsSourceFile>query.js</jsSourceFile>
-										<jsSourceFile>tools.js</jsSourceFile>
-										<jsSourceFile>ui.js</jsSourceFile>
-										<jsSourceFile>resizer.js</jsSourceFile>
-										<jsSourceFile>options.js</jsSourceFile>
-										<jsSourceFile>editors.js</jsSourceFile>
-										<jsSourceFile>confirm.js</jsSourceFile>
-										<jsSourceFile>i18n.js</jsSourceFile>
-										<jsSourceFile>init.js</jsSourceFile>
-                                    </jsSourceFiles>
-                                    <jsTargetDir>editor/elfinder/sakai/js</jsTargetDir>
-                                    <jsFinalFile>sakai-elfinder.js</jsFinalFile>
-                                    <jsEngine>CLOSURE</jsEngine>
-                                </configuration>
-                                <goals><goal>minify</goal></goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-					<plugin>
-						<groupId>com.google.code.maven-replacer-plugin</groupId>
-						<artifactId>replacer</artifactId>
-						<version>1.5.3</version>
-						<executions>
-							<execution>
-								<id>replace-for-custom-skin</id>
-								<phase>process-sources</phase>
-								<goals>
-									<goal>replace</goal>
-								</goals>
-								<configuration>
-									<ignoreMissingFile>false</ignoreMissingFile>
-                                    <file>${project.basedir}/src/morpheus-online/sass/_defaults.scss</file>
-									<replacements>
-										<replacement>
-											<token>morpheus-online</token>
-											<value>${sakai.skin.target}</value>
-										</replacement>
-									</replacements>
-								</configuration>
-							</execution>
-							<execution>
-								<id>revert-previous-replace</id>
-								<phase>package</phase>
-								<goals>
-									<goal>replace</goal>
-								</goals>
-								<configuration>
-									<ignoreMissingFile>false</ignoreMissingFile>
-                                    <file>${project.basedir}/src/morpheus-online/sass/_defaults.scss</file>
-									<replacements>
-										<replacement>
-											<token>${sakai.skin.target}</token>
-											<value>morpheus-online</value>
-										</replacement>
-									</replacements>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-					<plugin>
-					   <groupId>com.gitlab.haynes</groupId>
-					   <artifactId>libsass-maven-plugin</artifactId>
-					   <version>0.2.26</version>
-					   <executions>
-					       <execution>
-					           <phase>process-resources</phase>
-					           <goals>
-					               <goal>compile</goal>
-					           </goals>
-					       </execution>
-					   </executions>
-					   <configuration>
-					       <outputStyle>${sakai.skin.outputStyle}</outputStyle>
-					       <imgPath>${basedir}/src/${sakai.skin.source}/images/</imgPath>
-					       <inputPath>${basedir}/src/${sakai.skin.source}/sass/</inputPath>
-					       <outputPath>${basedir}/src/webapp/skin/${sakai.skin.target}</outputPath>
-					       <includePath>${basedir}/src/${sakai.skin.source}/bootstrap-sass-${bootstrap-version}/assets/stylesheets/${path.separator}${basedir}/src/${sakai.skin.source}/font-awesome-sass-${font-awesome-version}/assets/stylesheets/</includePath>
-					       <sourceMapOutputPath>${basedir}/src/webapp/skin/${sakai.skin.target}</sourceMapOutputPath>
-					   </configuration>
-					</plugin>
-					<plugin>
-						<artifactId>maven-clean-plugin</artifactId>
-						<version>3.1.0</version>
-						<executions>
-							<execution>
-								<id>remove-skin</id>
-								<phase>clean</phase>
-								<goals>
-									<goal>clean</goal>
-								</goals>
-							</execution>
-						</executions>
-						<configuration>
-							<filesets>
 								<fileset>
-									<directory>${basedir}/src/webapp/skin/${sakai.skin.target}</directory>
+									<directory>${basedir}/src/webapp/skin/${sakai.skin.online.target}</directory>
 								</fileset>
 							</filesets>
 						</configuration>
@@ -974,6 +799,28 @@
 								<configuration>
 									<sourceFile>${sakai.skin.customization.file}</sourceFile>
 									<destinationFile>${basedir}/src/${sakai.skin.source}/sass/_customization.scss</destinationFile>
+								</configuration>
+							</execution>
+							<execution>
+								<id>copy-gateway-customizations</id>
+								<phase>generate-resources</phase>
+								<goals>
+									<goal>copy</goal>
+								</goals>
+								<configuration>
+									<sourceFile>${sakai.skin.gateway.customization.file}</sourceFile>
+									<destinationFile>${basedir}/src/${sakai.skin.gateway.source}/sass/_customization.scss</destinationFile>
+								</configuration>
+							</execution>
+							<execution>
+								<id>copy-online-customizations</id>
+								<phase>generate-resources</phase>
+								<goals>
+									<goal>copy</goal>
+								</goals>
+								<configuration>
+									<sourceFile>${sakai.skin.online.customization.file}</sourceFile>
+									<destinationFile>${basedir}/src/${sakai.skin.online.source}/sass/_customization.scss</destinationFile>
 								</configuration>
 							</execution>
 						</executions>
