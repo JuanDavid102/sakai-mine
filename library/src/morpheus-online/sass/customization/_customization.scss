@@ -74,7 +74,7 @@ div#toolMenuWrap {
     @include defineColorHSL(--sakai-brand-dark, 216, 31%, 42%);
 
     // ----------------
-    --overview-portlet-title-background-color: var(--sakai-color-gray--darker-2);
+    --overview-portlet-title-background-color: #44546A;
     --overview-portlet-title-text-color: var(--sakai-text-color-3);
     
     // ----------------
@@ -310,10 +310,9 @@ div#toolMenuWrap {
 #loginImage {
     background-image: url(#{$skin-path}images/login_fondo.png);
     background-size: cover;
-    background-repeat: no-repeat;
-    background-position: left top;
+    background-position: right top;
     transition: background-position 0.1s ease; 
-    height: 66.35em;
+    flex: 1;
 }
 @media screen and (max-width: 1250px) {
     #loginImage {
@@ -322,4 +321,7 @@ div#toolMenuWrap {
 }
 body.portalBody.Mrphs-portalBody {
     padding: 0;
+    height: 100vh;
+    display: flex;
+    align-items: stretch;
 }
