@@ -1,6 +1,6 @@
 ##{$namespace}xlogin{
 	
-	width: 46em;
+	width: 40%;
 
 	background: var(--sakai-background-color-1);
 	div {
@@ -115,7 +115,7 @@
 		box-shadow: var(--elevation-8dp);
 	}
 
-	@media #{$phone}{
+	@media only screen and (max-width : 1250px){
 		width: 100%;
 		margin: 0;
 		right: 0;

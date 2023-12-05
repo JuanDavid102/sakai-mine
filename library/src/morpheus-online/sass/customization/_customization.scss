@@ -308,16 +308,13 @@ div#toolMenuWrap {
 
 // -- Login background Image
 #loginImage {
+    background-color: #0D536B;
     background-image: url(#{$skin-path}images/login_fondo.png);
-    background-size: cover;
+    background-size: contain;
     background-position: right top;
-    transition: background-position 0.1s ease; 
-    flex: 1;
-}
-@media screen and (max-width: 1250px) {
-    #loginImage {
-        background-position: right top; /* Cambia el porcentaje para ajustar el movimiento */
-    }
+    background-repeat: no-repeat;
+    transition: background-position 0.1s ease;
+    flex: 1
 }
 body.portalBody.Mrphs-portalBody {
     padding: 0;
