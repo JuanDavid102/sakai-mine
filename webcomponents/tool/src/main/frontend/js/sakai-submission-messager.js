@@ -1,6 +1,6 @@
-import {SakaiElement} from "./sakai-element.js";
+import { SakaiElement } from "./sakai-element.js";
+import { html } from "./assets/lit-element/lit-element.js";
 import { ifDefined } from "./assets/lit-html/directives/if-defined.js";
-import {html} from "./assets/lit-element/lit-element.js";
 import "./sakai-group-picker.js";
 
 class SakaiSubmissionMessager extends SakaiElement {

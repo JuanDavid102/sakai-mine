@@ -18,6 +18,7 @@ export class SakaiPageableElement extends LitElement {
   constructor() {
 
     super();
+    this.count = 0;
     this.pageSize = 5;
     this.currentPage = 1;
     this.allDataAtOnce = true;

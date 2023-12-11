@@ -161,7 +161,8 @@ export class SakaiHomeDashboard extends LitElement {
               site-id=""
               user-id="${ifDefined(this.userId ? this.userId : "")}"
               columns="2"
-              ?editing=${this.editing}> </sakai-widget-panel>
+              ?editing=${this.editing}>
+            </sakai-widget-panel>
           </div>
         </div>
       </div>
