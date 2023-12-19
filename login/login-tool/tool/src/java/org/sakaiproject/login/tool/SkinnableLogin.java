@@ -459,7 +459,10 @@ public class SkinnableLogin extends HttpServlet implements Login {
 		String loginPaymentPortalUrl = serverConfigurationService.getString("login.contact.url", null);
 		String loginContactUrl = serverConfigurationService.getString("login.payment.url", null);
 		
+		String eidText = rb.getString("log.rut.text");
+		String eidSpecialText = rb.getString("log.rut.special.text");
 		String eidWording = rb.getString("userid");
+		String pwText = rb.getString("log.pass.text");
 		String pwWording = rb.getString("log.pass");
 		String loginRequired = rb.getString("log.logreq");
 		String loginWording = rb.getString("log.login");
@@ -478,8 +481,11 @@ public class SkinnableLogin extends HttpServlet implements Login {
 		rcontext.put("uiService", uiService);
 		rcontext.put("pageScriptPath", getScriptPath());
 		rcontext.put("pageWebjarsPath", getWebjarsPath());
+		rcontext.put("loginEidSpecialText", eidSpecialText);
+		rcontext.put("loginEidText", eidText);
 		rcontext.put("loginEidWording", eidWording);
 		rcontext.put("loginPwWording", pwWording);
+		rcontext.put("loginPwText", pwText);
 		rcontext.put("loginRequired", loginRequired);
 		rcontext.put("loginWording", loginWording);
 		rcontext.put("cancelWording", cancelWording);
