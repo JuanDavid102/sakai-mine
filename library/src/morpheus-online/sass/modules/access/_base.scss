@@ -58,22 +58,18 @@
     	text-align: center;
 		padding: 1em;
 		label{
-			font-size: 1.1em;
-			display: inline-grid;
-			min-width: 25%;
+			font-size: 1.2em;
+			display: inline-block;
+			min-width: 38%;
 			min-height: 3em;
 			@media #{$phone}{
 				display: block;
 				min-height: 0.5em;
-				margin-top: 10px
-			}
-			span.smallText {
-				font-size: 0.7em;
 			}
 		}
 		input[type="text"],input[type="password"]{
 			display: inline-block;
-			min-width: 55%;
+			min-width: 67%;
 			background-color: var(--input-placeholder-background-color);
 			border: 1px solid var(--sakai-border-color);
     		margin: 10px;
