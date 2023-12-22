@@ -725,7 +725,7 @@ public class SubmitToGradingActionListener implements ActionListener {
 				String s = itemgrading.getAnswerText();
 				if (itemgrading.getItemGradingId() != null
 						&& itemgrading.getItemGradingId().intValue() > 0) {
-					if (("1".equals(delivery.getNavigation()) || item.isTimedQuestion()) && itemgrading.getPublishedAnswerId()==null && StringUtils.isBlank(s)) {
+					if (("1".equals(delivery.getNavigation()) || (item.isTimedQuestion() || delivery.isTrackingQuestions())) && itemgrading.getPublishedAnswerId()==null && StringUtils.isBlank(s)) {
 						//Mark this as the fake itemgrading record
 						fakeitemgrading=m;	 
 				    } else {
@@ -792,7 +792,7 @@ public class SubmitToGradingActionListener implements ActionListener {
 						itemgrading.setSubmittedDate(new Date());
 						adds.add(itemgrading);
 						log.debug("adding answer: " + itemgrading.getItemGradingId());
-					} else if(!item.isTimedQuestion() || grading.size() > 1){
+					} else if((!item.isTimedQuestion() && !delivery.isTrackingQuestions()) || grading.size() > 1){
 						removes.add(itemgrading);
 						log.debug("remove answer: " + itemgrading.getItemGradingId());
 					}
@@ -811,7 +811,7 @@ public class SubmitToGradingActionListener implements ActionListener {
 			// We need to remove any answer (response) items in the storage that are not in the above lists
 			removes.addAll(identifyOrphanedEMIAnswers(grading, publishedItemId, assessmentGradingId));
 
-			if(item.isTimedQuestion() && grading.size() == 0) {
+			if((item.isTimedQuestion() || delivery.isTrackingQuestions()) && grading.size() == 0) {
 				log.debug("Create a new (fake) ItemGradingData");
 				ItemGradingData itemGrading = new ItemGradingData();
 				itemGrading.setAssessmentGradingId(assessmentGradingId);
@@ -922,7 +922,7 @@ public class SubmitToGradingActionListener implements ActionListener {
 			}
 		}
 		
-		if(item.isTimedQuestion()) {
+		if((item.isTimedQuestion() || delivery.isTrackingQuestions())) {
 			adds.stream().forEach(itemGrading -> itemGrading.setAttemptDate(item.getAttemptDate()));
 		}
 		alladds.addAll(adds);

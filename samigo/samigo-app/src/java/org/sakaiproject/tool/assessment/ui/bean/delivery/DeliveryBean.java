@@ -336,6 +336,7 @@ public class DeliveryBean implements Serializable {
   private String takenHours;
   @Getter @Setter
   private String takenMinutes;
+  @Getter
   private AssessmentGradingData adata;
   @Getter
   private PublishedAssessmentFacade publishedAssessment;
@@ -454,6 +455,8 @@ public class DeliveryBean implements Serializable {
   private boolean firstTimeTaking;
   @Setter
   private boolean timeExpired = false;
+  @Setter @Getter
+  private boolean trackingQuestions = false;
   @Getter @Setter
   private long lastTimer=0;
 
@@ -1140,6 +1143,11 @@ public class DeliveryBean implements Serializable {
   }
   
   public String autoSave() {
+    System.out.println("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB");
+    System.out.println("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB");
+    System.out.println(this.actionMode);
+    System.out.println("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB");
+    System.out.println("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB");
 	  skipFlag = true;
 	  return saveWork();
   }
@@ -1924,6 +1932,7 @@ public class DeliveryBean implements Serializable {
 	         if (log.isDebugEnabled()) {
 	            log.debug("aData is null for actionString"+actionString);
 	         }
+           System.out.println("Ha entrado aqui");
 	         return;
 	      }
 	        int timeElapsed  = Math.round((new Date().getTime() - adata.getAttemptDate().getTime())/1000.0f);
@@ -2640,7 +2649,6 @@ public class DeliveryBean implements Serializable {
             }
             item.setReview(false);
             item.setRationale("");
-            
             for (ItemGradingData itemgrading : item.getItemGradingDataArray()) {
             	itemgrading.setAttemptDate(item.getAttemptDate());
             }
@@ -2767,6 +2775,10 @@ public class DeliveryBean implements Serializable {
     }
     
     public Boolean isTrackingQuestions() {
+    	return Boolean.valueOf(publishedAssessment.getAssessmentMetaDataByLabel(AssessmentMetaDataIfc.TRACK_QUESTIONS));
+    }
+
+    public Boolean getTrackingQuestions() {
     	return Boolean.valueOf(publishedAssessment.getAssessmentMetaDataByLabel(AssessmentMetaDataIfc.TRACK_QUESTIONS));
     }
 }

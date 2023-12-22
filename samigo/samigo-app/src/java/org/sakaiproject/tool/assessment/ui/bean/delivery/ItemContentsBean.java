@@ -1751,6 +1751,7 @@ public class ItemContentsBean implements Serializable {
 		DeliveryBean dbean = (DeliveryBean) ContextUtil.lookupBean("delivery");
 		//TODO: dbean.isTracking o algo así
 //		return Boolean.parseBoolean(itemData.getItemMetaDataByLabel(ItemMetaDataIfc.TRACKING));
+		System.out.println("attempDate?:"+ (dbean.getAdata() != null? dbean.getAdata().getAttemptDate() : "is null"));
 		System.out.println("IS tracking?:"+ dbean.isTrackingQuestions());
 		return dbean.isTrackingQuestions();
 	}
@@ -1850,9 +1851,21 @@ public class ItemContentsBean implements Serializable {
 		
 		Iterator<ItemGradingData> iter = getItemGradingDataArray().iterator();
 		ItemGradingData itemGradingData = null;
+		System.out.println("1");
+		System.out.println("1");
+		System.out.println("1");
+		System.out.println("1");
 		if (iter.hasNext()) {
+			System.out.println("2");
+			System.out.println("2");
+			System.out.println("2");
+			System.out.println("2");
 			itemGradingData = iter.next();
 		} else {
+			System.out.println("3");
+			System.out.println("3");
+			System.out.println("3");
+			System.out.println("3");
 			itemGradingData = new ItemGradingData();
 			itemGradingData.setAssessmentGradingId(delivery.getAssessmentGradingId());
 			itemGradingData.setPublishedItemId(itemData.getItemId());
@@ -1865,7 +1878,15 @@ public class ItemContentsBean implements Serializable {
 		}
 		
 		attemptDate = itemGradingData.getAttemptDate();
+		System.out.println("4");
+		System.out.println("4");
+		System.out.println("4");
+		System.out.println("4");
 		if(attemptDate == null) {
+			System.out.println("5");
+			System.out.println("5");
+			System.out.println("5");
+			System.out.println("5");
 			attemptDate = new Date();
 			itemGradingData.setAttemptDate(attemptDate);
 		}
