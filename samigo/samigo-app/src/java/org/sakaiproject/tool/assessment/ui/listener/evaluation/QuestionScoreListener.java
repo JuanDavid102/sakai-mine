@@ -934,35 +934,11 @@ import org.sakaiproject.tool.assessment.data.ifc.shared.TypeIfc;
 						results.setFullAnswer(fullAnswerText);
 						results.setRationale(rationale);
 						results.setSubmittedDate(gdata.getSubmittedDate());
+						System.out.println("----------------");
+						System.out.println("getSubmittedDate: " + (gdata.getSubmittedDate()) + "|getAttemptDate:" + (gdata.getAttemptDate()));
 						if(gdata.getSubmittedDate() != null && gdata.getAttemptDate() != null) {
 							results.setTimeElapsed((int)((gdata.getSubmittedDate().getTime() - gdata.getAttemptDate().getTime())/1000));
-							System.out.println();
-							System.out.println();
-							System.out.println();
-							System.out.println();
-							System.out.println();
-							System.out.println();
-							System.out.println("getSubmittedDate: " + (gdata.getSubmittedDate()) + "|getAttemptDate:" + (gdata.getAttemptDate()));
-							System.out.println();
-							System.out.println();
-							System.out.println();
-							System.out.println();
-							System.out.println();
-							System.out.println();
 						} else {
-							System.out.println();
-							System.out.println();
-							System.out.println();
-							System.out.println();
-							System.out.println();
-							System.out.println();
-							System.out.println("getSubmittedDate es null: " + (gdata.getSubmittedDate() != null) + "|getAttemptDate es null:" + (gdata.getAttemptDate() != null));
-							System.out.println();
-							System.out.println();
-							System.out.println();
-							System.out.println();
-							System.out.println();
-							System.out.println();
 							results.setTimeElapsed(0);
 						}
 

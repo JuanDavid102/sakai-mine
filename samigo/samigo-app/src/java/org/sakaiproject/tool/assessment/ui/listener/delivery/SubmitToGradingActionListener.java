@@ -605,6 +605,11 @@ public class SubmitToGradingActionListener implements ActionListener {
 		List<ItemGradingData> grading = item.getItemGradingDataArray();
 		int typeId = item.getItemData().getTypeId().intValue();
 		HashSet<ItemGradingData> adds = new HashSet<>();
+		System.out.println("Entre aqui we");
+		System.out.println("Entre aqui we");
+		System.out.println();
+		System.out.println("Entre aqui we");
+		System.out.println("Entre aqui we");
 		
 		//no matter what kinds of type questions, if it marks as review or has attempt date, add it in.
 		for (int m = 0; m < grading.size(); m++) {
@@ -827,13 +832,21 @@ public class SubmitToGradingActionListener implements ActionListener {
 		case 6: // File Upload
 		case 7: // Audio
 			GradingService gradingService = new GradingService();
+					System.out.println("Deberia.-2");
 			for (int m = 0; m < grading.size(); m++) {
 				ItemGradingData itemgrading = grading.get(m);
+					System.out.println("Deberia.-1");
 				if (itemgrading.getItemGradingId() != null && itemgrading.getItemGradingId().intValue() > 0) {
 					List<MediaData> medias = gradingService.getMediaArray2(itemgrading.getItemGradingId().toString());
 					for(MediaData md : medias) { 
 						delivery.getSubmissionFiles().put(itemgrading.getItemGradingId()+"_"+md.getMediaId(), md);
 					}
+					System.out.println("Deberia.0");
+					System.out.println("Deberia.0");
+					itemgrading.setSubmittedDate(new Date());
+					System.out.println("Deberia. " + itemgrading.getSubmittedDate());
+					System.out.println("Deberia. " + grading.get(m).getSubmittedDate());
+					grading.set(m, itemgrading);
 				}
 			}
 			handleMarkForReview(grading, adds);
@@ -923,7 +936,10 @@ public class SubmitToGradingActionListener implements ActionListener {
 		}
 		
 		if((item.isTimedQuestion() || delivery.isTrackingQuestions())) {
-			adds.stream().forEach(itemGrading -> itemGrading.setAttemptDate(item.getAttemptDate()));
+			adds.stream().forEach(itemGrading -> {
+				itemGrading.setAttemptDate(item.getAttemptDate());
+				itemGrading.setSubmittedDate(item.getSubmittedDate());
+			});
 		}
 		alladds.addAll(adds);
 	}
@@ -967,10 +983,14 @@ public class SubmitToGradingActionListener implements ActionListener {
     
     private void handleMarkForReview(List<ItemGradingData> grading, HashSet<ItemGradingData> adds){
       for (int m = 0; m < grading.size(); m++) {
+		System.out.println("00000000");
+		System.out.println("00000000");
         ItemGradingData itemgrading = grading.get(m);
         if (itemgrading.getItemGradingId() != null 
             && itemgrading.getItemGradingId().intValue() > 0
             && itemgrading.getReview() != null)  {
+		System.out.println("11111111");
+		System.out.println("11111111");
             // we will save itemgrading even though answer was not modified 
             // 'cos mark for review may have been modified
           adds.add(itemgrading);
