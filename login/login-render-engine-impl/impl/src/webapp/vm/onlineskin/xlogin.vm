@@ -31,9 +31,6 @@
                 </div>
             </div>
             <aside class="logo"></aside>
-            #if (${xloginChoice})
-                <div class="xloginMessage">${xloginChoice}&nbsp;<a href="${loginContainerUrl}">${containerText}</a></div>
-            #end
             #if (${notify})
         		<div class="alertMessage" role="alert">${notify}</div>
         	#end
@@ -44,6 +41,9 @@
     			#if (${loginAdvice})
     				<aside>${loginAdvice}</aside>
     			#end
+				#if (${xloginChoice})
+					<p class="passwordReset"><a href="${loginContainerUrl}">${containerText}</a></div>
+				#end
     			#if (${passwordResetUrl})
     				<p class="passwordReset">
     					<a href="${passwordResetUrl}">${passwordResetWording}</a>
