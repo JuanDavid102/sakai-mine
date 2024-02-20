@@ -38,6 +38,8 @@
 			</p>
 			<button id="shiftAllDates" th:text="#{dateshifter.all.button}" disabled></button>
 			<button id="shiftVisibleDates" th:text="#{dateshifter.visible.button}" disabled></button>
+			<a id="exportDates" class="btn btn-default" th:text="#{dateshifter.export.dates.csv}" th:href="@{/date-manager/export}">Export Dates</a>
+			<a id="importDates" class="btn btn-default" th:text="#{dateshifter.import.dates.csv}" th:href="@{/date-manager/page/import}">Import Dates</a>
 		</div>
 
 		<form class="panel-group" id="date-manager-form" method="POST">
@@ -334,9 +336,9 @@
 						var announcementsStr = JSON.stringify(updates.announcementsUpd.filter(el=>el));
 						var lessonsStr = JSON.stringify(updates.lessonsUpd.filter(el=>el));
 						var json = '{"assignments": ' + assignmentsStr + ', "assessments": ' + assessmentsStr + ', "gradebookItems": ' + gradebookStr + ', "signupMeetings": ' + signupStr + ', "resources": ' + resourcesStr + ', "calendarEvents": ' + calendarStr + ', "forums": ' + forumsStr + ', "announcements": ' + announcementsStr + ', "lessons": ' + lessonsStr + '}';
-
+						let futureLocation = ((window.location.href.length - 1) == window.location.href.lastIndexOf("/"))? window.location + 'date-manager/update' : window.location + '/date-manager/update';
 						$.ajax({
-							url: window.location + '/date-manager/update',
+							url: futureLocation,
 							processData: false,
 							dataType : 'json',
 							contentType: 'application/json; charset=utf-8',
@@ -358,6 +360,13 @@
 					$('#datemanager-cancel').click(function(e) {
 						e.preventDefault;
 						window.location = window.location.href.replace('/sakai.datemanager.helper', '');
+					});
+
+					$('#exportDates').click(function(e) {
+						$.ajax({
+							url: window.location + '/date-manager/export',
+							method: 'GET'
+						});
 					});
 				});
 			/*]]>*/

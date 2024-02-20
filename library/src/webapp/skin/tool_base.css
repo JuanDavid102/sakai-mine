@@ -906,3 +906,12 @@ blockquote p {
 	opacity: 1;
 	border-color: var(--sakai-background-color-1);
 }
+.pr-20 {
+	padding-right: 20px;
+}
+a.btn.btn-default {
+	vertical-align: initial;
+}
+a#datemanager-cancel {
+	margin-top: 4px;
+}
