@@ -46,7 +46,19 @@
     					<a href="${passwordResetUrl}">${passwordResetWording}</a>
     				</p>
     			#end
+    			<p class="buttons">
+    			#if (${doCancel})
+    				<input name="submit" type="submit" id="submit" class="loginsubmit" value="${loginWording}"/>
+    			#else
+    				<input name="submit" type="submit" id="submit" value="${loginWording}"/>
+    			#end
+    			</p>
+
 				#if (${xloginChoice})
+					<div>
+						<hr class="logins-separator">
+						<hr class="logins-separator">
+					</div>
 					<p class="passwordReset"><a href="${loginContainerUrl}"></a></div>
 					<div class="office-365-container">
 						<a class="loginOffice365" id="submitForOffice365" href="${loginContainerUrl}">
@@ -55,13 +67,6 @@
 						</a>
 					</div>
 				#end
-    			<p class="buttons">
-    			#if (${doCancel})
-    				<input name="submit" type="submit" id="submit" class="loginsubmit" value="${loginWording}"/>
-    			#else
-    				<input name="submit" type="submit" id="submit" value="${loginWording}"/>
-    			#end
-    			</p>
     		</fieldset>
     	</form>
     	#set ( $d = "$")
