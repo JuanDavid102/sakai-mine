@@ -1,10 +1,11 @@
 import { RubricsElement } from "./RubricsElement.js";
 import { html, nothing } from "lit";
+import { rubricsApiMixin } from "./SakaiRubricsApiMixin.js";
 import "../sakai-rubric-criterion-preview.js";
 import "../sakai-rubric-criterion-student.js";
 import "../sakai-rubric-pdf.js";
 
-export class SakaiRubricStudent extends RubricsElement {
+export class SakaiRubricStudent extends rubricsApiMixin(RubricsElement) {
 
   static properties = {
 
@@ -12,7 +13,7 @@ export class SakaiRubricStudent extends RubricsElement {
     toolId: { attribute: "tool-id", type: String },
     siteId: { attribute: "site-id", type: String },
     preview: { type: Boolean },
-    instructor: { type: Boolean },
+    instructor: { type: String },
     evaluatedItemId: { attribute: "evaluated-item-id", type: String },
     evaluatedItemOwnerId: { attribute: "evaluated-item-owner-id", type: String },
     rubricId: { attribute: "rubric-id", type: String },
@@ -30,6 +31,7 @@ export class SakaiRubricStudent extends RubricsElement {
     this.setRubricRequirements = [ "site-id", "rubric-id", "preview" ];
 
     this.options = {};
+    this.instanceSalt = Math.floor(Math.random() * Date.now());
   }
 
   get dynamic () { return this.options?.["rbcs-associate"] == 2 ?? false; }
@@ -65,10 +67,9 @@ export class SakaiRubricStudent extends RubricsElement {
   render() {
 
     console.debug("SakaiRubricStudent.render");
+    const isInstructor = this.instructor && this.instructor === "true";
 
     return html`
-      <hr class="itemSeparator" />
-
       <div class="rubric-details student-view">
         ${!this.dynamic ? html`
           <h3>
@@ -86,24 +87,24 @@ export class SakaiRubricStudent extends RubricsElement {
           </h3>
         ` : nothing }
 
-        ${this.instructor === "true" ? html`
+        ${isInstructor ? html`
         <div class="rubrics-tab-row">
           <a href="javascript:void(0);"
-              id="rubric-grading-or-preview-button"
+              id="rubric-grading-or-preview-${this.instanceSalt}-button"
               class="rubrics-tab-button rubrics-tab-selected"
               @keypress=${this.openGradePreviewTab}
               @click=${this.openGradePreviewTab}>
             ${this._i18n.grading_rubric}
           </a>
           <a href="javascript:void(0);"
-              id="rubric-student-summary-button"
+              id="rubric-student-summary-${this.instanceSalt}-button"
               class="rubrics-tab-button"
               @keypress=${this.makeStudentSummary}
               @click=${this.makeStudentSummary}>
             ${this._i18n.student_summary}
           </a>
           <a href="javascript:void(0);"
-              id="rubric-criteria-summary-button"
+              id="rubric-criteria-summary-${this.instanceSalt}-button"
               class="rubrics-tab-button"
               @keypress=${this.makeCriteriaSummary}
               @click=${this.makeCriteriaSummary}>
@@ -112,7 +113,7 @@ export class SakaiRubricStudent extends RubricsElement {
         </div>
         ` : nothing }
 
-        <div id="rubric-grading-or-preview" class="rubric-tab-content rubrics-visible">
+        <div id="rubric-grading-or-preview-${this.instanceSalt}" class="rubric-tab-content rubrics-visible">
           ${this.preview || this.forcePreview ? html`
           <sakai-rubric-criterion-preview .criteria=${this._rubric.criteria}
             ?weighted=${this._rubric.weighted}>
@@ -156,93 +157,86 @@ export class SakaiRubricStudent extends RubricsElement {
     console.debug("SakaiRubricStudent.init");
 
     // First, grab the tool association
-    const url = `/api/sites/${this.siteId}/rubric-associations/tools/${this.toolId}/items/${this.entityId}`;
+    this.apiGetAssociation()
+      .then(association => {
 
-    fetch(url, { credentials: "include", headers: { "Content-Type": "application/json" } })
-    .then(r => {
+        if (association) {
+          this.association = association;
+          this.options = association.parameters;
+          const rubricId = association.rubricId;
 
-      if (r.ok) {
-        return r.json();
-      }
-      throw new Error("Network error while getting association");
-    })
-    .then(association => {
+          // Now, get the rubric
+          const rubricUrl = `/api/sites/${association.siteId}/rubrics/${rubricId}`;
+          fetch(rubricUrl, {
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+          })
+          .then(r => {
 
-      if (association) {
-        this.association = association;
-        this.options = association.parameters;
-        const rubricId = association.rubricId;
-
-        // Now, get the rubric
-        const rubricUrl = `/api/sites/${association.siteId}/rubrics/${rubricId}`;
-        fetch(rubricUrl, {
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-        })
-        .then(r => {
-
-          if (r.ok) {
-            return r.json();
-          }
-          throw new Error("Server error while getting rubric");
-        })
-        .then(rubric => {
-
-          if (this.evaluatedItemId) {
-            // Now, get the evaluation
-            let evalUrl = `/api/sites/${association.siteId}/rubric-evaluations/tools/${this.toolId}/items/${this.entityId}/evaluations/${this.evaluatedItemId}/owners/${this.evaluatedItemOwnerId}`;
-            if (this.isPeerOrSelf) {
-              //for permission filters
-              evalUrl += "?isPeer=true";
+            if (r.ok) {
+              return r.json();
             }
-            fetch(evalUrl, {
-              credentials: "include",
-              headers: { "Content-Type": "application/json" },
-            })
-            .then(r => {
+            throw new Error("Server error while getting rubric");
+          })
+          .then(rubric => {
 
-              if (r.ok) {
-                return r.json();
+            if (this.evaluatedItemId) {
+              // Now, get the evaluation
+              let evalUrl = `/api/sites/${association.siteId}/rubric-evaluations/tools/${this.toolId}/items/${this.entityId}/evaluations/${this.evaluatedItemId}/owners/${this.evaluatedItemOwnerId}`;
+              if (this.isPeerOrSelf) {
+                //for permission filters
+                evalUrl += "?isPeer=true";
               }
+              fetch(evalUrl, {
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+              })
+              .then(r => {
 
-              if (r.status !== 404) {
-                throw new Error("Server error while getting evaluation");
-              }
-            })
-            .then(evaluation => {
+                if (r.status === 200) {
+                  return r.json();
+                }
 
-              if (evaluation) {
-                this.evaluation = evaluation;
-                this.preview = false;
-              } else {
-                this.evaluation = { criterionOutcomes: [] };
-                this.preview = true;
-              }
+                if (r.status !== 204) {
+                  throw new Error(`Network error while getting evaluation at ${evalUrl}`);
+                }
 
-              // Set the rubric, thus triggering a render
+                return null;
+              })
+              .then(evaluation => {
+
+                if (evaluation) {
+                  this.evaluation = evaluation;
+                  this.preview = false;
+                } else {
+                  this.evaluation = { criterionOutcomes: [] };
+                  this.preview = true;
+                }
+
+                // Set the rubric, thus triggering a render
+                this._rubric = rubric;
+              })
+              .catch (error => console.error(error));
+            } else {
+              this.evaluation = { criterionOutcomes: [] };
+              this.preview = true;
               this._rubric = rubric;
-            })
-            .catch (error => console.error(error));
-          } else {
-            this.evaluation = { criterionOutcomes: [] };
-            this.preview = true;
-            this._rubric = rubric;
-          }
-        })
-        .catch (error => console.error(error));
+            }
+          })
+          .catch (error => console.error(error));
 
-        if (this.options.hideStudentPreview == null) {
-          this.options.hideStudentPreview = false;
+          if (this.options.hideStudentPreview == null) {
+            this.options.hideStudentPreview = false;
+          }
         }
-      }
-    })
-    .catch (error => console.error(error));
+      })
+      .catch (error => console.error(error));
   }
 
   openGradePreviewTab(e) {
 
     e.stopPropagation();
-    this.openRubricsTab("rubric-grading-or-preview");
+    this.openRubricsTab(`rubric-grading-or-preview-${this.instanceSalt}`);
   }
 
   makeStudentSummary(e) {

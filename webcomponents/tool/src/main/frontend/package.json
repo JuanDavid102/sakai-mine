@@ -3,18 +3,14 @@
   "version": "1.0.0",
   "description": "Sakai Element",
   "main": "js/sakai-element.js",
-  "workspaces": [ "./packages/*" ],
+  "workspaces": [
+    "./packages/*"
+  ],
   "scripts": {
-    "lint": "eslint --fix packages/**/src/*.js",
-    "bundle": "esbuild bundle-entry-points/* --preserve-symlinks --bundle --splitting --format=esm --outdir=bundles --minify",
-    "analyze-bundle": "esbuild bundle-entry-points/* --preserve-symlinks --splitting --bundle --metafile=meta.json --format=esm --outdir=bundles --minify",
-    "analyze": "lit-analyzer --strict --quiet --rules.no-complex-attribute-binding=warning --rules.no-incompatible-type-binding=off packages/**/src/*.js"
-  },
-  "lint-staged": {
-    "**/packages/**/src/*.js": [
-      "npx eslint --fix",
-      "npx lit-analyzer --rules.no-incompatible-type-binding off --rules.no-nullable-attribute-binding off"
-    ]
+    "lint": "eslint \"packages/**/src/*.js\"",
+    "bundle": "esbuild \"bundle-entry-points/*.js\" --preserve-symlinks --bundle --splitting --format=esm --outdir=bundles --minify",
+    "analyze-bundle": "esbuild \"bundle-entry-points/*.js\" --preserve-symlinks --splitting --bundle --metafile=meta.json --format=esm --outdir=bundles --minify",
+    "analyze": "lit-analyzer --strict --quiet --rules.no-complex-attribute-binding=warning --rules.no-incompatible-type-binding=off \"packages/**/src/*.js\""
   },
   "keywords": [],
   "author": "",
@@ -51,16 +47,16 @@
     "@sakai-ui/sakai-tasks": "file:packages/sakai-tasks",
     "@sakai-ui/sakai-user-photo": "file:packages/sakai-user-photo",
     "@sakai-ui/sakai-widgets": "file:packages/sakai-widgets",
-    "esbuild": "^0.18.11",
+    "esbuild": "^0.20.2",
     "eslint": "^8.53.0",
     "eslint-plugin-html": "^7.1.0",
     "eslint-plugin-lit": "^1.10.1",
     "eslint-plugin-wc": "^2.0.4",
-    "get-browser-fingerprint": "^3.0.0",
     "husky": "^8.0.3",
     "imagesloaded": "^5.0.0",
     "lint-staged": "^15.1.0",
     "lit-analyzer": "^2.0.2",
+    "npx": "^10.2.2",
     "sortablejs": "^1.15.0",
     "temporal-polyfill": "^0.2.0"
   },

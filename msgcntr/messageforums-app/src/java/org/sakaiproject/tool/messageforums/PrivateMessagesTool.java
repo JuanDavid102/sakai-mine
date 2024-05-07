@@ -1377,20 +1377,21 @@ public void processChangeSelectView(ValueChangeEvent eve)
 	StringBuilder replyText = new StringBuilder();
     
     // populate replyToBody with the reply text
-	replyText.append("<br /><br />");
+	replyText.append("<p></p><p></p>");
 	replyText.append("<span style=\"font-weight:bold;font-style:italic;\">");
 	replyText.append(getResourceBundleString("pvt_msg_on"));
 	replyText.append(" " + formattedCreateDate + " ");
 	replyText.append(getResourceBundleString("pvt_msg_at"));
 	replyText.append(" " +formattedCreateTime);
 	replyText.append(getResourceBundleString("pvt_msg_comma"));
-    replyText.append(" " + formattedText.escapeHtml(pm.getAuthor(), false) + " ");
-    replyText.append(getResourceBundleString("pvt_msg_wrote")); 
+	replyText.append(" " + formattedText.escapeHtml(pm.getAuthor(), false) + " ");
+	replyText.append(getResourceBundleString("pvt_msg_wrote")); 
 	replyText.append("</span>");
     	
     String origBody = pm.getBody();
     if (origBody != null && origBody.trim().length() > 0) {
-    	replyText.append("<br />" + pm.getBody() + "<br />");
+    	replyText.append("<p></p>");
+    	replyText.append(pm.getBody());
     }
     
     List attachList = getDetailMsg().getAttachList();
@@ -1445,16 +1446,32 @@ public void processChangeSelectView(ValueChangeEvent eve)
 		StringBuilder forwardedText = new StringBuilder();
 	    
 	    // populate replyToBody with the forwarded text
-		forwardedText.append(getResourceBundleString("pvt_msg_fwd_heading") + "<br /><br />" +
-	    	getResourceBundleString("pvt_msg_fwd_authby", new Object[] {formattedText.escapeHtml(pm.getAuthor(), false), formattedCreateDate}) +  "<br />" +
-	    	getResourceBundleString("pvt_msg_fwd_to", new Object[] {pm.getRecipientsAsText()}) + "<br />" +
-	    	getResourceBundleString("pvt_msg_fwd_subject", new Object[] {pm.getTitle()}) + "<br />" +
-	    	getResourceBundleString("pvt_msg_fwd_label", new Object[] {getDetailMsg().getLabel()}) + "<br />");
+		forwardedText.append(getResourceBundleString("pvt_msg_fwd_heading") + "<br /><br />");
+		forwardedText.append("<strong>");
+		forwardedText.append(getResourceBundleString("pvt_msg_fwd_authby"));
+		forwardedText.append("</strong>");
+		forwardedText.append(" " + formattedText.escapeHtml(pm.getAuthor(), false));
+		forwardedText.append(" (" + formattedCreateDate + ")<br />");
+		forwardedText.append("<strong>");
+		forwardedText.append(getResourceBundleString("pvt_msg_fwd_to"));
+		forwardedText.append("</strong>");
+		forwardedText.append(" " + pm.getRecipientsAsText() + "<br />");
+		forwardedText.append("<strong>");
+		forwardedText.append(getResourceBundleString("pvt_msg_fwd_subject"));
+		forwardedText.append("</strong>");
+		forwardedText.append(" " + pm.getTitle() + "<br />");
+		forwardedText.append("<strong>");
+		forwardedText.append(getResourceBundleString("pvt_msg_fwd_label"));
+		forwardedText.append("</strong>");
+		forwardedText.append(" " + getDetailMsg().getLabel());
 	    
 	    List attachList = getDetailMsg().getAttachList();
 	    if (CollectionUtils.isNotEmpty(attachList)) {
-	    	forwardedText.append(getResourceBundleString("pvt_msg_fwd_attachments") + "<br />");
-	    	forwardedText.append("<ul style=\"list-style-type:none;margin:0;padding:0;padding-left:0.5em;\">");
+	    	forwardedText.append("<div>");
+	    	forwardedText.append("<strong>");
+	    	forwardedText.append(getResourceBundleString("pvt_msg_fwd_attachments"));
+	    	forwardedText.append("</strong>");
+	    	forwardedText.append("<ul style=\"list-style-type:none;margin-bottom:1.0em;margin-left:0;margin-right:0;margin-top:0;padding-left:0.5em;padding:0\">");
 	    	for (DecoratedAttachment decoAttach : (List<DecoratedAttachment>) attachList ) {
 	    		if (decoAttach != null) {
 	    			forwardedText.append("<li>");
@@ -1482,9 +1499,11 @@ public void processChangeSelectView(ValueChangeEvent eve)
 	    		}
 	    	}
 	    	forwardedText.append("</ul>");
+	    	forwardedText.append("</div>");
 	    }
 	    String origBody = pm.getBody();
 	    if (origBody != null && origBody.trim().length() > 0) {
+	    	forwardedText.append("<p></p>");
 	    	forwardedText.append(pm.getBody());
 	    }
 	    
@@ -1539,7 +1558,7 @@ public void processChangeSelectView(ValueChangeEvent eve)
 		
 	    
 	    // populate replyToBody with the reply text
-		replyallText.append("<br /><br />");
+		replyallText.append("<p></p><p></p>");
 		replyallText.append("<span style=\"font-weight:bold;font-style:italic;\">");
 		replyallText.append(getResourceBundleString("pvt_msg_on"));
 		replyallText.append(" " + formattedCreateDate + " ");
@@ -1552,7 +1571,8 @@ public void processChangeSelectView(ValueChangeEvent eve)
 	    	
 	    String origBody = pm.getBody();
 	    if (origBody != null && origBody.trim().length() > 0) {
-	    	replyallText.append("<br />" + pm.getBody() + "<br />");
+	    	replyallText.append("<p></p>");
+	    	replyallText.append(pm.getBody());
 	    }
 	    
 	    List attachList = getDetailMsg().getAttachList();
@@ -3139,6 +3159,18 @@ public void processChangeSelectView(ValueChangeEvent eve)
 		  rrepMsg.setRecipientsAsTextBcc(sendToBccString.toString() + " (" + sendToBccHiddenString.toString() + ")");
 	  }
 
+	  //Add users that joined the groups to which the message was sent (after it was sent)
+	  List<User> usersFromGroupsInCC = getUsersFromGroupsInCC();
+	  if (usersFromGroupsInCC != null && !usersFromGroupsInCC.isEmpty()) {
+		  for (User user : usersFromGroupsInCC) {
+			  //only if it wasn't part already
+			  if (!returnSet.containsKey(user)) {
+				  returnSet.put(user, false);
+				  log.debug("User '{}' added to the reply all list", user.getDisplayName());
+			  }
+		  }
+	  }
+
 	  //Add selected users to reply all list
 
 	  Map<User, Boolean> recipients = getRecipients();
@@ -3193,6 +3225,56 @@ public void processChangeSelectView(ValueChangeEvent eve)
 	  }
 	  return rrepMsg;
   }
+
+    private List<User> getUsersFromGroupsInCC() {
+        log.debug("getUsersFromGroupsInCC()");
+        //Try to get members of the groups to which the message was sent
+        List<User> usersFromGroupsInCC = new ArrayList<>();
+        Site currentSite = getCurrentSite();
+
+        if (currentSite != null && currentSite.hasGroups()) {
+            List<Group> siteGroups = new ArrayList<>(currentSite.getGroups());
+            //this string is all we know about previously selected groups..
+            String msgCClistString = getDetailMsg().getRecipientsAsText();
+            String[] ccItems = msgCClistString.split(";");
+
+            for (String ccItem : ccItems) {
+                //group prefix/suffix
+                String groupLabel = rb.getString("participants_group_desc")
+                    .replace("{0}", "").trim();
+                //we know ccItem is a group if it says so..
+                if (ccItem.contains(groupLabel)) {
+
+                    for (Group group : siteGroups) {
+                        //get group title by removing the group label from the CC item
+                        String groupTitle = ccItem.replace(groupLabel, "").trim();
+                        //get group users if title matches
+                        if (group.getTitle().equals(groupTitle)) {
+                            Set<String> userIds = group.getUsers();
+
+                            for (String userId : userIds) {
+                                try {
+                                    User user = userDirectoryService.getUser(userId);
+                                    usersFromGroupsInCC.add(user);
+                                } catch (UserNotDefinedException e) {
+                                    log.error(e.getMessage(), e);
+                                }
+                            }
+                        } else {
+                            //group title modifications will cause mismatches
+                            log.warn("Group title '{}' doesn't match any group in current site", groupTitle);
+                        }
+                    }
+                } else {
+                    //language-sensitive comparison, may lead to mismatches
+                    log.warn("ccItem '{}' doesn't contain group label '{}'", ccItem, groupLabel);
+                }
+            }
+        } else {
+            log.info("No groups found in current site");
+        }
+        return usersFromGroupsInCC;
+    }
 
   private void manageTagAssociation(Long msgId) {
     log.debug("msgId " + msgId + " - selectedTags " + selectedTags);

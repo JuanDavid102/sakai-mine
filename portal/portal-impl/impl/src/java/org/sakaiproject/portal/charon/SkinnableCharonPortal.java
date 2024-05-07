@@ -22,6 +22,7 @@ package org.sakaiproject.portal.charon;
 
 import static org.sakaiproject.portal.api.PortalConstants.*;
 import static org.sakaiproject.user.api.PreferencesService.USER_SELECTED_UI_THEME_PREFS;
+import static org.sakaiproject.user.api.PreferencesService.TUTORIAL_PREFS;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -219,6 +220,7 @@ public class SkinnableCharonPortal extends HttpServlet implements Portal {
     private boolean sakaiThemesEnabled;
     private boolean sakaiTutorialEnabled;
     private boolean showServerTime;
+    private boolean tasksEnabled;
     private boolean timeoutDialogEnabled;
     private boolean topLogin;
     private boolean useBullhornAlerts;
@@ -312,6 +314,7 @@ public class SkinnableCharonPortal extends HttpServlet implements Portal {
         serviceVersion = serverConfigurationService.getString(PROP_SERVICE_VERSION, "?");
         showServerTime = serverConfigurationService.getBoolean(PROP_SHOW_SERVER_TIME, true);
         skinRepo = serverConfigurationService.getString(PROP_SKIN_REPO);
+        tasksEnabled = serverConfigurationService.getBoolean(PROP_DASHBOARD_TASKS_ENABLED, false);
         timeoutDialogEnabled = serverConfigurationService.getBoolean(PROP_PORTAL_TIMEOUT_DIALOG_ENABLED, true);
         timeoutDialogWarningSeconds = serverConfigurationService.getInt(PROP_PORTAL_TIMEOUT_DIALOG_WARN_SECONDS, 600);
         toolUrlPrefix = serverConfigurationService.getToolUrl();
@@ -945,6 +948,8 @@ public class SkinnableCharonPortal extends HttpServlet implements Portal {
         rcontext.put("pageTop", Boolean.valueOf(true));
         rcontext.put("rloader", MESSAGES);
 
+        rcontext.put("serviceName", serverConfigurationService.getString("ui.service"));
+
         // Allow for inclusion of extra header code via property
         rcontext.put("includeExtraHead", includeExtraHead);
 
@@ -1053,6 +1058,8 @@ public class SkinnableCharonPortal extends HttpServlet implements Portal {
         rcontext.put("notificationsPushEnabled", notificationsPushEnabled);
 
         rcontext.put("debugNotifications", debugNotifications);
+
+        rcontext.put("tasksEnabled" , tasksEnabled);
 
         return rcontext;
     }
@@ -1522,34 +1529,10 @@ public class SkinnableCharonPortal extends HttpServlet implements Portal {
             rcontext.put("portalVideoChatTimeout", portalChatVideoTimeout);
 
             if (sakaiTutorialEnabled && thisUser != null && ! userDirectoryService.isRoleViewType(thisUser)) {
-                String userTutorialPref = preferences.getProperties() != null ? preferences.getProperties().getProperty("sakaiTutorialFlag") : "";
+                String userTutorialPref = preferences.getProperties(TUTORIAL_PREFS) != null ? preferences.getProperties(TUTORIAL_PREFS).getProperty("tutorialFlag") : "";
                 log.debug("Fetched tutorial config [{}] from user [{}] preferences", userTutorialPref, thisUser);
                 if (!StringUtils.equals("1", userTutorialPref)) {
                     rcontext.put("tutorial", true);
-                    //now save this in the user's preferences, so we don't show it again
-                    PreferencesEdit preferencesEdit = null;
-                    try {
-                        try {
-                            preferencesEdit = preferencesService.edit(thisUser);
-                        } catch (IdUnusedException iue) {
-                            preferencesEdit = preferencesService.add(thisUser);
-                        }
-                    } catch (Exception e) {
-                        log.warn("Could not get the preferences for user [{}], {}", thisUser, e.toString());
-                    }
-
-                    if (preferencesEdit != null) {
-                        try {
-                            ResourcePropertiesEdit props = preferencesEdit.getPropertiesEdit();
-                            props.addProperty("sakaiTutorialFlag", "1");
-                        } catch (Exception e) {
-                            log.warn("Could not update user [{}] tutorial preference, {}", thisUser, e.toString());
-                            preferencesService.cancel(preferencesEdit);
-                            preferencesEdit = null;
-                        } finally {
-                            if (preferencesEdit != null) preferencesService.commit(preferencesEdit);
-                        }
-                    }
                 }
             }
 
@@ -1803,10 +1786,7 @@ public class SkinnableCharonPortal extends HttpServlet implements Portal {
             throws IOException {
         // headers
         res.setContentType(Objects.requireNonNullElse(contentType, "text/html; charset=UTF-8"));
-        res.addDateHeader("Expires", System.currentTimeMillis() - (1000L * 60L * 60L * 24L * 365L));
-        res.addDateHeader("Last-Modified", System.currentTimeMillis());
-        res.addHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0, post-check=0, pre-check=0");
-        res.addHeader("Pragma", "no-cache");
+        res.addHeader("Cache-Control", "no-store");
 
         // get the writer
         PrintWriter out = res.getWriter();

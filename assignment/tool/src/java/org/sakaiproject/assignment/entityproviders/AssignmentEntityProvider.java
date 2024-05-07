@@ -47,6 +47,7 @@ import org.sakaiproject.authz.api.SecurityService;
 import org.sakaiproject.component.api.ServerConfigurationService;
 import org.sakaiproject.content.api.ContentHostingService;
 import org.sakaiproject.content.api.ContentResource;
+import org.sakaiproject.content.api.ContentTypeImageService;
 import org.sakaiproject.entity.api.Entity;
 import org.sakaiproject.entity.api.EntityManager;
 import org.sakaiproject.entity.api.Reference;
@@ -97,6 +98,7 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
     private AssignmentService assignmentService;
     private AssignmentToolUtils assignmentToolUtils;
     private ContentHostingService contentHostingService;
+    private ContentTypeImageService contentTypeImageService;
     private EntityBroker entityBroker;
     private EntityManager entityManager;
     private SecurityService securityService;
@@ -719,9 +721,12 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
                             ContentResource cr = contentHostingService.getResource(id);
                             Map<String, String> attachment = new HashMap<>();
                             attachment.put("name", cr.getProperties().getPropertyFormatted(cr.getProperties().getNamePropDisplayName()));
+                            attachment.put("creationDate", cr.getProperties().getPropertyFormatted(cr.getProperties().getNamePropCreationDate()));
+                            attachment.put("contentLength", cr.getProperties().getPropertyFormatted(cr.getProperties().getNamePropContentLength()));
                             attachment.put("ref", cr.getReference());
                             attachment.put("url", cr.getUrl());
                             attachment.put("type", cr.getContentType());
+                            attachment.put("iconClass", contentTypeImageService.getContentTypeImageClass(cr.getContentType()));
                             return attachment;
                         } catch (Exception e) {
                             log.info("There was an attachment on submission {} that was invalid", as.getId());
@@ -1161,10 +1166,16 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
             throw new EntityException("You don't have permission to set grades", "", HttpServletResponse.SC_FORBIDDEN);
         }
 
-        if (assignment.getTypeOfGrade() == Assignment.GradeType.SCORE_GRADE_TYPE) {
-            grade = assignmentToolUtils.scalePointGrade(grade, assignment.getScaleFactor(), alerts);
-        } else if (assignment.getTypeOfGrade() == Assignment.GradeType.PASS_FAIL_GRADE_TYPE && grade.equals(AssignmentConstants.UNGRADED_GRADE_STRING)) {
-            grade = null;
+        switch (assignment.getTypeOfGrade()) {
+            case SCORE_GRADE_TYPE:
+                grade = assignmentToolUtils.scalePointGrade(grade, assignment.getScaleFactor(), alerts);
+                break;
+            case UNGRADED_GRADE_TYPE:
+                grade = ASSN_GRADE_TYPE_NOGRADE_PROP;
+                break;
+            case PASS_FAIL_GRADE_TYPE:
+                if (AssignmentConstants.UNGRADED_GRADE_STRING.equals(grade)) grade = null;
+            default:
         }
 
         Map<String, Object> options = new HashMap<>();
@@ -1187,7 +1198,6 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
         options.put(GRADE_SUBMISSION_FEEDBACK_TEXT, feedbackText);
         options.put(GRADE_SUBMISSION_FEEDBACK_COMMENT, feedbackComment);
         options.put(GRADE_SUBMISSION_PRIVATE_NOTES, privateNotes);
-        options.put(WITH_GRADES, true);
         options.put(ALLOW_RESUBMIT_NUMBER, resubmitNumber);
 
         if (StringUtils.isNotBlank(resubmitDate)) {

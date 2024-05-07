@@ -273,18 +273,6 @@ public class FormatHelper {
 	}
 
 	/**
-	 * Format a date with a time e.g. MM/dd/yyyy HH:mm
-	 *
-	 * @param date
-	 * @return
-	 */
-	public static String formatDateTime(final Date date) {
-		final String dateTimeFormatString = MessageHelper.getString("format.datetime");
-		final SimpleDateFormat df = new SimpleDateFormat(dateTimeFormatString);
-		return df.format(date);
-	}
-
-	/**
 	 * Strips out line breaks
 	 *
 	 * @param s String to abbreviate
@@ -407,8 +395,8 @@ public class FormatHelper {
 	 * @return fully formatted string ready for display
 	 */
 	public static String getGradeFromNumber(String newGrade, Map<String, Double> schema, Locale currentUserLocale) {
-		Double currentGradeValue = new Double(0.0);
-		Double maxValue = new Double(0.0);
+		Double currentGradeValue = 0.0;
+		Double maxValue = 0.0;
 		String returnGrade = newGrade;
 		try	{
 			NumberFormat nf = NumberFormat.getInstance(currentUserLocale);
@@ -467,13 +455,32 @@ public class FormatHelper {
 			if (parsePosition.getIndex() != newGrade.length()) {
 				throw new NumberFormatException("Grade has a bad format.");
 			}
-			Double dValue = n.doubleValue();
+			double dValue = n.doubleValue();
 
-			return (dValue.toString());
+			return (Double.toString(dValue));
 
 		}
 		catch (NumberFormatException e) {
 			throw new NumberFormatException("Grade is not a number.");
 		}
 	}
+
+
+	/*
+	 *
+	 * Method to normalize a grade by removing trailing ".0" or ",0" and trimming it to null if it becomes empty
+	 * @param grade String to transform
+	 * @return normalized grade stripped of trailing .0 or ,0
+	 */
+	public static String normalizeGrade(String grade) {
+		if (grade == null) {
+			return null;
+		}
+
+		// Remove ".0" and ",0" suffixes, then trim the result to null if it's empty
+		String adjustedGrade = StringUtils.removeEnd(grade, ".0");
+		adjustedGrade = StringUtils.removeEnd(adjustedGrade, ",0");
+		return StringUtils.trimToNull(adjustedGrade);
+	}
+
 }

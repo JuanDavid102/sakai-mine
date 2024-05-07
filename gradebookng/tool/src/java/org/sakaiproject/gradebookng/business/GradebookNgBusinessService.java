@@ -39,7 +39,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -74,8 +73,6 @@ import org.sakaiproject.section.api.coursemanagement.CourseSection;
 import org.sakaiproject.section.api.coursemanagement.EnrollmentRecord;
 import org.sakaiproject.section.api.facade.Role;
 import org.sakaiproject.exception.IdUnusedException;
-import org.sakaiproject.exception.IdUsedException;
-import org.sakaiproject.exception.InUseException;
 import org.sakaiproject.exception.PermissionException;
 import org.sakaiproject.gradebookng.business.exception.GbAccessDeniedException;
 import org.sakaiproject.gradebookng.business.exception.GbException;
@@ -99,9 +96,7 @@ import org.sakaiproject.grading.api.CourseGradeTransferBean;
 import org.sakaiproject.grading.api.GradeDefinition;
 import org.sakaiproject.grading.api.GradebookInformation;
 import org.sakaiproject.grading.api.GraderPermission;
-import org.sakaiproject.grading.api.GradingCategoryType;
 import org.sakaiproject.grading.api.GradingPermissionService;
-import org.sakaiproject.grading.api.GradeType;
 import org.sakaiproject.grading.api.InvalidGradeException;
 import org.sakaiproject.grading.api.PermissionDefinition;
 import org.sakaiproject.grading.api.SortType;
@@ -769,7 +764,7 @@ public class GradebookNgBusinessService {
 		final Double maxPoints = assignment.getPoints();
 
 		// check what grading mode we are in
-		final GradeType gradingType = gradebook.getGradeType();
+		final Integer gradingType = gradebook.getGradeType();
 
 		// if percentage entry type, reformat the grades, otherwise use points as is
 		String newGradeAdjusted = newGrade;
@@ -787,7 +782,7 @@ public class GradebookNgBusinessService {
 					",".equals(formattedText.getDecimalSeparator()) ? "," : ".");
 		}
 
-		if (GradeType.PERCENTAGE.equals(gradingType)) {
+		if (Objects.equals(GradingConstants.GRADE_TYPE_PERCENTAGE, gradingType)) {
 			// the passed in grades represents a percentage so the number needs to be adjusted back to points
 			Double newGradePercentage = new Double("0.0");
 
@@ -818,22 +813,16 @@ public class GradebookNgBusinessService {
 			// we dont need processing of the stored grade as the service does that when persisting.
 		}
 
-		// trim the .0 from the grades if present. UI removes it so lets standardise
+		// trim the .0 (and the ,0) from the grades if present. UI removes it so lets standardise
 		// trim to null so we can better compare against no previous grade being recorded (as it will be null)
 		// Note that we also trim newGrade so that don't add the grade if the new grade is blank and there was no grade previously
-		storedGradeAdjusted = StringUtils.trimToNull(StringUtils.removeEnd(storedGradeAdjusted, ".0"));
-		oldGradeAdjusted = StringUtils.trimToNull(StringUtils.removeEnd(oldGradeAdjusted, ".0"));
-		newGradeAdjusted = StringUtils.trimToNull(StringUtils.removeEnd(newGradeAdjusted, ".0"));
+		storedGradeAdjusted = FormatHelper.normalizeGrade(storedGradeAdjusted);
+		oldGradeAdjusted = FormatHelper.normalizeGrade(oldGradeAdjusted);
+		newGradeAdjusted = FormatHelper.normalizeGrade(newGradeAdjusted);
 
-		storedGradeAdjusted = StringUtils.trimToNull(StringUtils.removeEnd(storedGradeAdjusted, ",0"));
-		oldGradeAdjusted = StringUtils.trimToNull(StringUtils.removeEnd(oldGradeAdjusted, ",0"));
-		newGradeAdjusted = StringUtils.trimToNull(StringUtils.removeEnd(newGradeAdjusted, ",0"));
-
-		if (log.isDebugEnabled()) {
-			log.debug("storedGradeAdjusted: " + storedGradeAdjusted);
-			log.debug("oldGradeAdjusted: " + oldGradeAdjusted);
-			log.debug("newGradeAdjusted: " + newGradeAdjusted);
-		}
+		log.debug("storedGradeAdjusted: {}", storedGradeAdjusted);
+		log.debug("oldGradeAdjusted: {}", oldGradeAdjusted);
+		log.debug("newGradeAdjusted: {}", newGradeAdjusted);
 
 		// if comment longer than MAX_COMMENT_LENGTH chars, error.
 		// SAK-33836 - MAX_COMMENT_LENGTH controlled by sakai.property 'gradebookng.maxCommentLength'; defaults to 20,000
@@ -933,13 +922,31 @@ public class GradebookNgBusinessService {
 		final String storedGrade = this.gradingService.getAssignmentScoreString(gradebook.getUid(), assignmentId,
 				studentUuid);
 
+		// if percentage entry type, reformat the grade, otherwise use points as is
+		String storedGradeAdjusted = storedGrade;
+		final Integer gradingType = gradebook.getGradeType();
+		if (Objects.equals(GradingConstants.GRADE_TYPE_PERCENTAGE, gradingType)) {
+			// the stored grade represents points so the number needs to be adjusted back to percentage
+			Double storedGradePoints = new Double("0.0");
+			if (StringUtils.isNotBlank(storedGrade)) {
+				storedGradePoints = FormatHelper.validateDouble(storedGrade);
+			}
+
+			final Double maxPoints = this.getAssignment(assignmentId).getPoints();
+			final Double storedGradePointsFromPercentage = (storedGradePoints * 100) / maxPoints;
+			storedGradeAdjusted = FormatHelper.formatDoubleToDecimal(storedGradePointsFromPercentage);
+		}
+		// trim the .0 (and ,0) from the grades if present. UI removes it so lets standardise.
+		storedGradeAdjusted = FormatHelper.normalizeGrade(storedGradeAdjusted);
+
+		log.debug("storedGradeAdjusted: {}", storedGradeAdjusted);
+
 		GradeSaveResponse rval = null;
 
 		// save
 		try {
-			//must pass in the raw grade as the service does conversions between percentage etc
 			this.gradingService.saveGradeAndExcuseForStudent(gradebook.getUid(), assignmentId, studentUuid,
-					storedGrade, excuse);
+					storedGradeAdjusted, excuse);
 
 			if (rval == null) {
 				// if we don't have some other warning, it was all OK
@@ -1119,7 +1126,7 @@ public class GradebookNgBusinessService {
 		return items;
 	}
 
-	public List<GbGradeComparisonItem> buildMatrixForGradeComparison(Assignment assignment, GradeType gradingType, GradebookInformation settings){
+	public List<GbGradeComparisonItem> buildMatrixForGradeComparison(Assignment assignment, Integer gradingType, GradebookInformation settings){
 		// Only return the list if the feature is activated
 		boolean serverPropertyOn = serverConfigService.getConfig(
 				SAK_PROP_ALLOW_STUDENTS_TO_COMPARE_GRADES,
@@ -1161,9 +1168,8 @@ public class GradebookNgBusinessService {
 						}
 						el.setIsCurrentUser(userEid.equals(el.getEid()));
 						
-						el.setGrade(FormatHelper.formatGrade(el.getGrade()) + (
-							GradeType.PERCENTAGE.equals(gradingType) ? "%" : ""
-						));
+						el.setGrade(FormatHelper.formatGrade(el.getGrade())
+								+ (Objects.equals(GradingConstants.GRADE_TYPE_PERCENTAGE, gradingType) ? "%" : ""));
 						return el;
 					})
 					.collect(Collectors.toList());
@@ -1785,7 +1791,7 @@ public class GradebookNgBusinessService {
 	/**
 	 * Get a list of sections and groups in a site
 	 *
-	 * @return
+	 * @return a list of sections and groups in the current site
 	 */
 	public List<GbGroup> getSiteSectionsAndGroups() {
 		final String siteId = getCurrentSiteId();
@@ -2952,8 +2958,8 @@ public class GradebookNgBusinessService {
 		final String siteId = getCurrentSiteId();
 		final Gradebook gradebook = getGradebook(siteId);
 
-		return GradingCategoryType.ONLY_CATEGORY == gradebook.getCategoryType()
-				|| GradingCategoryType.WEIGHTED_CATEGORY == gradebook.getCategoryType();
+		return Objects.equals(GradingConstants.CATEGORY_TYPE_ONLY_CATEGORY, gradebook.getCategoryType())
+				|| Objects.equals(GradingConstants.CATEGORY_TYPE_WEIGHTED_CATEGORY, gradebook.getCategoryType());
 	}
 
 	/**
@@ -2961,7 +2967,7 @@ public class GradebookNgBusinessService {
 	 *
 	 * @return GradingCategoryType wrapper around the int value
 	 */
-	public GradingCategoryType getGradebookCategoryType() {
+	public Integer getGradebookCategoryType() {
 		final String siteId = getCurrentSiteId();
 		final Gradebook gradebook = getGradebook(siteId);
 
@@ -3061,12 +3067,7 @@ public class GradebookNgBusinessService {
 	 * @return true if ja, false if nay.
 	 */
 	public boolean isUserRoleSwapped() {
-		try {
-			return this.securityService.isUserRoleSwapped();
-		} catch (final IdUnusedException e) {
-			// something has happened between getting the siteId and getting the site.
-			throw new GbException("An error occurred checking some bits and pieces, please try again.", e);
-		}
+		return securityService.isUserRoleSwapped();
 	}
 
 	/**

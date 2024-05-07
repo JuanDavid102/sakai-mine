@@ -1,66 +1,85 @@
-var sakaiTutorialSkin = 'sakaiTutorial';
-var sakaiTutorialStartUrl = "/direct/tutorial/introToSakai_p1.json";
-var sakaiTutorialLocationUrl = '/direct/tutorial/introToSakai_pTutorialLocation.json';
-var optsCache;
-var maxWidth = 500;
-var previousClicked = false;
-var dialogPosition = {
+var sakai = sakai || {};
+sakai.triggerTutorial = "triggerTutorial";
+sakai.tutorialFlagSet = "tutorialFlagSet";
+sakai.sakaiTutorialLocationUrl = '/direct/tutorial/introToSakai_pTutorialLocation.json';
+
+let optsCache;
+const maxWidth = 500;
+let previousClicked = false;
+const dialogPosition = {
     my: 'center',
     at: 'center',
     target: $(window), // Position it via the document body...
     viewport: $(window)
 };
 
-function startTutorial(opts){
-    if (!portal.loggedIn) {
-        return;
-    }
+function startTutorial(opts) {
 
-    if ( inPlusPortal() ) {
-        return;
-    }
+    if (inPlusPortal()) return;
 
-    localStorage.setItem('tutorialOpts', JSON.stringify(opts));
+    const isRedirectNeeded = opts.userInitiatedTutorial && window.location.pathname !== '/portal';
+    const isRedirectedForTutorial = sessionStorage.getItem(sakai.triggerTutorial) === 'true';
 
-    if (window.location.pathname !== '/portal' || localStorage.getItem('tutorialStartPending') === 'true') {
-        localStorage.setItem('tutorialStartPending', 'true');
+    if (isRedirectNeeded) {
+        sessionStorage.setItem(sakai.triggerTutorial, 'true');
         window.location.pathname = '/portal';
-    } else {
-        runTutorial(opts);
-    }
-}
-
-function runTutorial(opts) {
-    if (!portal.loggedIn) {
         return;
+    } else if (isRedirectedForTutorial) {
+        sessionStorage.setItem(sakai.triggerTutorial, 'false');
     }
 
-    localStorage.setItem('tutorialStartPending', 'false');
-    localStorage.setItem('tutorialRunning', 'true');
-
-    showTutorialPage(sakaiTutorialStartUrl, opts);
-
-    var accountPanel = document.querySelector('#sakai-account-panel');
-    if (accountPanel.classList.contains('show')) {
-        var bsOffcanvas = bootstrap.Offcanvas.getInstance(accountPanel);
-        bsOffcanvas.hide();
+    function maybeHideAccountPanel() {
+        const accountPanel = document.querySelector('#sakai-account-panel');
+        if (accountPanel?.classList.contains('show')) {
+            bootstrap.Offcanvas.getInstance(accountPanel)?.hide();
+        }
+    }
+    
+    if (!isRedirectNeeded) {
+        const flagSet = sessionStorage.getItem(sakai.tutorialFlagSet) !== 'true' || !sessionStorage.getItem(sakai.tutorialFlagSet);
+        const trigger = sessionStorage.getItem(sakai.triggerTutorial);
+    
+        if (trigger || opts.userInitiatedTutorial || flagSet) {
+            showTutorialPage("/direct/tutorial/introToSakai_p1.json", opts);
+            maybeHideAccountPanel();
+        }
     }
 }
 
-function endTutorial(selection){
-    localStorage.setItem('tutorialRunning', 'false');
+function checkAndStartTutorialIfRedirected() {
+    if (sessionStorage.getItem(sakai.triggerTutorial) === 'true' && window.location.pathname === '/portal') {
+        startTutorial({});
+    }
+}
+
+document.addEventListener('DOMContentLoaded', checkAndStartTutorialIfRedirected);
+
+function endTutorial(selection) {
     $(selection).qtip('destroy');
+    sessionStorage.removeItem(sakai.triggerTutorial);
+
+    if (!sessionStorage.getItem(sakai.tutorialFlagSet)) {
+        sessionStorage.setItem(sakai.tutorialFlagSet, 'true');
+
+        const url = `/direct/userPrefs/updateKey/${portal.user.id}/sakai:portal:tutorialFlag?tutorialFlag=${1}`;
+        const options = {
+            method: "PUT",
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        };
+
+        fetch(url, options)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to update tutorial flag');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
 }
 
-window.addEventListener('DOMContentLoaded', (event) => {
-    var opts = JSON.parse(localStorage.getItem('tutorialOpts') || '{}');
-
-    if (localStorage.getItem('tutorialStartPending') === 'true') {
-        runTutorial(opts);
-    } else if (localStorage.getItem('tutorialRunning') === 'true') {
-        runTutorial(opts);
-    }
-});
 
 function showTutorialPage(url, opts) {
     if(opts != null)
@@ -100,7 +119,7 @@ function showTutorialPage(url, opts) {
                 selection.qtip({ 
                     content: {
                         title: response.data.title,
-                        button: $('<a class="qtipClose tut-close" href="#" onclick="if(\''+opts.showTutorialLocationOnHide + '\' == \'true\' && \'' + url + '\' != \'' + sakaiTutorialLocationUrl + '\'){showTutorialPage(\''+ sakaiTutorialLocationUrl + '\');}" title="' + $('.closeMe').find('.skip').text() +'"><i class="fa fa-close tut-icon-close"></i><span class="skip">' + $('.closeMe').find('.skip').text() + '</span></a>'),
+                        button: $('<a class="qtipClose tut-close" href="#" onclick="if(\''+opts.showTutorialLocationOnHide + '\' == \'true\' && \'' + url + '\' != \'' + sakai.sakaiTutorialLocationUrl + '\'){showTutorialPage(\''+ sakai.sakaiTutorialLocationUrl + '\');}" title="' + $('.closeMe').find('.skip').text() +'"><i class="fa fa-close tut-icon-close"></i><span class="skip">' + $('.closeMe').find('.skip').text() + '</span></a>'),
                         text: response.data.body
                     },
                     position: response.data.dialog == 'true' ? dialogPosition: {
@@ -148,6 +167,17 @@ function showTutorialPage(url, opts) {
                                     api.hide(event);
                                     $(response.data.selection).qtip("destroy");
                                 }
+                            });
+                            $(document).on('click.tutorial', function(e) {
+                                var isInsideClick = $(e.target).closest('.qtip').length > 0;
+                                if (!isInsideClick) {
+                                    api.hide();
+                                    endTutorial(response.data.selection);
+                                }
+                            });
+                            api.elements.tooltip.on('hide.qtip', function() {
+                                $(document).off('click.tutorial');
+                                $(window).off('keydown.tutorial');
                             });
                         }
                     }

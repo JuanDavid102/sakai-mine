@@ -294,7 +294,7 @@ public final class AssignmentConstants {
         RETURNED,
         COMMENTED,
         GRADED,
-        RETURNED_PENDING_RESUBMIT
+        RESUBMIT_ALLOWED
     }
 
 	// IMS Score Publishing Service - states
@@ -332,8 +332,6 @@ public final class AssignmentConstants {
     public static final String SUBMISSION_OPTION_RETRACT = "retract";
 
     public static final String STATE_CONTEXT_STRING = "Assignment.context_string";
-
-    public static final String WITH_GRADES = "with_grades";
 
     public static final String GRADE_SUBMISSION_SUBMISSION_ID = "grade_submission_submission_id";
     public static final String GRADE_SUBMISSION_ASSIGNMENT_ID = "grade_submission_assignment_id";

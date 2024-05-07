@@ -116,6 +116,7 @@ import org.sakaiproject.contentreview.dao.ContentReviewConstants;
 import org.sakaiproject.contentreview.dao.ContentReviewItem;
 import org.sakaiproject.contentreview.exception.QueueException;
 import org.sakaiproject.contentreview.service.ContentReviewService;
+import org.sakaiproject.entity.api.ContentExistsAware;
 import org.sakaiproject.entity.api.Entity;
 import org.sakaiproject.entity.api.EntityManager;
 import org.sakaiproject.entity.api.EntityTransferrer;
@@ -147,7 +148,6 @@ import org.sakaiproject.grading.api.GradingService;
 import org.sakaiproject.messaging.api.Message;
 import org.sakaiproject.messaging.api.MessageMedium;
 import org.sakaiproject.messaging.api.UserMessagingService;
-import org.sakaiproject.rubrics.api.RubricsConstants;
 import org.sakaiproject.rubrics.api.RubricsService;
 import org.sakaiproject.rubrics.api.model.ToolItemRubricAssociation;
 import org.sakaiproject.search.api.SearchService;
@@ -166,7 +166,6 @@ import org.sakaiproject.time.api.UserTimeService;
 import org.sakaiproject.timesheet.api.TimeSheetEntry;
 import org.sakaiproject.timesheet.api.TimeSheetService;
 import org.sakaiproject.tool.api.SessionManager;
-import org.sakaiproject.tool.api.Tool;
 import org.sakaiproject.tool.api.ToolManager;
 import org.sakaiproject.user.api.CandidateDetailProvider;
 import org.sakaiproject.user.api.User;
@@ -187,6 +186,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.Assert;
+import org.w3c.dom.CDATASection;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -203,7 +203,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Transactional(readOnly = true)
-public class AssignmentServiceImpl implements AssignmentService, EntityTransferrer, ApplicationContextAware {
+public class AssignmentServiceImpl implements AssignmentService, EntityTransferrer, ContentExistsAware, ApplicationContextAware {
 
 	@Setter private AnnouncementService announcementService;
     @Setter private ApplicationContext applicationContext;
@@ -325,7 +325,71 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
                 Element assignmentElement = assignmentDocument.getDocumentElement();
                 Node assignmentNode = doc.importNode(assignmentElement, true);
                 element.appendChild(assignmentNode);
+
+                // Model answer with optional attachments
+                AssignmentModelAnswerItem modelAnswer = assignmentSupplementItemService.getModelAnswer(assignment.getId());
+                if (modelAnswer != null) {
+                    Element modelAnswerElement = doc.createElement("ModelAnswer");
+
+                    if (modelAnswer.getShowTo() != null) {
+                        modelAnswerElement.setAttribute("showTo", modelAnswer.getShowTo().toString());
+                    }
+
+                    // Write text as CDATA
+                    CDATASection cdata = doc.createCDATASection(modelAnswer.getText());
+                    modelAnswerElement.appendChild(cdata);
+
+                    // Add attachments from the supplementary item
+                    addSupplementaryItemAttachments(doc, modelAnswerElement, assignmentSupplementItemService.getAttachmentListForSupplementItem(modelAnswer), attachments);
+
+                    assignmentNode.appendChild(modelAnswerElement);
+                }
+
+                // Note (text only)
+                AssignmentNoteItem noteItem = assignmentSupplementItemService.getNoteItem(assignment.getId());
+                if (noteItem != null) {
+                    Element noteElement = doc.createElement("PrivateNote");
+
+                    if (noteItem.getShareWith() != null) {
+                        noteElement.setAttribute("shareWith", noteItem.getShareWith().toString());
+                    }
+
+                    // Write text as CDATA
+                    CDATASection cdata = doc.createCDATASection(noteItem.getNote());
+                    noteElement.appendChild(cdata);
+
+                    assignmentNode.appendChild(noteElement);
+                }
+
+                // All Purpose Item (with optional attachments)
+                // Not archived: getHide(), getReleaseDate(), getRetractDate(), getAccessSet()
+                AssignmentAllPurposeItem allPurposeItem = assignmentSupplementItemService.getAllPurposeItem(assignment.getId());
+                if (allPurposeItem != null) {
+                    Element itemElement = doc.createElement("AllPurposeItem");
+
+                    if (allPurposeItem.getTitle() != null) {
+                        itemElement.setAttribute("title", allPurposeItem.getTitle());
+                    }
+
+                    // Write text as CDATA
+                    CDATASection cdata = doc.createCDATASection(allPurposeItem.getText());
+                    itemElement.appendChild(cdata);
+
+                    assignmentNode.appendChild(itemElement);
+
+                    // Add attachments from the supplementary item
+                    addSupplementaryItemAttachments(doc, itemElement, assignmentSupplementItemService.getAttachmentListForSupplementItem(allPurposeItem), attachments);
+                }
+
+                // Add attachmments from the assignment
+                for (String resourceId : assignment.getAttachments()) {
+                    attachments.add(entityManager.newReference(resourceId));
+                }
+
+                // Add the assignment
+                element.appendChild(assignmentNode);
                 assignmentsArchived++;
+
             } catch (Exception e) {
                 String error = String.format("could not append assignment %s to archive: %s", assignment.getId(), e.getMessage());
                 log.error(error, e);
@@ -337,6 +401,27 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 
         results.append("completed archiving ").append(getLabel()).append(" context ").append(siteId).append(" count (").append(assignmentsArchived).append(")").append(LINE_SEPARATOR);
         return results.toString();
+    }
+
+    private void addSupplementaryItemAttachments(Document doc, Element item, List<String> itemAttachments, List archiveAttachments) {
+
+        if (itemAttachments.isEmpty()) {
+            return;
+        }
+
+        Element attachmentsElement = doc.createElement("attachments");
+
+        // Add attachments from the supplementary item
+        for (String resourceId : itemAttachments) {
+            archiveAttachments.add(entityManager.newReference(resourceId));
+            Element attachmentElement = doc.createElement("attachment");
+            attachmentElement.appendChild(doc.createTextNode(resourceId));
+            attachmentsElement.appendChild(attachmentElement);
+        }
+
+        item.appendChild(attachmentsElement);
+
+        return;
     }
 
     @Override
@@ -1895,7 +1980,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
                 return resourceLoader.getString("grad3");
             case HONOR_ACCEPTED:
                 return resourceLoader.getString("gen.hpsta");
-            case RETURNED_PENDING_RESUBMIT:
+            case RESUBMIT_ALLOWED:
                 return resourceLoader.getString("gen.pending_resubmit");
             default:
                 return "Undefined Status";
@@ -1918,11 +2003,6 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
     private AssignmentConstants.SubmissionStatus getGradersCanonicalSubmissionStatus(AssignmentSubmission submission) {
         if (submission == null) return SubmissionStatus.NO_SUBMISSION;
 
-        String resubmissionString = StringUtils.trimToNull(submission.getProperties().get(AssignmentConstants.ALLOW_RESUBMIT_NUMBER));
-        boolean resubmissionAllowed = NumberUtils.isCreatable(resubmissionString) ?
-                Integer.parseInt(resubmissionString) > 0 || Integer.parseInt(resubmissionString) == -1 : // "-1" means infinite resubmissions allowed
-                false;
-
         Instant submitTime = submission.getDateSubmitted();
         Instant returnTime = submission.getDateReturned();
 
@@ -1938,25 +2018,35 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
                                 return SubmissionStatus.RESUBMITTED;
                             }
                         } else {
-                            return resubmissionAllowed ? SubmissionStatus.RETURNED_PENDING_RESUBMIT : SubmissionStatus.RETURNED;
+                            return canSubmitResubmission(submission, Instant.now()) ? SubmissionStatus.RESUBMIT_ALLOWED : SubmissionStatus.RETURNED;
                         }
                     } else {
                         if (returnTime != null && returnTime.isAfter(submitTime)) {
-                            return resubmissionAllowed ? SubmissionStatus.RETURNED_PENDING_RESUBMIT : SubmissionStatus.RETURNED; 
+                            return canSubmitResubmission(submission, Instant.now()) ? SubmissionStatus.RESUBMIT_ALLOWED : SubmissionStatus.RETURNED;
                         } else {
                             return SubmissionStatus.RETURNED;
                         }
                     }
                 } else if (submission.getGraded()) {
-                    return StringUtils.isNotBlank(submission.getGrade()) ? SubmissionStatus.GRADED : SubmissionStatus.COMMENTED;
-                } else {
-                    return SubmissionStatus.UNGRADED;
+                    if (StringUtils.isNotBlank(submission.getGrade())) {
+                        return SubmissionStatus.GRADED;
+                    } else if (StringUtils.isNotBlank(submission.getFeedbackComment())) {
+                        return SubmissionStatus.COMMENTED;
+                    }
+                } else if (StringUtils.isNotBlank(submission.getFeedbackComment())) {
+                    return SubmissionStatus.COMMENTED;
                 }
             } else {
                 if (submission.getReturned()) {
                     return SubmissionStatus.RETURNED;
                 } else if (submission.getGraded()) {
-                    return StringUtils.isNotBlank(submission.getGrade()) ? SubmissionStatus.GRADED : SubmissionStatus.COMMENTED;
+                    if (StringUtils.isNotBlank(submission.getGrade())) {
+                        return SubmissionStatus.GRADED;
+                    } else if (StringUtils.isNotBlank(submission.getFeedbackComment())) {
+                        return SubmissionStatus.COMMENTED;
+                    }
+                } else if (StringUtils.isNotBlank(submission.getFeedbackComment())) {
+                    return SubmissionStatus.COMMENTED;
                 } else {
                     return SubmissionStatus.NO_SUBMISSION;
                 }
@@ -1968,21 +2058,21 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
                     return SubmissionStatus.RETURNED;
                 } else {
                     // grade saved but not release yet, show this to graders
-                    return StringUtils.isNotBlank(submission.getGrade()) ? AssignmentConstants.SubmissionStatus.GRADED : AssignmentConstants.SubmissionStatus.COMMENTED;
+                    if (StringUtils.isNotBlank(submission.getGrade())) {
+                        return SubmissionStatus.GRADED;
+                    } else if (StringUtils.isNotBlank(submission.getFeedbackComment())) {
+                        return SubmissionStatus.COMMENTED;
+                    }
                 }
-            } else {
-                return SubmissionStatus.UNGRADED;
+            } else if (StringUtils.isNotBlank(submission.getFeedbackComment())) {
+                return SubmissionStatus.COMMENTED;
             }
         }
+        return SubmissionStatus.UNGRADED;
     }
 
     private AssignmentConstants.SubmissionStatus getSubmittersCanonicalSubmissionStatus(AssignmentSubmission submission) {
         if (submission == null) return SubmissionStatus.NOT_STARTED;
-
-        String resubmissionString = StringUtils.trimToNull(submission.getProperties().get(AssignmentConstants.ALLOW_RESUBMIT_NUMBER));
-        boolean resubmissionAllowed = NumberUtils.isCreatable(resubmissionString) ?
-                Integer.parseInt(resubmissionString) > 0 || Integer.parseInt(resubmissionString) == -1 : // "-1" means infinite resubmissions allowed
-                false;
 
         Instant submitTime = submission.getDateSubmitted();
         Instant returnTime = submission.getDateReturned();
@@ -2000,11 +2090,11 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
                                 return SubmissionStatus.RESUBMITTED;
                             }
                         } else {
-                            return resubmissionAllowed ? SubmissionStatus.RETURNED_PENDING_RESUBMIT : SubmissionStatus.RETURNED;
+                            return canSubmitResubmission(submission, Instant.now()) ? SubmissionStatus.RESUBMIT_ALLOWED : SubmissionStatus.RETURNED;
                         }
                     } else {
                         if (returnTime != null && returnTime.isAfter(submitTime)) {
-                            return resubmissionAllowed ? SubmissionStatus.RETURNED_PENDING_RESUBMIT : SubmissionStatus.RETURNED; 
+                            return canSubmitResubmission(submission, Instant.now()) ? SubmissionStatus.RESUBMIT_ALLOWED : SubmissionStatus.RETURNED;
                         } else {
                             return SubmissionStatus.RETURNED;
                         }
@@ -2047,56 +2137,6 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
                 }
             }
         }
-    }
-
-    public Map<String,Boolean> getProgressBarStatus(AssignmentSubmission submission) {//currently this is only for student
-        Map<String, Boolean> statusMap = new LinkedHashMap<>();
-        if(submission == null) {
-            statusMap.put(getFormattedStatus(AssignmentConstants.SubmissionStatus.IN_PROGRESS, ""), false);
-            statusMap.put(getFormattedStatus(AssignmentConstants.SubmissionStatus.SUBMITTED, ""), false);
-            statusMap.put(getFormattedStatus(AssignmentConstants.SubmissionStatus.RETURNED, ""), false);
-            return statusMap;
-        }
-        Assignment assignment = submission.getAssignment();
-        Instant latestSubmitTime = submission.getDateSubmitted();
-        Instant returnTime = submission.getDateReturned();
-        if (assignment.getHonorPledge()) {
-            if(submission.getHonorPledge()) {
-                statusMap.put(getFormattedStatus(AssignmentConstants.SubmissionStatus.HONOR_ACCEPTED, ""), true);
-            } else {
-                statusMap.put(getFormattedStatus(AssignmentConstants.SubmissionStatus.HONOR_ACCEPTED, ""), false);
-            }
-        }
-        if(StringUtils.isNotBlank(submission.getSubmittedText()) || CollectionUtils.isNotEmpty(submission.getAttachments())) {//if text or attachments are persisted
-            statusMap.put(getFormattedStatus(AssignmentConstants.SubmissionStatus.IN_PROGRESS, ""), true);
-        } else {
-            statusMap.put(getFormattedStatus(AssignmentConstants.SubmissionStatus.IN_PROGRESS, ""), false);
-        }
-        // If it is submitted, "in progress" is assumed (i.e. for LTI Assignments)
-        if (submission.getSubmitted() && submission.getUserSubmission()) {
-            statusMap.put(getFormattedStatus(AssignmentConstants.SubmissionStatus.SUBMITTED, ""), true);
-            statusMap.put(getFormattedStatus(AssignmentConstants.SubmissionStatus.IN_PROGRESS, ""), true);
-        } else {
-            statusMap.put(getFormattedStatus(AssignmentConstants.SubmissionStatus.SUBMITTED, ""), false);
-        }
-        if (latestSubmitTime != null && submission.getReturned() && returnTime != null && returnTime.isBefore(latestSubmitTime)) {
-            if (submission.getSubmitted()) {
-                statusMap.put(getFormattedStatus(AssignmentConstants.SubmissionStatus.RESUBMITTED, ""), true);
-            } else {
-                statusMap.put(getFormattedStatus(AssignmentConstants.SubmissionStatus.RESUBMITTED, ""), false);
-            }
-            statusMap.put(getFormattedStatus(AssignmentConstants.SubmissionStatus.SUBMITTED, ""), true);
-            if (latestSubmitTime.isAfter(assignment.getDueDate())) {
-                statusMap.put(getFormattedStatus(AssignmentConstants.SubmissionStatus.LATE, ""), true);
-            }
-        }
-        if (submission.getReturned()) {//this is the only interesting teacher status that a student needs to know
-            statusMap.put(getFormattedStatus(AssignmentConstants.SubmissionStatus.RETURNED, ""), true);
-        } else {
-            statusMap.put(getFormattedStatus(AssignmentConstants.SubmissionStatus.RETURNED, ""), false);
-        }
-        //futureable options: peer review, in progress after submission, content review, differ in progress and saved...
-		return statusMap;
     }
 
     // TODO this could probably be removed
@@ -2344,6 +2384,51 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
         return AssignmentReferenceReckoner.reckoner().context(context).id(id).container(assignmentId).subtype("s").reckon().getReference();
     }
 
+    /**
+     * Perform a check to see of a submission can be resubmitted
+     * @param submission the AssignmentSubmission to check
+     * @param time the time to use when calculating
+     * @return true if submission is not null and the user has resubmissions
+     *              and if time bounded the time is before the close date
+     */
+    private boolean canSubmitResubmission(AssignmentSubmission submission, Instant time) {
+        if (submission == null) return false; // false if submission is null
+
+        // check that a submission has been submitted
+        if (submission.getSubmitted() || submission.getDateSubmitted() != null) {
+            // get the resubmit settings from submission object first
+            String allowResubmitNumString = submission.getProperties().get(AssignmentConstants.ALLOW_RESUBMIT_NUMBER);
+            String allowResubmitCloseTimeString = submission.getProperties().get(AssignmentConstants.ALLOW_RESUBMIT_CLOSETIME);
+
+            // -1 = unlimited resubmissions
+            //  0 = no resubmissions left
+            // >0 = number of resubmissions allowed
+            int resubmitNumber = NumberUtils.toInt(allowResubmitNumString, 0);
+            long resubmitCloseTimeMillis = NumberUtils.toLong(allowResubmitCloseTimeString, 0);
+
+            log.debug("Submission {} has: number of resubmits [{}], resubmit close time [{}]", submission.getId(), resubmitNumber, resubmitCloseTimeMillis);
+
+            if (resubmitCloseTimeMillis > 0) { // if a resubmission close time has been set then it is part of the check
+                Instant resubmitCloseTime = Instant.ofEpochMilli(resubmitCloseTimeMillis);
+                Assignment assignment = submission.getAssignment();
+                Instant assignmentCloseDate = assignment.getCloseDate() != null ? assignment.getCloseDate() : assignment.getDueDate();
+                // use whichever time is later the assignment close time or the resubmission close time
+                if (assignmentCloseDate != null && resubmitCloseTime.isBefore(assignmentCloseDate)) {
+                    // otherwise, use assignment close time as the resubmission close time
+                    resubmitCloseTime = assignmentCloseDate;
+                }
+
+                if (time == null) time = Instant.now(); // if a time was not supplied use now
+                // true if the user has more resubmission attempts and current time is before resubmission close time
+                return (resubmitNumber > 0 || resubmitNumber == -1) && time.isBefore(resubmitCloseTime);
+            } else { // otherwise it is an open ended assignment and we just check number of attempts left
+                // true if the user has more resubmission attempts
+                return (resubmitNumber > 0 || resubmitNumber == -1);
+            }
+        }
+        return false;
+    }
+
     @Override
     public boolean canSubmit(Assignment assignment, String userId) {
         if (assignment == null || BooleanUtils.isTrue(assignment.getDeleted())) return false;
@@ -2374,53 +2459,29 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
             }
 
             // whether the current time is after the assignment close date inclusive
-            boolean isBeforeAssignmentCloseDate = !currentTime.isAfter(assignment.getCloseDate());
+            boolean isBeforeAssignmentCloseDate = currentTime.isBefore(assignment.getCloseDate());
 
             AssignmentSubmission submission = getSubmission(AssignmentReferenceReckoner.reckoner().assignment(assignment).reckon().getId(), userId);
 
             if (submission != null) {
 
-                // check for allow resubmission or not
                 // If an Extension exists for the user, we switch out the assignment's overall
-                // Close date for the extension deadline. We do this if the grade has been actually
-                // released, or if the submission object has not actually been submitted yet.
-                // Additionally, we make sure that a Resubmission date is not set [make sure it's null],
+                // close date for the extension deadline but only if the submission object has not been submitted.
+                // Additionally, we make sure that a Resubmission date is not set,
                 // so that this date-switching happens ONLY under Extension-related circumstances.
-                if (submission.getProperties().get(AssignmentConstants.ALLOW_EXTENSION_CLOSETIME) != null
-                        && (submission.getReturned() || !submission.getUserSubmission())) {
+                if (StringUtils.isNotBlank(submission.getProperties().get(AssignmentConstants.ALLOW_EXTENSION_CLOSETIME))
+                        && StringUtils.isBlank(submission.getProperties().get(AssignmentConstants.ALLOW_RESUBMIT_CLOSETIME))) {
                     Instant extensionCloseTime = Instant.ofEpochMilli(Long.parseLong(submission.getProperties().get(AssignmentConstants.ALLOW_EXTENSION_CLOSETIME)));
-                    isBeforeAssignmentCloseDate = !currentTime.isAfter(extensionCloseTime);
+                    isBeforeAssignmentCloseDate = currentTime.isBefore(extensionCloseTime);
                 }
 
-                if (isBeforeAssignmentCloseDate && (submission.getDateSubmitted() == null || !submission.getSubmitted())) {
-                    // before the assignment close date
-                    // and if no date then a submission was never never submitted
-                    // or if there is a submitted date and its a not submitted then it is considered a draft
-                    return true;
-                }
+                // before the assignment close date
+                // and if no date then a submission was never never submitted
+                // or if there is a submitted date and its a not submitted then it is considered a draft
+                if (isBeforeAssignmentCloseDate && (submission.getDateSubmitted() == null || !submission.getSubmitted())) return true;
 
-                // check for allow resubmission or not first
-                // return true if resubmission is allowed and current time is before resubmission close time
-                // get the resubmit settings from submission object first
-                String allowResubmitNumString = submission.getProperties().get(AssignmentConstants.ALLOW_RESUBMIT_NUMBER);
-                if (NumberUtils.isParsable(allowResubmitNumString) && (submission.getSubmitted() || submission.getDateSubmitted() != null)) {
-                    String allowResubmitCloseTime = submission.getProperties().get(AssignmentConstants.ALLOW_RESUBMIT_CLOSETIME);
-                    try {
-                        int allowResubmitNumber = Integer.parseInt(allowResubmitNumString);
-
-                        Instant resubmitCloseTime;
-                        if (NumberUtils.isParsable(allowResubmitCloseTime)) {
-                            // see if a resubmission close time is set on submission level
-                            resubmitCloseTime = Instant.ofEpochMilli(Long.parseLong(allowResubmitCloseTime));
-                        } else {
-                            // otherwise, use assignment close time as the resubmission close time
-                            resubmitCloseTime = assignment.getCloseDate();
-                        }
-                        return (allowResubmitNumber > 0 || allowResubmitNumber == -1) && !currentTime.isAfter(resubmitCloseTime);
-                    } catch (NumberFormatException e) {
-                        log.warn("allowResubmitNumString = {}, allowResubmitCloseTime = {}", allowResubmitNumString, allowResubmitCloseTime, e);
-                    }
-                }
+                // returns true if resubmission is allowed
+                if (canSubmitResubmission(submission, currentTime)) return true;
             } else {
                 // there is no submission yet so only check if before assignment close date
                 return isBeforeAssignmentCloseDate;
@@ -2936,8 +2997,6 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
      * Contains logic to consistently output a String based version of a grade
      * Interprets the grade using the scale for display
      *
-     * This should probably be moved to a static utility class - ern
-     *
      * @param grade
      * @param typeOfGrade
      * @param scaleFactor
@@ -3037,17 +3096,21 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 
     @Override
     public Collection<User> getSubmissionSubmittersAsUsers(AssignmentSubmission submission) {
-        Objects.requireNonNull(submission, "Submission cannot be null");
-        List<User> submitters = new ArrayList<>();
-        for (AssignmentSubmissionSubmitter submitter : submission.getSubmitters()) {
-            try {
-                User user = userDirectoryService.getUser(submitter.getSubmitter());
-                submitters.add(user);
-            } catch (UserNotDefinedException e) {
-                log.warn("Could not find user with id: {}", submitter.getSubmitter());
-            }
-        }
-        return submitters;
+        if (submission == null) return Collections.emptyList();
+        return submission.getSubmitters().stream()
+                .map(AssignmentSubmissionSubmitter::getSubmitter)
+                .filter(StringUtils::isNotBlank)
+                .map(u -> {
+                    User user = null;
+                    try {
+                        user = userDirectoryService.getUser(u);
+                    } catch (UserNotDefinedException e) {
+                        log.warn("Could not find user with id: {}", u);
+                    }
+                    return user;
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -4127,6 +4190,12 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
     }
 
     @Override
+    public boolean hasContent(String siteId) {
+
+        return assignmentRepository.countAssignmentsBySite(siteId) > 0L;
+    }
+
+    @Override
     @Transactional
     public Map<String, String> transferCopyEntities(String fromContext, String toContext, List<String> ids, List<String> transferOptions) {
 
@@ -4510,6 +4579,13 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
         }
 
         return transversalMap;
+    }
+
+    @Override
+    public List<Map<String, String>> getEntityMap(String fromContext) {
+
+        return getAssignmentsForContext(fromContext).stream()
+            .map(ass -> Map.of("id", ass.getId(), "title", ass.getTitle())).collect(Collectors.toList());
     }
 
     private String transferAttachment(String fromContext, String toContext, String oAttachmentId) {
