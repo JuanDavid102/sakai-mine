@@ -127,6 +127,16 @@ function printView(url) {
 							#else
 								title="$!tlang.getString('relcommented')">$!tlang.getString('relcommented')</a>
 							#end
+							<input type="button" name="downloadButton" id="downloadButton"  accesskey="d" class="active"
+									onclick="ASN.invokeDownloadUrl('$accessPointUrl', '$accessPointUrl&panel=Main&sakai_action=doExport_Pdf_Rubrics&rbcs-rubricslist=$rubricId', 'Downloading all rubrics', '$contextString', 'all', '', 'false', this);" value="Ruuuuuuuuubricas" />
+
+							#if (1 == 0)
+								<input ref="#toolLinkParam("$action" "doExport_Pdf_Rubrics" "rbcs-rubricslist=$rubricId")" id="exportAllRubrics" rbcs-rubricslist="$rubricId" type="button" accesskey="a" class="active" name="apply" value="Export all rubric as pdf" title="Export all rubric" />
+								<a href="#toolLinkParam("$action" "doExport_Pdf_Rubrics" "rbcs-rubricslist=$rubricId")"
+									class="assignment-item" 
+									id="exportAllRubrics"
+									title="Export all rubric">Export all rubric as pdf</a>
+							#end
 						#end
 						#if ($taggable)
 							#foreach ($provider in $providers)

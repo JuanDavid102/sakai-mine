@@ -54,7 +54,9 @@ import static org.sakaiproject.assignment.api.model.Assignment.GradeType.values;
 
 import org.sakaiproject.util.CalendarUtil;
 
+import org.sakaiproject.entity.api.HttpAccess;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -62,6 +64,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URLDecoder;
+import java.net.http.HttpResponse;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
@@ -118,6 +121,7 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -178,6 +182,8 @@ import org.sakaiproject.cheftool.JetspeedRunData;
 import org.sakaiproject.cheftool.PagedResourceActionII;
 import org.sakaiproject.cheftool.PortletConfig;
 import org.sakaiproject.cheftool.RunData;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.sakaiproject.cheftool.VelocityPortlet;
 import org.sakaiproject.component.api.ServerConfigurationService;
 import org.sakaiproject.component.cover.ComponentManager;
@@ -14305,6 +14311,89 @@ public class AssignmentAction extends PagedResourceActionII {
         state.setAttribute(STATE_MODE, MODE_INSTRUCTOR_DOWNLOAD_ALL);
 
     } // doPrep_download_all
+
+    /**
+     * Action is to preparing to go to the download all file
+     */
+    public void doExport_Pdf_Rubrics(RunData data) {
+        doExport_Pdf_Rubric(data);
+    }
+    public HttpAccess doExport_Pdf_Rubric(RunData data) {
+        return (req, res, ref, copyrightAcceptedRefs) -> {
+            try {
+                SessionState state = ((JetspeedRunData) data).getPortletSessionState(((JetspeedRunData) data).getJs_peid());
+                ParameterParser params = data.getParameters();
+                System.out.println("1");
+                
+                String toolId = "sakai.assignment";
+                // String rubricId = "1";
+                String rubricId = params.getString(RubricsConstants.RBCS_LIST);
+        
+                String fileName = "Rubrics_" + rubricId + ".zip";
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ZipOutputStream out = new ZipOutputStream(baos);
+                out.setLevel(serverConfigurationService.getInt("zip.compression.level", 1));
+                System.out.println("2");
+        
+                final ZipEntry zipEntry = new ZipEntry(fileName);
+                out.putNextEntry(zipEntry);
+                out.write(INPUT_BUFFER_SIZE);
+                System.out.println("3");
+                List userSubmissions = (List) state.getAttribute(USER_SUBMISSIONS);
+                // List userSubmissions = new ArrayList<>();
+                for (Object submissionObject : userSubmissions) {
+                    System.out.println("4");
+                    SubmitterSubmission submitterSubmission = (SubmitterSubmission) submissionObject;
+                    AssignmentSubmission assignmentSubmission = submitterSubmission.getSubmission();
+                    Assignment originalAssignment = assignmentSubmission.getAssignment();
+                    System.out.println("5");
+        
+                    String siteId = originalAssignment.getContext();
+                    String itemId = originalAssignment.getId();
+                    String title = originalAssignment.getTitle();
+                    String evaluatedItemId = assignmentSubmission.getId();
+                    System.out.println("6");
+                    
+                    if ((siteId != null && !siteId.equals("")) && (itemId != null && !itemId.equals("")) 
+                            && (title != null && !title.equals("")) && (evaluatedItemId != null && !evaluatedItemId.equals("")) 
+                            && (rubricId != null && !rubricId.equals("")) && (toolId != null && !toolId.equals(""))) {
+                        System.out.println("7");
+                        byte[] pdf = rubricsService.createPdf(siteId, Long.parseLong(rubricId), toolId, itemId, evaluatedItemId);
+                        String userName = submitterSubmission.getUser().getEid();
+                        System.out.println("8");
+        
+                        final ZipEntry zipEntryPdf = new ZipEntry(userName + "_" + title + ".pdf");
+                        out.putNextEntry(zipEntryPdf);
+                        out.write(pdf);
+                        out.closeEntry();
+                        System.out.println("9");
+                    } else {
+                        System.out.println(siteId);
+                        System.out.println(itemId);
+                        System.out.println(title);
+                        System.out.println(evaluatedItemId);
+                        System.out.println(rubricId);
+                        System.out.println(toolId);
+                    }
+                }
+                System.out.println("10");
+                out.finish();
+                out.flush();
+                out.close();
+                res.setContentType("application/zip");
+                res.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
+                res.setContentLength(baos.size());
+                
+                // Escribir el contenido del ByteArrayOutputStream en la respuesta
+                baos.writeTo(res.getOutputStream());
+                res.getOutputStream().flush();
+                System.out.println("11");
+                throw new Exception("                      -                      ");
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
+            }
+        };
+    } // doExport_Pdf_Rubrics
 
     /**
      * Action is to preparing to go to the upload files
