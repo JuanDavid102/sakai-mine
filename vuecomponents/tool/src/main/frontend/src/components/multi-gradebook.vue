@@ -185,7 +185,7 @@ export default {
 
 				if (foundTag) {
 					this.value.push(foundTag);
-					break;
+					return;
 				}
 			});
       	});

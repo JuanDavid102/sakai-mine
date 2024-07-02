@@ -1482,6 +1482,7 @@ public class GradingServiceImpl implements GradingService {
     @Override
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public Map<String, String> getViewableStudentsForItemForUser(String userUid, String gradebookUid, String siteId, Long gradableObjectId) {
+        System.out.println("+4.1");
 
         if (gradebookUid == null || gradableObjectId == null || userUid == null) {
             throw new IllegalArgumentException("null gradebookUid or gradableObjectId or " +
@@ -1489,17 +1490,28 @@ public class GradingServiceImpl implements GradingService {
                     " gradebookUid: " + gradebookUid + " gradableObjectId:" +
                     gradableObjectId + " userId: " + userUid);
         }
+        System.out.println("+4.2");
 
         if (!this.gradingAuthz.isUserAbleToGrade(siteId, userUid)) {
             return new HashMap<>();
         }
-
+        System.out.println("+4.3");
+        // final Optional<GradebookAssignment> optAssignment = getDbExternalAssignment(gradebookUid, gradableObjectId.toString());
+        // final List<GradebookAssignment> assignmentsAux = getSortedAssignments(gradableObjectId, SortType.SORT_BY_SORTING, true);
+        // Optional<GradebookAssignment> optTarget = assignmentsAux.stream().filter(a -> a.getId().equals(gradableObjectId)).findAny();
+        // List<GradebookAssignment> gradebookAssignments = gradingPersistenceManager.getCountedAndGradedAssignmentsForGradebook(gradableObjectId);
+        
+        // Queda por probar
+        // getAssignmentWithoutStats with name
+        // isGradebookGroupEnabled
         final GradebookAssignment gradebookItem = getAssignmentWithoutStatsByID(gradebookUid, gradableObjectId);
+        System.out.println("+4.3.1");
 
         if (gradebookItem == null) {
             log.debug("The gradebook item does not exist, so returning empty set");
             return new HashMap();
         }
+        System.out.println("+4.4");
 
         final Long categoryId = gradebookItem.getCategory() == null ? null : gradebookItem.getCategory().getId();
 
@@ -1508,6 +1520,7 @@ public class GradingServiceImpl implements GradingService {
         if (enrRecFunctionMap == null) {
             return new HashMap();
         }
+        System.out.println("+4.5");
 
         final Map<String, String> studentIdFunctionMap = new HashMap();
         for (final Entry<EnrollmentRecord, String> entry : enrRecFunctionMap.entrySet()) {
@@ -1516,6 +1529,7 @@ public class GradingServiceImpl implements GradingService {
                 studentIdFunctionMap.put(enr.getUser().getUserUid(), entry.getValue());
             }
         }
+        System.out.println("+4.6");
         return studentIdFunctionMap;
     }
 

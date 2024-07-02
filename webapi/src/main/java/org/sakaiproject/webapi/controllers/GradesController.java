@@ -60,11 +60,14 @@ public class GradesController extends AbstractSakaiApiController {
     private SiteService siteService;
 
     private final Function<String, List<GradeRestBean>> gradeDataSupplierForSite = (siteId) -> {
+        System.out.println("1");
         List<Assignment> assignments = gradingService.getViewableAssignmentsForCurrentUser(siteId, siteId, SortType.SORT_BY_NONE);
         List<Long> assignmentIds = assignments.stream().map(Assignment::getId).collect(Collectors.toList());
+        System.out.println("2");
 
         // no need to continue if the site doesn't have gradebook items
         if (assignmentIds.isEmpty()) return Collections.emptyList();
+        System.out.println("3");
 
         // collect site information
         return siteService.getOptionalSite(siteId).map(site -> {
@@ -81,25 +84,30 @@ public class GradesController extends AbstractSakaiApiController {
                     : List.of(userId);
 
             Map<Long, List<GradeDefinition>> gradeDefinitions = gradingService.getGradesWithoutCommentsForStudentsForItems(siteId, siteId, assignmentIds, userIds);
+            System.out.println("4");
 
             List<GradeRestBean> beans = new ArrayList<>();
             // collect information for each gradebook item
             for (Assignment a : assignments) {
+                System.out.println("5");
                 GradeRestBean bean = new GradeRestBean(a);
                 bean.setSiteTitle(site.getTitle());
                 bean.setSiteRole(role.getId());
 
                 // collect information for internal gb item
                 List<GradeDefinition> gd = gradeDefinitions.get(a.getId());
+                System.out.println("6");
 
                 if (gd == null) {
                     // no grades for this gb assignment yet
                     bean.setScore("");
+                    System.out.println("7");
                     if (isMaintainer) {
                         bean.setUngraded(userIds.size());
                     }
                     bean.setNotGradedYet(true);
                 } else {
+                    System.out.println("8");
                     if (isMaintainer) {
                         double total = 0;
                         for (GradeDefinition d : gd) {
@@ -107,13 +115,16 @@ public class GradesController extends AbstractSakaiApiController {
                                 String grade = d.getGrade();
                                 if (!StringUtils.isBlank(grade)) {
                                     total += Double.parseDouble(grade);
+                                    System.out.println("9");
                                 }
                             }
                         }
                         bean.setScore(total > 0 ? String.format("%.2f", total / gd.size()) : "");
                         bean.setUngraded(userIds.size() - gd.size());
                         bean.setNotGradedYet(gd.isEmpty());
+                        System.out.println("10");
                     } else {
+                        System.out.println("11");
                         if (a.getReleased() && !gd.isEmpty()) {
                             bean.setNotGradedYet(false);
                             bean.setScore(StringUtils.trimToEmpty(gd.get(0).getGrade()));
@@ -121,19 +132,23 @@ public class GradesController extends AbstractSakaiApiController {
                             bean.setScore("");
                             bean.setNotGradedYet(true);
                         }
+                        System.out.println("12");
                     }
                 }
 
+                System.out.println("13");
                 String url = "";
                 if (a.getExternallyMaintained()) {
                     url = entityManager.getUrl(a.getReference(), Entity.UrlType.PORTAL).orElse("");
                 }
+                System.out.println("14");
                 if (StringUtils.isBlank(url)) {
 // TODO S2U-26 COMPROBAR LOS GB A LOS QUE PERTENECE EL USUARIO Y DEVOLVER NOTAS DE TODOS ELLOS?
 	// usado en 2 metodos q se llaman en SakaiGrades.js  que se llama en el dashboard solamente
                     ToolConfiguration tc = null;
                     Collection<ToolConfiguration> gbs = site.getTools("sakai.gradebookng");
                     for (ToolConfiguration tool : gbs) {
+                        System.out.println("15");
                         Properties props = tool.getPlacementConfig();
                         if (props.getProperty("gb-group") == null) {
                             // S2U-26 leaving backwards compatibility for the moment, it will always be a site=id situation until SAK-49493 is completed
@@ -141,12 +156,14 @@ public class GradesController extends AbstractSakaiApiController {
                             break;
                         }
                     }
+                    System.out.println("16");
                     url = tc != null ? "/portal/directtool/" + tc.getId() : "";
                 }
                 bean.setUrl(url);
 
                 // add data to list
                 beans.add(bean);
+                System.out.println("17");
             }
             return beans;
         }).orElse(Collections.emptyList());
@@ -154,6 +171,7 @@ public class GradesController extends AbstractSakaiApiController {
 
     @GetMapping(value = "/users/me/grades", produces = MediaType.APPLICATION_JSON_VALUE)
     public List<GradeRestBean> getUserGrades() {
+        System.out.println("18");
 
         Session session = checkSakaiSession();
         return portalService.getPinnedSites(session.getUserId()).stream()
@@ -163,6 +181,7 @@ public class GradesController extends AbstractSakaiApiController {
 
     @GetMapping(value = "/sites/{siteId}/grades", produces = MediaType.APPLICATION_JSON_VALUE)
     public List<GradeRestBean> getSiteGrades(@PathVariable String siteId) throws UserNotDefinedException {
+        System.out.println("19");
 
         checkSakaiSession();
 

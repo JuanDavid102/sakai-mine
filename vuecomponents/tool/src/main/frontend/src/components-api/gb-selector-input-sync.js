@@ -30,4 +30,33 @@ export default function syncGbSelectorInput(gbSelectorId, inputId, callbackFn) {
     return input?.value?.split(",").filter(gbId => gbId != "") ?? null;
 }
 
+// export default function syncGbSelectorInputa(gbSelectorId, inputId) {
+//     const input = document.getElementById(inputId);
+//     const gbSelector = document.getElementById(gbSelectorId);
+//     if (input && gbSelector) {
+//         gbSelector.addEventListener("change", (event) => {
+//             const gbs = event.detail?.[0];
+//             if (gbs) {
+//                 // Ids of the gbs separated by comma
+//                 const gbIds = gbs.map(gb => gb.id);
+//                 input.value = gbIds.join(",");
+//                 // Call callback function if present
+//             }
+//         });
+//     } else {
+//         if (!gbSelector) {
+//             console.error(`GB selector with id ${gbSelectorId} not found`);
+//         }
+
+//         if (!input) {
+//             console.error(`Input with id ${inputId} not found`);
+//         }
+//     }
+
+//     // Return the gbIds of the inputs initial value
+//     return input?.value?.split(",").filter(gbId => gbId != "") ?? null;
+// }
+
 window.syncGbSelectorInput = syncGbSelectorInput;
+
+// window.syncGbSelectorInputa = syncGbSelectorInputa;

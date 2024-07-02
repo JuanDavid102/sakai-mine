@@ -126,7 +126,37 @@
 			<script src="/library/js/spinner.js"></script>
 			<link rel="stylesheet" type="text/css" href="/messageforums-tool/css/dialog.css" />
 			<link rel="stylesheet" type="text/css" href="/messageforums-tool/css/msgcntr_statistics.css" />
-		<script>		
+		<script>
+			function initGbSelector(gbSelectorId, inputId) {
+				const input = document.getElementById(inputId);
+				const gbSelector = document.getElementById(gbSelectorId);
+				alert("Cero");
+				if (input && gbSelector) {
+					alert("Uno dos");
+					gbSelector.addEventListener("change", (event) => {
+						const gbs = event.detail?.[0];
+						if (gbs) {
+							// Ids of the gbs separated by comma
+							const gbIds = gbs.map(gb => gb.id);
+							input.value = gbIds.join(",");
+							// Call callback function if present
+							callbackFn?.(gbIds);
+						}
+					});
+				} else {
+					if (!gbSelector) {
+						console.error(`GB selector with id ${gbSelectorId} not found`);
+					}
+
+					if (!input) {
+						console.error(`Input with id ${inputId} not found`);
+					}
+				}
+				alert(input?.value?.split(",").filter(gbId => gbId != ""));
+
+				// Return the gbIds of the inputs initial value
+				return input?.value?.split(",").filter(gbId => gbId != "") ?? null;
+			}
 			function toggleComments(link){
 				if(link.innerHTML == "<h:outputText value="#{msgs.stat_forum_comments_show}" escape="false"/>"){
 					$('.awesomplete').fadeIn();
@@ -168,6 +198,8 @@
                                     sakaiReminder.new($(this).val());
                                   });
                                 });
+				initGbSelector("gb-selector", "dfStatisticsForm:gb_selector");
+
 			});
 		</script>
         <%@ include file="/jsp/discussionForum/menu/forumsMenu.jsp" %>
@@ -214,11 +246,37 @@
 			    <f:verbatim></h3></f:verbatim>
           </h:panelGroup> 
           <h:panelGroup styleClass="itemNav">
-	      	<h:outputText value="#{msgs.cdfm_select_assign}: "/>
-	  		<h:selectOneMenu id="assignment" value="#{mfStatisticsBean.selectedAssign}" valueChangeListener="#{mfStatisticsBean.processGradeAssignChange}" styleClass="selAssignVal"
-	          onchange="document.forms[0].submit();">
-	           <f:selectItems value="#{mfStatisticsBean.assignments}" />
-	        </h:selectOneMenu>          
+		  <h:panelGroup rendered="#{!mfStatisticsBean.gradingServiceAux.isGradebookGroupEnabled(ForumTool.siteId)}">
+			<h:outputText value="#{msgs.cdfm_select_assign}: "/>
+			<h:selectOneMenu id="assignment" value="#{mfStatisticsBean.selectedAssign}" valueChangeListener="#{mfStatisticsBean.processGradeAssignChange}" styleClass="selAssignVal"
+			onchange="document.forms[0].submit();">
+			<f:selectItems value="#{mfStatisticsBean.assignments}" />
+			</h:selectOneMenu>
+		  </h:panelGroup>
+<!-- document.getElementById("gb-selector").onfocus = function(){document.getElementById("gb-selector").style= "height: 700px; display:block"} -->
+ <!-- document.getElementById("gb-selector").onended = function(){document.getElementById("gb-selector").style= ""} -->
+ <!-- var dropdown = document.getElementById("gb-selector"); document.addEventListener('click', function(event) {
+	const isClickInside = dropdown.contains(event.target);
+	if (!isClickInside) {
+		dropdown.style = "";
+	}
+}); -->
+<!-- valueChangeListener="{mfStatisticsBean.processGradeAssignsChange}" -->
+			<h:panelGroup rendered="#{mfStatisticsBean.gradingServiceAux.isGradebookGroupEnabled(ForumTool.siteId)}">
+				<sakai-multi-gradebook
+						id="gb-selector"
+						site-id='<h:outputText value="#{ForumTool.siteId}" />'
+						selected-temp='<h:outputText value="Hey" />'
+					>
+				</sakai-multi-gradebook>
+				<h:inputHidden 
+					id="gb_selector" 
+					value="#{mfStatisticsBean.selectedAssign}" 
+				/>
+				
+				<h:commandButton action="#{mfStatisticsBean.proccessActionGradeAssignsChangeSubmit}" value="Una mierda" accesskey="s"
+				onclick="warn = false;SPNR.disableControlsAndSpin( this, null );" />
+			</h:panelGroup>
           </h:panelGroup>  
           <h:panelGroup styleClass="itemNav" rendered="#{!empty mfStatisticsBean.groupsForStatisticsByTopic}">
           
@@ -381,6 +439,8 @@
 						</h:outputFormat>
 					</h:commandLink>
   				</f:facet>
+				<h:outputText value="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" />
+				<h:outputText value="#{stat.gradebookAssignment.allowedToGrade}" />
   				<h:inputText size="5" value="#{stat.gradebookAssignment.score}" rendered="#{stat.gradebookAssignment.allowedToGrade}" styleClass="gradeInput" onkeyup="warn = true;"/>
   				<h:outputText value="#{msgs.stat_forum_na}" rendered="#{!stat.gradebookAssignment.allowedToGrade}"/>
   				<h:outputText value=" %" rendered="#{mfStatisticsBean.gradeByPercent && stat.gradebookAssignment.allowedToGrade}" />

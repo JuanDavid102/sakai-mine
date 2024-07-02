@@ -675,16 +675,31 @@ public class DiscussionForumTool {
 
         //Code to get the gradebook service from ComponentManager
         GradingService gradingService = getGradingService();
-
-        for (Assignment thisAssign : gradingService.getAssignments(toolManager.getCurrentPlacement().getContext(), toolManager.getCurrentPlacement().getContext(), SortType.SORT_BY_NONE)) {
-          if (!thisAssign.getExternallyMaintained()) {
-            try {
-              assignments.add(new SelectItem(Long.toString(thisAssign.getId()), thisAssign.getName()));
-            } catch (Exception e) {
-              log.error("DiscussionForumTool - processDfMsgGrd:" + e);
-            }
-          }
-        }
+		if (gradingService.isGradebookGroupEnabled(toolManager.getCurrentPlacement().getContext())) {
+			List<String> gradeAssignments = gradingService.getGradebookGroupInstances(toolManager.getCurrentPlacement().getContext());
+			for(int i=0; i<gradeAssignments.size(); i++) {
+				System.out.println("--> " + gradeAssignments.get(i));
+				List<Assignment> groupAssignments = gradingService.getAssignments(gradeAssignments.get(i), toolManager.getCurrentPlacement().getContext(), SortType.SORT_BY_NONE);
+				for (Assignment assignment: groupAssignments) {
+					System.out.println("--> " + assignment.getId());
+					assignments.add(new SelectItem(Long.toString(assignment.getId()), assignment.getName()));
+				}
+			}
+		} else {
+			List gradeAssignmentsBeforeFilter = gradingService.getAssignments(toolManager.getCurrentPlacement().getContext(), toolManager.getCurrentPlacement().getContext(), SortType.SORT_BY_NONE);
+			for (Assignment thisAssign : gradingService.getAssignments(toolManager.getCurrentPlacement().getContext(), toolManager.getCurrentPlacement().getContext(), SortType.SORT_BY_NONE)) {
+				System.out.println(" - - - - -  - - - - -  - - - - - - - - - - -");
+				System.out.println(thisAssign.getName());
+				if (!thisAssign.getExternallyMaintained()) {
+				  try {
+					assignments.add(new SelectItem(Long.toString(thisAssign.getId()), thisAssign.getName()));
+				  } catch (Exception e) {
+					log.error("DiscussionForumTool - processDfMsgGrd:" + e);
+				  }
+				}
+			  }
+		}
+        
       } catch (SecurityException se) {
           log.debug("SecurityException caught while getting assignments.", se);
       } catch (Exception e1) {

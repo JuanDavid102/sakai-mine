@@ -706,19 +706,23 @@ public class MessageForumStatisticsBean {
 	}
 	
 	public List getTopicStatistics(){
+		System.out.println("!!!!");
 		final List<DecoratedCompiledMessageStatistics> statistics = new ArrayList<DecoratedCompiledMessageStatistics>();
 		m_displayAnonIds = false;
+		System.out.println("!!!! - 2");
 				
 		if ( StringUtils.isNotBlank(selectedAllTopicsTopicId) || StringUtils.isNotBlank(selectedAllTopicsForumId) ) {
 			Map<String, Integer> userMessageTotal = new HashMap<String, Integer>();
 			DiscussionForum forum = forumManager.getForumByIdWithTopics(Long.parseLong(selectedAllTopicsForumId));
 			if (StringUtils.isNotBlank(selectedAllTopicsTopicId)) {
+				System.out.println("!!!! - 3");
 				DiscussionTopic currTopic = forumManager.getTopicById(Long.parseLong(selectedAllTopicsTopicId));
 				m_displayAnonIds = isUseAnonymousId(currTopic);
 				int topicMessages = messageManager.findMessageCountByTopicId(Long.parseLong(selectedAllTopicsTopicId));
 				userMessageTotal = getStudentTopicMessagCount(forum, currTopic, topicMessages);
 			}else{
 				//totalForum = messageManager.findMessageCountByForumId(Long.parseLong(selectedAllTopicsForumId));
+				System.out.println("!!!! - 4");
 				List<Object[]> totalTopcsCountList = messageManager.findMessageCountByForumId(forum.getId());
 				Map<Long, Integer> totalTopcsCountMap = new HashMap<Long, Integer>();
 				for(Object[] objArr : totalTopcsCountList){
@@ -726,6 +730,7 @@ public class MessageForumStatisticsBean {
 				}
 				// if there are no topics, reveal IDs; otherwise assume we're in a pure anonymous scenario (all topics are anonymous), if we find one that isn't anonymous, we'll flip it to false
 				m_displayAnonIds = !forum.getTopicsSet().isEmpty();
+				System.out.println("!!!! - 5");
 				for (Iterator itor = forum.getTopicsSet().iterator(); itor.hasNext(); ) {
 					DiscussionTopic currTopic = (DiscussionTopic)itor.next();
 					if (m_displayAnonIds && (!isUseAnonymousId(currTopic)))
@@ -734,6 +739,7 @@ public class MessageForumStatisticsBean {
 					}
 
 					Integer topicCount = totalTopcsCountMap.getOrDefault(currTopic.getId(), 0);
+					System.out.println("!!!! - 6");
 
 					Map<String, Integer> totalTopicCountMap = getStudentTopicMessagCount(forum, currTopic, topicCount);
 					for(Entry<String, Integer> entry : totalTopicCountMap.entrySet()){
@@ -743,9 +749,11 @@ public class MessageForumStatisticsBean {
 						}
 						userMessageTotal.put(entry.getKey(), studentCount);
 					}
+					System.out.println("!!!! - 7");
 				}
 			}
 
+			System.out.println("!!!! - 8");
 			Map<String, DecoratedCompiledMessageStatistics> tmpStatistics = new TreeMap<String, DecoratedCompiledMessageStatistics>();
 
 			// process the returned read statistics for the students to get them sorted by user id
@@ -755,6 +763,7 @@ public class MessageForumStatisticsBean {
 			}else{
 				studentReadStats = messageManager.findReadMessageCountForAllStudentsByForumId(Long.parseLong(selectedAllTopicsForumId));
 			}
+			System.out.println("!!!! - 9");
 			
 			for (Object[] readStat: studentReadStats) {
 				DecoratedCompiledMessageStatistics userStats = tmpStatistics.get(readStat[0]);
@@ -772,6 +781,7 @@ public class MessageForumStatisticsBean {
 					userStats.setReadForumsAmt(0);				
 				}
 			}
+			System.out.println("!!!! - 10");
 
 			// process the returned authored statistics for the students to get them sorted by user id
 			List<Object[]> studentAuthoredStats;
@@ -797,6 +807,7 @@ public class MessageForumStatisticsBean {
 					userStats.setAuthoredForumsAmt(0);
 				}
 			}
+			System.out.println("!!!! - 11");
 
 			List<Object[]> studentAuthoredNewStats;
 			if (selectedAllTopicsTopicId != null && !"".equals(selectedAllTopicsTopicId)) {
@@ -824,6 +835,7 @@ public class MessageForumStatisticsBean {
 					userStats.setAuthoredForumsNewAmt(0);
 				}
 			}
+			System.out.println("!!!! - 12");
 
 			List<Object[]> studentAuthoredRepliesStats;
 			if (selectedAllTopicsTopicId != null && !"".equals(selectedAllTopicsTopicId)) {
@@ -851,24 +863,30 @@ public class MessageForumStatisticsBean {
 					userStats.setAuthoredForumsRepliesAmt(0);
 				}
 			}
+			System.out.println("!!!! - 13");
 
 			// now process the users from the list of site members to add display information
 			// this will also prune the list of members so only the papropriate ones are displayed
 			courseMemberMap = membershipManager.getAllCourseUsersAsMap();
 			Map convertedMap = convertMemberMapToUserIdMap(courseMemberMap);
+			System.out.println("!!!! - 13.0");
 			Map<String, DecoratedGradebookAssignment> studentGradesMap = getGradebookAssignment();
 			List<DecoratedUser> dUsers = new ArrayList();
+			System.out.println("!!!! - 13.1");
 			
 			if(!DEFAULT_GB_ITEM.equals(selectedGroup)){
 				try{
+					System.out.println("!!!! - 13.2");
 					Site currentSite = siteService.getSite(toolManager.getCurrentPlacement().getContext());		
 					if(currentSite.hasGroups()){
 						Group group = currentSite.getGroup(selectedGroup);
+						System.out.println("!!!! - 13.3");
 						
 						for (Iterator i = group.getMembers().iterator(); i.hasNext();) {
 							Member item = (Member) i.next();
 							if(convertedMap.containsKey(item.getUserId())){
 								MembershipItem memItem = (MembershipItem) convertedMap.get(item.getUserId());
+								System.out.println("!!!! - 13.4");
 								if (null != memItem.getUser()) {
 									dUsers.add(new DecoratedUser(memItem.getUser().getId(), memItem.getName()));
 								}
@@ -887,6 +905,7 @@ public class MessageForumStatisticsBean {
 					}
 				}
 			}
+			System.out.println("!!!! - 14");
 
 			Map<String, String> userIdAnonIdMap = null;
 			// If appropriate, get the map of userIds -> anonIds in one query up front
@@ -942,6 +961,7 @@ public class MessageForumStatisticsBean {
 
 				statistics.add(userInfo);
 			}
+			System.out.println("!!!! - 15");
 
 			sortStatistics(statistics);
 		}
@@ -966,9 +986,11 @@ public class MessageForumStatisticsBean {
 		// Determine if something has changed that warrants the cached gradeStatistics to be refreshed
 		// Has the selected gradebook assignment or the selected group changed since the gradeStatistics were cached?
 		boolean refreshCachedStatistics = !StringUtils.equals(m_gradeStatisticsAssign, selectedAssign) || !StringUtils.equals(m_gradeStatisticsGroup, selectedGroup);
+		System.out.println("111111111: " + m_gradeStatisticsAssign + " - " + selectedAssign + " - " + m_gradeStatisticsGroup + " - " + selectedGroup + "(" + refreshCachedStatistics + ")");
 		if (!refreshCachedStatistics)
 		{
 			// Are we sorting on a different column?
+			System.out.println("222222222");
 			Comparator comparator = determineComparator();
 			if (comparator != null && !comparator.equals(m_comparator))
 			{
@@ -978,9 +1000,11 @@ public class MessageForumStatisticsBean {
 
 		if (refreshCachedStatistics)
 		{
+			System.out.println("333333333");
 			// The selected gradebook assignment or group has changed; our gradeStatistics need to be updated
 			getTopicStatistics();
 		}
+		System.out.println("444444444");
 		return gradeStatistics;
 	}
 	
@@ -2742,18 +2766,35 @@ public class MessageForumStatisticsBean {
 			//Code to get the gradebook service from ComponentManager
 
 			GradingService gradingService = getGradingService();
-
-            List gradeAssignmentsBeforeFilter = gradingService.getAssignments(toolManager.getCurrentPlacement().getContext(), toolManager.getCurrentPlacement().getContext(), SortType.SORT_BY_NONE);
-            for(int i=0; i<gradeAssignmentsBeforeFilter.size(); i++) {
-                Assignment thisAssign = (Assignment) gradeAssignmentsBeforeFilter.get(i);
-                if(!thisAssign.getExternallyMaintained()) {
-                    try {
-                        assignments.add(new SelectItem(Integer.toString(assignments.size()), thisAssign.getName()));
-                    } catch(Exception e) {
-                        log.error("DiscussionForumTool - processDfMsgGrd:" + e);
-                    }
-                }
-            }
+			// findFirst
+			System.out.println(gradingService.isGradebookGroupEnabled(toolManager.getCurrentPlacement().getContext()));
+			System.out.println(gradingService.getGradebookGroupInstances(toolManager.getCurrentPlacement().getContext()).size());
+			// gradingService.List<String> getGradebookGroupInstances(String siteId);
+			if (gradingService.isGradebookGroupEnabled(toolManager.getCurrentPlacement().getContext())) {
+				List<String> gradeAssignments = gradingService.getGradebookGroupInstances(toolManager.getCurrentPlacement().getContext());
+				for(int i=0; i<gradeAssignments.size(); i++) {
+					System.out.println("--> " + gradeAssignments.get(i));
+					List<Assignment> groupAssignments = gradingService.getAssignments(gradeAssignments.get(i), toolManager.getCurrentPlacement().getContext(), SortType.SORT_BY_NONE);
+					for (Assignment assignment: groupAssignments) {
+						System.out.println("--> " + assignment.getId());
+						assignments.add(new SelectItem(Long.toString(assignment.getId()), assignment.getName(), assignment.getPoints().toString() + "," + gradeAssignments.get(i)));
+					}
+				}
+			} else {
+				List gradeAssignmentsBeforeFilter = gradingService.getAssignments(toolManager.getCurrentPlacement().getContext(), toolManager.getCurrentPlacement().getContext(), SortType.SORT_BY_NONE);
+				for(int i=0; i<gradeAssignmentsBeforeFilter.size(); i++) {
+					Assignment thisAssign = (Assignment) gradeAssignmentsBeforeFilter.get(i);
+					System.out.println("____________________: " + gradeAssignmentsBeforeFilter.size());
+					System.out.println(thisAssign.getName());
+					if(!thisAssign.getExternallyMaintained()) {
+						try {
+							assignments.add(new SelectItem(Integer.toString(assignments.size()), thisAssign.getName()));
+						} catch(Exception e) {
+							log.error("DiscussionForumTool - processDfMsgGrd:" + e);
+						}
+					}
+				}
+			}
 		} catch(SecurityException se) {
 			log.debug("SecurityException caught while getting assignments.", se);
 		} catch(Exception e1) {
@@ -2764,6 +2805,9 @@ public class MessageForumStatisticsBean {
 	public String processGradeAssignChange(ValueChangeEvent vce) 
 	{ 
 		String changeAssign = (String) vce.getNewValue(); 
+		System.out.println("selectedAssign");
+		System.out.println(selectedAssign);
+		System.out.println(changeAssign);
 		if (changeAssign == null) 
 		{ 
 			return null; 
@@ -2779,6 +2823,17 @@ public class MessageForumStatisticsBean {
 
 			return null;
 		} 
+	}
+	public String proccessActionGradeAssignsChangeSubmit() {
+		gradebookItemChosen = true;
+		selectedAssign = selectedAssign.split(",")[0]; 
+		if(!DEFAULT_GB_ITEM.equalsIgnoreCase(selectedAssign)) {
+			gbItemPointsPossible = ((SelectItem)assignments.stream()
+				.filter(n -> ((String)n.getValue()).equals(selectedAssign.split(",")[0]))
+				.findFirst().get())
+			.getDescription().split(",")[0];
+		}
+		return null;
 	}
 	
 	public String processGroupChange(ValueChangeEvent vce) 
@@ -2798,6 +2853,8 @@ public class MessageForumStatisticsBean {
 	
 	public List<SelectItem> getAssignments() 
 	{
+		System.out.println("assignments == null");
+		System.out.println(assignments == null);
 		if(assignments == null){
 			setUpGradebookAssignments();
 		}
@@ -2856,18 +2913,40 @@ public class MessageForumStatisticsBean {
 			selectedAssign = item.getValue().toString();
 			selAssignName = assign;
 		});
+		System.out.println(assign);
+		System.out.println("<- +-+  :-:  +-+ ->" + assignments.size() + " : " + getAssignments().size());
 	}
 	
 	private Map<String, DecoratedGradebookAssignment> getGradebookAssignment(){
 		Map<String, DecoratedGradebookAssignment> returnVal = new HashMap<String, DecoratedGradebookAssignment>();
-
+		System.out.println("++  :  -  :  ++ ->");
+		String selectedAssignAux = selectedAssign;
 		if(!DEFAULT_GB_ITEM.equalsIgnoreCase(selectedAssign)) {
+			System.out.println("-1 : ");
 			String gradebookUid = toolManager.getCurrentPlacement().getContext();
-			selAssignName = ((SelectItem)assignments.get((Integer.valueOf(selectedAssign)).intValue())).getLabel();
+			System.out.println("+-0-+: " + selectedAssign.split(",")[0]);
+			assignments = getAssignments();
+			System.out.println("+-0.5: " + assignments.size());
 
+			SelectItem currentItem = ((SelectItem)assignments.stream()
+					.filter(n -> ((String) n.getValue()).equals(selectedAssign.split(",")[0]))
+					.findFirst().get());
+
+			selAssignName = currentItem.getLabel();
+			System.out.println("+1");
 
 			GradingService gradingService = getGradingService();
 			if (gradingService == null) return returnVal;
+			System.out.println("+2");
+			Assignment assignment = null;
+			if (gradingService.isGradebookGroupEnabled(toolManager.getCurrentPlacement().getContext())) {
+				assignment = gradingService.getAssignments(currentItem.getDescription().split(",")[1], toolManager.getCurrentPlacement().getContext(), SortType.SORT_BY_NONE).stream()
+						.filter(n -> ((String) n.getId().toString()).equals(selectedAssign.split(",")[0]))
+						.findFirst()
+						.get();
+			} else {
+				assignment = gradingService.getAssignmentByNameOrId(gradebookUid, gradebookUid, selAssignName);
+			}
 			
 			Integer gradeEntryType = gradingService.getGradeEntryType(gradebookUid);
             if (Objects.equals(gradeEntryType, GradingConstants.GRADE_TYPE_LETTER)) {
@@ -2883,10 +2962,11 @@ public class MessageForumStatisticsBean {
                 gradeByPercent = false;
                 gradeByLetter = false;
             }
+			System.out.println("+3");
 
-			Assignment assignment = gradingService.getAssignmentByNameOrId(gradebookUid, gradebookUid, selAssignName);
 			if(assignment != null){
 				gbItemPointsPossible = assignment.getPoints().toString();			
+				System.out.println("+4");
 
 				//grab all grades for the id's that the user is able to grade:
 				String userUid = sessionManager.getCurrentSessionUserId();
@@ -2894,7 +2974,9 @@ public class MessageForumStatisticsBean {
 				List<GradeDefinition> grades = gradingService.getGradesForStudentsForItem(gradebookUid, gradebookUid, assignment.getId(), new ArrayList(studentIdFunctionMap.keySet()));
 				//add grade values to return map
 				String decSeparator = formattedText.getDecimalSeparator();
+				System.out.println("+5");
 				for(GradeDefinition gradeDef : grades){
+					System.out.println("+5.1");
 					String studentUuid = gradeDef.getStudentUid();		  
 					DecoratedGradebookAssignment gradeAssignment = new DecoratedGradebookAssignment();
 					gradeAssignment.setAllowedToGrade(true);						
@@ -2906,7 +2988,9 @@ public class MessageForumStatisticsBean {
 					returnVal.put(studentUuid, gradeAssignment);
 				}
 				//now populate empty data for users who can be graded but don't have a grade yet:
+				System.out.println("+6");
 				for (Iterator iterator = studentIdFunctionMap.entrySet().iterator(); iterator.hasNext();) {
+					System.out.println("+6.1");
 					Entry entry = (Entry) iterator.next();
 					if(!returnVal.containsKey(entry.getKey().toString())){
 						//this user needs to be added a gradeable:
@@ -2918,7 +3002,8 @@ public class MessageForumStatisticsBean {
 						returnVal.put(entry.getKey().toString(), gradeAssignment);
 					}
 				}
-			}			
+				System.out.println("+7");
+			}
 		}
 
 		return returnVal;
@@ -2958,6 +3043,8 @@ public class MessageForumStatisticsBean {
 			return null;
 		}
 		
+		System.out.println("0");
+		System.out.println(selectedAssign);
 		if(gradeStatistics != null){
 	  	
 			if(selectedAssign == null || selectedAssign.trim().length()==0 || DEFAULT_GB_ITEM.equalsIgnoreCase(selectedAssign)) 
@@ -2965,7 +3052,6 @@ public class MessageForumStatisticsBean {
 				setErrorMessage(getResourceBundleString(NO_ASSGN)); 
 				return null; 
 			}     
-
 			if(!validateGradeInput())
 				return null;
 
@@ -3170,6 +3256,11 @@ public class MessageForumStatisticsBean {
 			m_groupsForStatisticsByTopic = getGroups();
 		}
 		return m_groupsForStatisticsByTopic;
+	}
+	
+	GradingService gradingServiceAux;
+	public GradingService getGradingServiceAux() {
+		return (GradingService)  ComponentManager.get("org.sakaiproject.grading.api.GradingService");
 	}
 
 	public List<SelectItem> getCachedGroupsForStatisticsByTopic()

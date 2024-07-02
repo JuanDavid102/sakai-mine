@@ -99,6 +99,38 @@ function initTagSelector(view) {
     window.syncTagSelectorInput(tagSelectorId, tagsInputId);
 }
 
+function initGbSelector(gbSelectorId, inputId) {
+
+	const input = document.getElementById(inputId);
+	const gbSelector = document.getElementById(gbSelectorId);
+	alert("Cero");
+	if (input && gbSelector) {
+		alert("Uno dos");
+		gbSelector.addEventListener("change", (event) => {
+			const gbs = event.detail?.[0];
+			if (gbs) {
+				// Ids of the gbs separated by comma
+				const gbIds = gbs.map(gb => gb.id);
+				input.value = gbIds.join(",");
+				// Call callback function if present
+				callbackFn?.(gbIds);
+			}
+		});
+	} else {
+		if (!gbSelector) {
+			console.error(`GB selector with id ${gbSelectorId} not found`);
+		}
+
+		if (!input) {
+			console.error(`Input with id ${inputId} not found`);
+		}
+	}
+	alert(input?.value?.split(",").filter(gbId => gbId != ""));
+
+	// Return the gbIds of the inputs initial value
+	return input?.value?.split(",").filter(gbId => gbId != "") ?? null;
+}
+
 $(document).ready(function(){
 
     $("#prefs_pvt_form\\:pvtmsgs\\:checkAll, #prefs_pvt_form\\:threaded_pvtmsgs\\:checkAll").click(function () {
