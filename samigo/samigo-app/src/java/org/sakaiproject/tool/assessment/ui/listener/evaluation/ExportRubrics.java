@@ -82,7 +82,7 @@ import org.sakaiproject.util.ResourceLoader;
 
         String evaluatedItemId = rubricsService.getRubricEvaluationObjectId(itemId, user.getId(), toolId, AgentFacade.getCurrentSiteId());
         byte[] pdf = rubricsService.createPdf(AgentFacade.getCurrentSiteId(), rubricId, "sakai.samigo", itemId, evaluatedItemId);
-        final ZipEntry zipEntryPdf = new ZipEntry(user.getEid() + "_" +  templateFilename) + ".pdf";
+        final ZipEntry zipEntryPdf = new ZipEntry(user.getEid() + "_" +  templateFilename + ".pdf");
 
         out.putNextEntry(zipEntryPdf);
         out.write(pdf);

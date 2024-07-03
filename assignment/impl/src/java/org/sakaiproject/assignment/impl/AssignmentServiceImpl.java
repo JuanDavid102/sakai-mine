@@ -540,14 +540,13 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
                 // determine the type of download to create using the reference that was requested
                 AssignmentReferenceReckoner.AssignmentReference refReckoner = AssignmentReferenceReckoner.reckoner().reference(ref.getReference()).reckon();
 
-                String queryString = req.getQueryString();
-
                 if (REFERENCE_ROOT.equals("/" + refReckoner.getType())) {
+                    String date = DateTimeFormatter.ofPattern("yyyyMMddHHmmss").withZone(userTimeService.getLocalTimeZone().toZoneId()).format(ZonedDateTime.now());
+                    String queryString = req.getQueryString();
                     // don't process any references that are not of type assignment
                     switch (refReckoner.getSubtype()) {
                         case REF_TYPE_CONTENT:
                         case REF_TYPE_ASSIGNMENT:
-                            String date = DateTimeFormatter.ofPattern("yyyyMMddHHmmss").withZone(userTimeService.getLocalTimeZone().toZoneId()).format(ZonedDateTime.now());
                             if (StringUtils.isNotBlank(refReckoner.getId())) {
                                 // if subtype is assignment then were downloading all submissions for an assignment
                                 try {
@@ -650,8 +649,6 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
                                     out.flush();
                                     out.close();
                                     res.setContentType("application/zip");
-
-                                    String date = DateTimeFormatter.ofPattern("yyyyMMddHHmmss").withZone(userTimeService.getLocalTimeZone().toZoneId()).format(ZonedDateTime.now());
 
                                     String filename = (escapeInvalidCharsEntry(assignment.getTitle())) + "_" + resourceLoader.getString("rubrics.zip") + "_" + date;
 
