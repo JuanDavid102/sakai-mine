@@ -1015,21 +1015,6 @@ $(document).ready(() => {
     buttons && buttons.forEach(button => button.addEventListener("click", releaseRubric));
   }
 
-  const exportRubricsButton = document.getElementById("exportAllRubrics");
-  exportRubricsButton.addEventListener("click", exportRubrics)
-  function exportRubrics(e) {
-    e.preventDefault();
-    $.ajax({
-        url: exportRubricsButton.getAttribute("ref"),
-        processData: false,
-        cache: false,
-        data: "rbcs-rubricslist=" + exportRubricsButton.getAttribute("rbcs-rubricslist"),
-        method: 'get',
-        success: function(response){
-            console.debug(response);
-        }
-    });
-  };
 });
 
 ASN.cancelGradeSubmission = function () {

@@ -650,7 +650,9 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
                                     out.close();
                                     res.setContentType("application/zip");
 
-                                    String filename = (escapeInvalidCharsEntry(assignment.getTitle())) + "_" + resourceLoader.getString("rubrics.zip") + "_" + date;
+                                    String assigmentTitle = assignment.getTitle().replace("/", "_");
+
+                                    String filename = (escapeInvalidCharsEntry(assigmentTitle)) + "_" + resourceLoader.getString("rubrics.zip") + "_" + date;
 
                                     res.setHeader("Content-Disposition", "attachment; filename=\"" + filename + ".zip\"");
                                     res.setContentLength(baos.size());
