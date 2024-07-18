@@ -1500,11 +1500,18 @@ public class GradingServiceImpl implements GradingService {
         // final List<GradebookAssignment> assignmentsAux = getSortedAssignments(gradableObjectId, SortType.SORT_BY_SORTING, true);
         // Optional<GradebookAssignment> optTarget = assignmentsAux.stream().filter(a -> a.getId().equals(gradableObjectId)).findAny();
         // List<GradebookAssignment> gradebookAssignments = gradingPersistenceManager.getCountedAndGradedAssignmentsForGradebook(gradableObjectId);
-        
-        // Queda por probar
         // getAssignmentWithoutStats with name
+        
+        // preguntar a juanma sobre como obtener esto de grupos
         // isGradebookGroupEnabled
+        List<String> gradebookList = getGradebookGroupInstances(siteId);
+        for (String gb : gradebookList) {
+            List<Assignment> assignments = getAssignments(gb, siteId, SortType.SORT_BY_NONE);
+            System.out.println(assignments.size());
+        }
+
         final GradebookAssignment gradebookItem = getAssignmentWithoutStatsByID(gradebookUid, gradableObjectId);
+        
         System.out.println("+4.3.1");
 
         if (gradebookItem == null) {

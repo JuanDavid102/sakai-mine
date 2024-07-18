@@ -2965,9 +2965,9 @@ public class MessageForumStatisticsBean {
 			System.out.println("+3");
 
 			if(assignment != null){
-				gbItemPointsPossible = assignment.getPoints().toString();			
+				gbItemPointsPossible = assignment.getPoints().toString();
 				System.out.println("+4");
-
+				System.out.println(assignment.getName());
 				//grab all grades for the id's that the user is able to grade:
 				String userUid = sessionManager.getCurrentSessionUserId();
 				Map studentIdFunctionMap = gradingService.getViewableStudentsForItemForUser(userUid, gradebookUid, gradebookUid, assignment.getId());
@@ -2994,6 +2994,7 @@ public class MessageForumStatisticsBean {
 					Entry entry = (Entry) iterator.next();
 					if(!returnVal.containsKey(entry.getKey().toString())){
 						//this user needs to be added a gradeable:
+						System.out.println("+6.1.1");
 						DecoratedGradebookAssignment gradeAssignment = new DecoratedGradebookAssignment();
 						gradeAssignment.setAllowedToGrade(true);				
 						gradeAssignment.setName(selAssignName);
