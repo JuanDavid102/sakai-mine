@@ -119,6 +119,7 @@ import org.sakaiproject.util.ResourceLoader;
 import org.sakaiproject.util.StringUtil;
 import org.springframework.lang.Nullable;
 import org.springframework.orm.hibernate5.HibernateOptimisticLockingFailureException;
+import org.sakaiproject.user.api.UserDirectoryService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -161,6 +162,7 @@ public class GradingServiceImpl implements GradingService {
     @Autowired private SecurityService securityService;
     @Autowired private SessionManager sessionManager;
     @Autowired private ServerConfigurationService serverConfigurationService;
+    @Autowired private UserDirectoryService userDirectoryService;
 
     
 
@@ -1502,7 +1504,7 @@ public class GradingServiceImpl implements GradingService {
     @Override
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public Map<String, String> getViewableStudentsForItemForUser(String userUid, String gradebookUid, String siteId, Long gradableObjectId) {
-        System.out.println("+4.1");
+        System.out.println("+4.1: " + gradebookUid + " - " + gradableObjectId);
 
         if (gradebookUid == null || gradableObjectId == null || userUid == null) {
             throw new IllegalArgumentException("null gradebookUid or gradableObjectId or " +
@@ -1515,24 +1517,14 @@ public class GradingServiceImpl implements GradingService {
         if (!this.gradingAuthz.isUserAbleToGrade(siteId, userUid)) {
             return new HashMap<>();
         }
-        System.out.println("+4.3");
-        // final Optional<GradebookAssignment> optAssignment = getDbExternalAssignment(gradebookUid, gradableObjectId.toString());
-        // final List<GradebookAssignment> assignmentsAux = getSortedAssignments(gradableObjectId, SortType.SORT_BY_SORTING, true);
-        // Optional<GradebookAssignment> optTarget = assignmentsAux.stream().filter(a -> a.getId().equals(gradableObjectId)).findAny();
-        // List<GradebookAssignment> gradebookAssignments = gradingPersistenceManager.getCountedAndGradedAssignmentsForGradebook(gradableObjectId);
-        // getAssignmentWithoutStats with name
-        
-        // preguntar a juanma sobre como obtener esto de grupos
-        // isGradebookGroupEnabled
-        List<String> gradebookList = getGradebookGroupInstances(siteId);
-        for (String gb : gradebookList) {
-            List<Assignment> assignments = getAssignments(gb, siteId, SortType.SORT_BY_NONE);
-            System.out.println(assignments.size());
-        }
 
-        final GradebookAssignment gradebookItem = getAssignmentWithoutStatsByID(gradebookUid, gradableObjectId);
-        
+        GradebookAssignment gradebookItem = getAssignmentWithoutStatsByID(gradebookUid, gradableObjectId);
         System.out.println("+4.3.1");
+        if (isGradebookGroupEnabled(gradebookUid)) {
+            gradebookItem = getAssignmentByUIDWithGradableId(gradebookUid, gradableObjectId);
+            System.out.println("+4.3.7");
+        }
+        System.out.println("+4.3.20: " + (gradebookItem == null));
 
         if (gradebookItem == null) {
             log.debug("The gradebook item does not exist, so returning empty set");
@@ -1542,8 +1534,32 @@ public class GradingServiceImpl implements GradingService {
 
         final Long categoryId = gradebookItem.getCategory() == null ? null : gradebookItem.getCategory().getId();
 
-        final Map<EnrollmentRecord, String> enrRecFunctionMap = this.gradingAuthz.findMatchingEnrollmentsForItemForUser(userUid, gradebookUid, siteId,
+        Map<EnrollmentRecord, String> enrRecFunctionMap = null;
+
+        if (isGradebookGroupEnabled(gradebookUid)) {
+            try {
+                org.sakaiproject.user.api.User user = userDirectoryService.getUser(userUid);
+                System.out.println("+4.4.1: " + (user != null));
+                Site currentSite = siteService.getSite(gradebookUid);
+                Group currentGroup = null;
+
+                Gradebook currentGradebook = getGradebookGroupInstances(gradebookUid).stream()
+                    .filter(n -> {
+                        System.out.println("n.getId() + - + n.getUid() + .- + gradableObjectId     ");
+                        System.out.println(n.getId() + " - " + n.getUid() + " ._ " + gradableObjectId + "---->" + siteId);
+                        return (n.getUid()).equals(siteId.split(",")[1]);
+                    })
+                    .findFirst().get();
+    
+                enrRecFunctionMap = this.gradingAuthz.findMatchingEnrollmentsForItemForUser(userUid, gradebookUid, siteId,
+                    categoryId, currentGradebook.getCategoryType(), null, null);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            enrRecFunctionMap = this.gradingAuthz.findMatchingEnrollmentsForItemForUser(userUid, gradebookUid, siteId,
                 categoryId, getGradebook(gradebookUid).getCategoryType(), null, null);
+        }
         if (enrRecFunctionMap == null) {
             return new HashMap();
         }
@@ -2006,7 +2022,10 @@ public class GradingServiceImpl implements GradingService {
             return;
         }
 
-        final GradebookAssignment assignment = getAssignmentWithoutStatsByID(gradebookUid, gradableObjectId);
+        GradebookAssignment assignment = getAssignmentWithoutStatsByID(gradebookUid, gradableObjectId);
+        if (isGradebookGroupEnabled(siteId)) {
+            assignment = getAssignmentByUIDWithGradableId(gradebookUid, gradableObjectId);
+        }
         if (assignment == null) {
             throw new AssessmentNotFoundException("No gradebook item exists with gradable object id = " + gradableObjectId);
         }
@@ -4871,6 +4890,10 @@ public class GradingServiceImpl implements GradingService {
     private AssignmentGradeRecord getAssignmentGradeRecord(GradebookAssignment assignment, String studentUid) {
         return gradingPersistenceManager.getAssignmentGradeRecordForAssignmentAndStudent(assignment.getId(), studentUid);
     }
+    public List<AssignmentGradeRecord> getAssignmentGradeRecords(Long assignmentId) {
+        return gradingPersistenceManager.getAllAssignmentGradeRecordsForAssignment(assignmentId);
+    }
+    
 
     public void postEvent(final String event, final String objectReference) {
         this.eventTrackingService.post(this.eventTrackingService.newEvent(event, objectReference, true));
@@ -5241,6 +5264,25 @@ public class GradingServiceImpl implements GradingService {
 		return gbList;
 	}
 
+    public List<String> getGradebookGroupInstancesIds(String siteId) {
+		///if cached return cache
+		List<String> gbGroups = new ArrayList<>();
+		try {
+			final Site site = this.siteService.getSite(siteId);
+			Collection<ToolConfiguration> gbs = site.getTools("sakai.gradebookng");
+			for (ToolConfiguration tc : gbs) {
+				Properties props = tc.getPlacementConfig();
+				if (props.getProperty(GB_GROUP_TOOL_PROPERTY) != null) {
+					log.info("Detected gradebook for group {}", props.getProperty(GB_GROUP_TOOL_PROPERTY));
+					gbGroups.add(props.getProperty(GB_GROUP_TOOL_PROPERTY));
+				}
+			}
+        } catch (IdUnusedException idue) {
+            log.warn("No site for id {}", siteId);
+        }
+		return gbGroups;
+	}
+
     // Possible new param to do log, warn or info instead of retriving message
     // I18n feature implementation replacing strings to messageProperties
     private String buildCacheLogDebug(String type, String cacheKey) {
@@ -5593,4 +5635,27 @@ public class GradingServiceImpl implements GradingService {
             }
         }
     }
+
+    public GradebookAssignment getAssignmentByUIDWithGradableId(String gradebookUid, Long gradableObjectId) {
+        GradebookAssignment gradebookItem = null;
+        List<Gradebook> gradebookList = getGradebookGroupInstances(gradebookUid);
+        System.out.println("+4.3.2");
+        for (Gradebook gb : gradebookList) {
+            System.out.println("+4.3.3: " + gb.getId() + " - " + gb.getUid());
+            List<GradebookAssignment> gradebookItemsAux = getAssignments(gb.getId());
+            if (gradebookItemsAux != null && gradebookItemsAux.size() > 0 && gradebookItem == null) {
+                System.out.println("+4.3.4");
+                for (GradebookAssignment gradebookItemAux : gradebookItemsAux) {
+                    if (gradebookItemAux.getId().equals(gradableObjectId)) {
+                        System.out.println("Entre" + (gradebookItemAux.getId().equals(gradableObjectId)));
+                        System.out.println("Entre" + (gradebookItemAux.getExternalId()));
+                        gradebookItem = gradebookItemAux;
+                    }
+                }
+                System.out.println("+4.3.5");
+            }
+        }
+        return gradebookItem;
+    }
+
 }

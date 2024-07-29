@@ -76,6 +76,7 @@ import org.sakaiproject.grading.api.Assignment;
 import org.sakaiproject.grading.api.GradeDefinition;
 import org.sakaiproject.grading.api.GradingConstants;
 import org.sakaiproject.grading.api.GradingService;
+import org.sakaiproject.grading.api.model.Gradebook;
 import org.sakaiproject.grading.api.SortType;
 import org.sakaiproject.site.api.Group;
 import org.sakaiproject.site.api.Site;
@@ -90,6 +91,7 @@ import org.sakaiproject.util.api.FormattedText;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
+import org.sakaiproject.grading.api.model.AssignmentGradeRecord;
 
 @Slf4j
 @ManagedBean(name="mfStatisticsBean")
@@ -2768,10 +2770,10 @@ public class MessageForumStatisticsBean {
 			GradingService gradingService = getGradingService();
 			// findFirst
 			System.out.println(gradingService.isGradebookGroupEnabled(toolManager.getCurrentPlacement().getContext()));
-			System.out.println(gradingService.getGradebookGroupInstances(toolManager.getCurrentPlacement().getContext()).size());
-			// gradingService.List<String> getGradebookGroupInstances(String siteId);
+			System.out.println(gradingService.getGradebookGroupInstancesIds(toolManager.getCurrentPlacement().getContext()).size());
+			// gradingService.List<String> getGradebookGroupInstancesIds(String siteId);
 			if (gradingService.isGradebookGroupEnabled(toolManager.getCurrentPlacement().getContext())) {
-				List<String> gradeAssignments = gradingService.getGradebookGroupInstances(toolManager.getCurrentPlacement().getContext());
+				List<String> gradeAssignments = gradingService.getGradebookGroupInstancesIds(toolManager.getCurrentPlacement().getContext());
 				for(int i=0; i<gradeAssignments.size(); i++) {
 					System.out.println("--> " + gradeAssignments.get(i));
 					List<Assignment> groupAssignments = gradingService.getAssignments(gradeAssignments.get(i), toolManager.getCurrentPlacement().getContext(), SortType.SORT_BY_NONE);
@@ -2826,12 +2828,14 @@ public class MessageForumStatisticsBean {
 	}
 	public String proccessActionGradeAssignsChangeSubmit() {
 		gradebookItemChosen = true;
-		selectedAssign = selectedAssign.split(",")[0]; 
+		System.out.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+		System.out.println(selectedAssign);
+		selectedAssign = selectedAssign.split("\",")[0]; 
 		if(!DEFAULT_GB_ITEM.equalsIgnoreCase(selectedAssign)) {
 			gbItemPointsPossible = ((SelectItem)assignments.stream()
-				.filter(n -> ((String)n.getValue()).equals(selectedAssign.split(",")[0]))
+				.filter(n -> ((String)n.getValue()).equals(selectedAssign.split("\",")[0]))
 				.findFirst().get())
-			.getDescription().split(",")[0];
+			.getDescription().split("\",")[0];
 		}
 		return null;
 	}
@@ -2922,14 +2926,20 @@ public class MessageForumStatisticsBean {
 		System.out.println("++  :  -  :  ++ ->");
 		String selectedAssignAux = selectedAssign;
 		if(!DEFAULT_GB_ITEM.equalsIgnoreCase(selectedAssign)) {
-			System.out.println("-1 : ");
+			System.out.println("-1 : " + selectedAssign);
 			String gradebookUid = toolManager.getCurrentPlacement().getContext();
-			System.out.println("+-0-+: " + selectedAssign.split(",")[0]);
+			System.out.println("+-0-+: ");
 			assignments = getAssignments();
+			for (SelectItem assn: assignments) {
+				System.out.println("assn");
+				System.out.println(assn.getDescription());
+				System.out.println(assn.getLabel());
+				System.out.println((String)assn.getValue());
+			}
 			System.out.println("+-0.5: " + assignments.size());
 
 			SelectItem currentItem = ((SelectItem)assignments.stream()
-					.filter(n -> ((String) n.getValue()).equals(selectedAssign.split(",")[0]))
+					.filter(n -> ((String) n.getValue()).equals(selectedAssign))
 					.findFirst().get());
 
 			selAssignName = currentItem.getLabel();
@@ -2940,8 +2950,10 @@ public class MessageForumStatisticsBean {
 			System.out.println("+2");
 			Assignment assignment = null;
 			if (gradingService.isGradebookGroupEnabled(toolManager.getCurrentPlacement().getContext())) {
+				System.out.println(currentItem.getDescription());
+				System.out.println(selectedAssign);
 				assignment = gradingService.getAssignments(currentItem.getDescription().split(",")[1], toolManager.getCurrentPlacement().getContext(), SortType.SORT_BY_NONE).stream()
-						.filter(n -> ((String) n.getId().toString()).equals(selectedAssign.split(",")[0]))
+						.filter(n -> ((String) n.getId().toString()).equals(selectedAssign.split("\",")[0]))
 						.findFirst()
 						.get();
 			} else {
@@ -2970,7 +2982,7 @@ public class MessageForumStatisticsBean {
 				System.out.println(assignment.getName());
 				//grab all grades for the id's that the user is able to grade:
 				String userUid = sessionManager.getCurrentSessionUserId();
-				Map studentIdFunctionMap = gradingService.getViewableStudentsForItemForUser(userUid, gradebookUid, gradebookUid, assignment.getId());
+				Map studentIdFunctionMap = gradingService.getViewableStudentsForItemForUser(userUid, gradebookUid, currentItem.getDescription(), assignment.getId());
 				List<GradeDefinition> grades = gradingService.getGradesForStudentsForItem(gradebookUid, gradebookUid, assignment.getId(), new ArrayList(studentIdFunctionMap.keySet()));
 				//add grade values to return map
 				String decSeparator = formattedText.getDecimalSeparator();
@@ -2979,7 +2991,22 @@ public class MessageForumStatisticsBean {
 					System.out.println("+5.1");
 					String studentUuid = gradeDef.getStudentUid();		  
 					DecoratedGradebookAssignment gradeAssignment = new DecoratedGradebookAssignment();
-					gradeAssignment.setAllowedToGrade(true);						
+					if (gradingService.isGradebookGroupEnabled(gradebookUid)) {
+						try {
+							User user = userDirectoryService.getUser(studentUuid);
+							final Site s = this.siteService.getSite(gradebookUid);
+							final Group g = s.getGroup(currentItem.getDescription().split(",")[1]);
+							boolean isFromGroup = (g != null) && (g.getMember(user.getDisplayId()) != null);
+							gradeAssignment.setAllowedToGrade(isFromGroup);
+							// List<AssignmentGradeRecord> unfilteredRecords = gradingPersistenceManager.getAllAssignmentGradeRecordsForAssignment(assignment.getId());
+							// System.out.println("ASDASDASD:     -> " + unfilteredRecords.size());
+							// AssignmentGradeRecord.pointsEarned
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					} else {
+						gradeAssignment.setAllowedToGrade(true);
+					}
 					gradeAssignment.setScore(StringUtils.replace(gradeDef.getGrade(), (",".equals(decSeparator)?".":","), decSeparator));
 					gradeAssignment.setComment(gradeDef.getGradeComment());
 					gradeAssignment.setName(selAssignName);
@@ -2989,6 +3016,7 @@ public class MessageForumStatisticsBean {
 				}
 				//now populate empty data for users who can be graded but don't have a grade yet:
 				System.out.println("+6");
+				List<AssignmentGradeRecord> gradeRecords = gradingService.getAssignmentGradeRecords(assignment.getId());
 				for (Iterator iterator = studentIdFunctionMap.entrySet().iterator(); iterator.hasNext();) {
 					System.out.println("+6.1");
 					Entry entry = (Entry) iterator.next();
@@ -2996,7 +3024,35 @@ public class MessageForumStatisticsBean {
 						//this user needs to be added a gradeable:
 						System.out.println("+6.1.1");
 						DecoratedGradebookAssignment gradeAssignment = new DecoratedGradebookAssignment();
-						gradeAssignment.setAllowedToGrade(true);				
+						if (gradingService.isGradebookGroupEnabled(gradebookUid)) {
+							try {
+								User user = userDirectoryService.getUser(entry.getKey().toString());
+								final Site s = this.siteService.getSite(gradebookUid);
+								final Group g = s.getGroup(currentItem.getDescription().split(",")[1]);
+
+								boolean isFromGroup = (g != null) && (g.getMember(user.getId()) != null);
+								gradeAssignment.setAllowedToGrade(isFromGroup);
+								if (isFromGroup) {
+									String score = gradeRecords.stream()
+										.filter(n -> ((String)n.getStudentId()).equals(user.getId()))
+										.findFirst().get().getPointsEarned().toString();
+									gradeAssignment.setScore(score);
+								}
+	
+								// gradeAssignment.setScore(decSeparator);
+
+								// Should modify? No
+								// gradingService.getGradesForStudentsForItem(gradebookUid, gradebookUid, assignment.getId(), new ArrayList(studentIdFunctionMap.keySet()))
+
+								System.out.println();
+								System.out.println();
+								System.out.println(assignment.getPoints());
+							} catch (Exception e) {
+								e.printStackTrace();
+							}
+						} else {
+							gradeAssignment.setAllowedToGrade(true);
+						}			
 						gradeAssignment.setName(selAssignName);
 						gradeAssignment.setPointsPossible(gbItemPointsPossible);
 						gradeAssignment.setUserUuid(entry.getKey().toString());
@@ -3045,7 +3101,6 @@ public class MessageForumStatisticsBean {
 		}
 		
 		System.out.println("0");
-		System.out.println(selectedAssign);
 		if(gradeStatistics != null){
 	  	
 			if(selectedAssign == null || selectedAssign.trim().length()==0 || DEFAULT_GB_ITEM.equalsIgnoreCase(selectedAssign)) 
@@ -3058,8 +3113,18 @@ public class MessageForumStatisticsBean {
 
 			try 
 			{   
-				String selectedAssignName = ((SelectItem)assignments.get((Integer.valueOf(selectedAssign)).intValue())).getLabel();
+				System.out.println("0.0");
+				String selectedAssignName;
+				if (gradingService.isGradebookGroupEnabled(toolManager.getCurrentPlacement().getContext())) {
+					selectedAssignName = ((SelectItem)assignments.stream()
+						.filter(n -> ((String)n.getValue()).equals(selectedAssign))
+						.findFirst().get())
+					.getLabel();
+				} else {
+					selectedAssignName = ((SelectItem)assignments.get((Integer.valueOf(selectedAssign)).intValue())).getLabel();
+				}
 				String gradebookUuid = toolManager.getCurrentPlacement().getContext();
+				System.out.println("0.01: " + gradebookUuid);
 				
 				List<GradeDefinition> gradeInfoToSave = new ArrayList<GradeDefinition>();
 				for (DecoratedCompiledMessageStatistics gradeStatistic : gradeStatistics) {
@@ -3069,6 +3134,8 @@ public class MessageForumStatisticsBean {
                 		                        !"".equals(gradeStatistic.getGradebookAssignment().getScore())){
 
 		                                    GradeDefinition gradeDef = new GradeDefinition();
+											System.out.println("0.1");
+											//
 		                                    gradeDef.setStudentUid(gradeStatistic.getGradebookAssignment().getUserUuid());
 		                                    gradeDef.setGrade(gradeStatistic.getGradebookAssignment().getScore());
 		                                    gradeDef.setGradeComment(gradeStatistic.getGradebookAssignment().getComment());
@@ -3078,9 +3145,13 @@ public class MessageForumStatisticsBean {
 						}
 					}
 				}
-				
-				gradingService.saveGradesAndComments(gradebookUuid, gradebookUuid, gradingService.getAssignmentByNameOrId(gradebookUuid, gradebookUuid, selectedAssignName).getId(), gradeInfoToSave);
-
+				if (gradingService.isGradebookGroupEnabled(toolManager.getCurrentPlacement().getContext())) {
+					System.out.println("Id:    " + gradingService.getAssignmentByUIDWithGradableId(gradebookUuid, Long.parseLong(selectedAssign)).getId());
+					gradingService.saveGradesAndComments(gradebookUuid, gradebookUuid, gradingService.getAssignmentByUIDWithGradableId(gradebookUuid, Long.parseLong(selectedAssign)).getId(), gradeInfoToSave);
+				} else {
+					System.out.println("Id:    " + gradingService.getAssignmentByNameOrId(gradebookUuid, gradebookUuid, selectedAssignName).getId());
+					gradingService.saveGradesAndComments(gradebookUuid, gradebookUuid, gradingService.getAssignmentByNameOrId(gradebookUuid, gradebookUuid, selectedAssignName).getId(), gradeInfoToSave);
+				}
 				setSuccessMessage(getResourceBundleString(GRADE_SUCCESSFUL));
 			} 
 			catch(SecurityException se) {
@@ -3088,7 +3159,8 @@ public class MessageForumStatisticsBean {
 				setErrorMessage(getResourceBundleString("cdfm_no_gb_perm"));
 			}
 			catch(Exception e) 
-			{ 
+			{
+				e.printStackTrace();
 				log.error("MessageForumStatisticsBean - proccessActionSubmitGrades:" + e); 
 			} 
 

@@ -31,8 +31,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.sakaiproject.grading.api.model.AssignmentGradeRecord;
 import org.sakaiproject.grading.api.model.Category;
+import org.sakaiproject.grading.api.model.CourseGrade;
 import org.sakaiproject.grading.api.model.Gradebook;
+import org.sakaiproject.grading.api.model.GradebookAssignment;
 import org.sakaiproject.grading.api.model.GradingEvent;
 import org.sakaiproject.grading.api.model.GradingScale;
 import org.sakaiproject.section.api.coursemanagement.CourseSection;
@@ -1041,4 +1044,9 @@ public interface GradingService extends EntityProducer {
 
     public boolean isGradebookGroupEnabled(String siteId);
     public List<Gradebook> getGradebookGroupInstances(String siteId);
+    public List<String> getGradebookGroupInstancesIds(String siteId);
+
+    public GradebookAssignment getAssignmentByUIDWithGradableId(String gradebookUid, Long gradableObjectId);
+    public List<AssignmentGradeRecord> getAssignmentGradeRecords(Long assignmentId);
+
 }
