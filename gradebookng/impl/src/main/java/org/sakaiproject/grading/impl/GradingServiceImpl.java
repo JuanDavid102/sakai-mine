@@ -1524,7 +1524,7 @@ public class GradingServiceImpl implements GradingService {
         final Long categoryId = gradebookItem.getCategory() == null ? null : gradebookItem.getCategory().getId();
 
         final Map<EnrollmentRecord, String> enrRecFunctionMap = this.gradingAuthz.findMatchingEnrollmentsForItemForUser(userUid, gradebookUid, siteId,
-                categoryId, getGradebook(gradebookUid).getCategoryType(), null, null);
+                categoryId, getGradebook(gradebookUid).getCategoryType(), null, isCurrentGbSite(gradebookUid) ? null : gradebookUid);
         if (enrRecFunctionMap == null) {
             return new HashMap();
         }

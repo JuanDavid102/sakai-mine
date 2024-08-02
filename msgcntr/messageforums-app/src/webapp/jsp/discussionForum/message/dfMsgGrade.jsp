@@ -197,8 +197,17 @@
                         rendered="#{!ForumTool.selGBItemRestricted}" readonly="#{!ForumTool.allowedToGradeItem}"/>
                 </h:panelGroup>
             </h:panelGrid>
-
-            <sakai-multi-gradebook id="gb-selector"></sakai-multi-gradebook>
+            <h:panelGroup>
+                <h:outputText value="#{ForumTool.siteId}" />
+            </h:panelGroup>
+            <sakai-multi-gradebook
+                    id="gb-selector"
+                    site-id='<h:outputText value="#{ForumTool.siteId}" />'
+                >
+            </sakai-multi-gradebook>
+            <h:panelGroup>
+                <h:outputText value="#{ForumTool.siteId}" />
+            </h:panelGroup>
             <h:inputHidden id="gb_selector" />
 
             <% if (hasAssociatedRubric) { %>

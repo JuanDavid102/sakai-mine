@@ -194,7 +194,7 @@ export default {
 				const foundTag = option.items.find((item) => item.id === element);
 				if (foundTag) {
 					this.value.push(foundTag);
-					break;
+					return;
 				}
 			}
       	});
