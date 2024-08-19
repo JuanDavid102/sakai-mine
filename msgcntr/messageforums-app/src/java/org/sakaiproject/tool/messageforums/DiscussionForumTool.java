@@ -6011,6 +6011,7 @@ public class DiscussionForumTool {
    
   public String processGradeAssignChange(ValueChangeEvent vce) 
   { 
+	  System.out.println("1");
 	  String changeAssign = (String) vce.getNewValue(); 
 	  if (changeAssign == null) 
 	  { 
@@ -6018,6 +6019,7 @@ public class DiscussionForumTool {
 	  } 
 	  else 
 	  { 
+	  	  System.out.println("2: " + changeAssign);
 		  try 
 		  { 
 			  selectedAssign = changeAssign; 
@@ -6026,19 +6028,23 @@ public class DiscussionForumTool {
 			  if(!DEFAULT_GB_ITEM.equalsIgnoreCase(selectedAssign)) {
 				  String gradebookUid = toolManager.getCurrentPlacement().getContext();
 				  String studentId;
+			  	  System.out.println("3: " + gradebookUid);
 				  if(selectedMessage == null && selectedGradedUserId != null && !"".equals(selectedGradedUserId)){
 					  studentId = selectedGradedUserId;
 				  }else{
 					  studentId = userDirectoryService.getUser(selectedMessage.getMessage().getCreatedBy()).getId();  
 				  }				   
+				  System.out.println("4: " + studentId);
 				  
 				  setUpGradeInformation(gradebookUid, selectedAssign, studentId);
 			  } else {
 				  // this is the "Select a gradebook item" option
+				  System.out.println("5");
 				  allowedToGradeItem = false;
 				  selGBItemRestricted = true;
 			  }
 
+			  System.out.println("6");
 			  return GRADE_MESSAGE; 
 		  } 
 		  catch(Exception e) 
@@ -6048,6 +6054,66 @@ public class DiscussionForumTool {
 		  } 
 	  } 
   } 
+
+  public String currentChange;
+  public void setCurrentChange(String newChange){
+	currentChange = newChange;
+  }
+  public String getCurrentChange(){
+	return currentChange;
+  }
+  public String currentChange2;
+  public void setCurrentChange2(String newChange2){
+	currentChange2 = newChange2;
+  }
+  public String getCurrentChange2(){
+	return currentChange2;
+  }
+  public String processGradeAssignSend() 
+  { 
+	  System.out.println("1: " + currentChange);
+	  String changeAssign = currentChange; // Set value
+	  if (changeAssign == null) 
+	  { 
+		  return null; 
+	  } 
+	  else 
+	  { 
+	  	  System.out.println("2: " + changeAssign);
+		  try 
+		  { 
+			  selectedAssign = changeAssign; 
+			  resetGradeInfo();
+
+			  if(!DEFAULT_GB_ITEM.equalsIgnoreCase(selectedAssign)) {
+				  String gradebookUid = toolManager.getCurrentPlacement().getContext();
+				  String studentId;
+			  	  System.out.println("3: " + gradebookUid);
+				  if(selectedMessage == null && selectedGradedUserId != null && !"".equals(selectedGradedUserId)){
+					  studentId = selectedGradedUserId;
+				  }else{
+					  studentId = userDirectoryService.getUser(selectedMessage.getMessage().getCreatedBy()).getId();  
+				  }				   
+				  System.out.println("4: " + studentId);
+				  
+				  setUpGradeInformation(gradebookUid, selectedAssign, studentId);
+			  } else {
+				  // this is the "Select a gradebook item" option
+				  System.out.println("5");
+				  allowedToGradeItem = false;
+				  selGBItemRestricted = true;
+			  }
+
+			  System.out.println("6");
+			  return GRADE_MESSAGE; 
+		  } 
+		  catch(Exception e) 
+		  { 
+			  log.error("processGradeAssignChange in DiscussionFOrumTool - " + e); 
+			  return null; 
+		  } 
+	  } 
+  }
  
   public boolean isNumber(String validateString) 
   {
@@ -9506,5 +9572,9 @@ public class DiscussionForumTool {
     public String getAttachmentReadableSize(final String attachmentSize) {
       return FileUtils.byteCountToDisplaySize(Long.parseLong(attachmentSize));
     }
+
+	public boolean isGradebookGroupEnabled() {
+		return getGradingService().isGradebookGroupEnabled(toolManager.getCurrentPlacement().getContext());
+	}
 
 }

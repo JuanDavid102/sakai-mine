@@ -808,6 +808,9 @@ MFR.cancelGrading = function () {
   rubricGrading && rubricGrading.cancel();
   closeDialogBoxIfExists();
 }
+MFR.KA = function () {
+    window.syncGbSelectorInput("gb-selector", "msgForum:gb_selector");
+}
 
 window.onload = function() {
     document.querySelectorAll("[id*=createEmail1").forEach(item => {
