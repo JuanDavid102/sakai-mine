@@ -156,13 +156,12 @@
                 <h:outputText value="#{msgs.cdfm_required}" />
                 <h:outputText value="#{msgs.pvt_star}" styleClass="reqStarInline"/>
             </h:panelGroup>
-
-
-            <% if(isGradebookGroupEnabled) { %>
-                <h1>B</h1>
+            <% if (isGradebookGroupEnabled) { %>
                 <sakai-multi-gradebook
                         id="gb-selector"
                         site-id='<h:outputText value="#{ForumTool.siteId}" />'
+                        user-id='<h:outputText value="#{ForumTool.selectedGradedUserId}" />'
+                        selected-temp='<h:outputText value="#{ForumTool.selectedAssign}" />'
                     >
                 </sakai-multi-gradebook>
                 <h:inputHidden id="gb_selector" value="#{ForumTool.currentChange}" />
@@ -233,7 +232,7 @@
                     <h:commandButton action="#{ForumTool.processDfGradeCancel}" value="#{msgs.cdfm_cancel}" accesskey="x"
                         onclick="MFR.cancelGrading();" />
                 <%}%>
-                    <h:commandButton value="Hola" accesskey="x" onclick="changeChages()" action="#{ForumTool.processGradeAssignSend}" />
+                <h:commandButton value="Hola" onclick="document.forms[0].submit();" accesskey="x" action="#{ForumTool.processGradeAssignSend}" />
 
             </sakai:button_bar>
 

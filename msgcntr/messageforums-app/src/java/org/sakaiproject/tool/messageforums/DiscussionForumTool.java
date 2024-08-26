@@ -676,26 +676,16 @@ public class DiscussionForumTool {
 
         //Code to get the gradebook service from ComponentManager
         GradingService gradingService = getGradingService();
-        if (gradingService.isGradebookGroupEnabled(toolManager.getCurrentPlacement().getContext())) {
-            List<Gradebook> gradeAssignments = gradingService.getGradebookGroupInstances(toolManager.getCurrentPlacement().getContext());
-            for(int i=0; i<gradeAssignments.size(); i++) {
-                List<Assignment> groupAssignments = gradingService.getAssignments(gradeAssignments.get(i).getId().toString(), toolManager.getCurrentPlacement().getContext(), SortType.SORT_BY_NONE);
-                for (Assignment assignment: groupAssignments) {
-                    assignments.add(new SelectItem(Long.toString(assignment.getId()), assignment.getName()));
-                }
-            }
-        } else {
-            List gradeAssignmentsBeforeFilter = gradingService.getAssignments(toolManager.getCurrentPlacement().getContext(), toolManager.getCurrentPlacement().getContext(), SortType.SORT_BY_NONE);
-            for (Assignment thisAssign : gradingService.getAssignments(toolManager.getCurrentPlacement().getContext(), toolManager.getCurrentPlacement().getContext(), SortType.SORT_BY_NONE)) {
-                if (!thisAssign.getExternallyMaintained()) {
-                  try {
-                    assignments.add(new SelectItem(Long.toString(thisAssign.getId()), thisAssign.getName()));
-                  } catch (Exception e) {
-                    log.error("DiscussionForumTool - processDfMsgGrd:" + e);
-                  }
-                }
-              }
-        }
+        
+		for (Assignment thisAssign : gradingService.getAssignments(toolManager.getCurrentPlacement().getContext(), toolManager.getCurrentPlacement().getContext(), SortType.SORT_BY_NONE)) {
+			if (!thisAssign.getExternallyMaintained()) {
+				try {
+					assignments.add(new SelectItem(Long.toString(thisAssign.getId()), thisAssign.getName()));
+				} catch (Exception e) {
+					log.error("DiscussionForumTool - processDfMsgGrd:" + e);
+				}
+			}
+		}
         
       } catch (SecurityException se) {
           log.debug("SecurityException caught while getting assignments.", se);
@@ -4573,7 +4563,7 @@ public class DiscussionForumTool {
 			  gbItemPointsPossible = ((DecimalFormat) numberFormat).format(assignment.getPoints());
 		  }
 		  
-		  GradeDefinition gradeDef = gradingService.getGradeDefinitionForStudentForItem(gradebookUid, gradebookUid, assignment.getId(), studentId);
+	  	  GradeDefinition gradeDef = gradingService.getGradeDefinitionForStudentForItem(gradebookUid, siteId, assignment.getId(), studentId);
 
 		  if (gradeDef.getGrade() != null) {
 		      String decSeparator = formattedText.getDecimalSeparator();
@@ -4585,10 +4575,10 @@ public class DiscussionForumTool {
 		  }
 		  
 		  setSelectedAssignForMessage(selAssignmentName);
-	  } else {
+		} else {
 		  resetGradeInfo();
 		  setSelectedAssignForMessage(selAssignmentName);
-	  }
+		}
   }
   
   public String processDfMsgRvsFromThread()
@@ -5985,6 +5975,7 @@ public class DiscussionForumTool {
 	  gbItemComment = null;
 	  gradeComment = null; 
 	  gbItemPointsPossible = null;
+	  currentChange = null;
   }
   
   public String processDfGradeCancel() 
@@ -6010,8 +6001,7 @@ public class DiscussionForumTool {
   } 
    
   public String processGradeAssignChange(ValueChangeEvent vce) 
-  { 
-	  System.out.println("1");
+  {
 	  String changeAssign = (String) vce.getNewValue(); 
 	  if (changeAssign == null) 
 	  { 
@@ -6019,7 +6009,6 @@ public class DiscussionForumTool {
 	  } 
 	  else 
 	  { 
-	  	  System.out.println("2: " + changeAssign);
 		  try 
 		  { 
 			  selectedAssign = changeAssign; 
@@ -6028,23 +6017,19 @@ public class DiscussionForumTool {
 			  if(!DEFAULT_GB_ITEM.equalsIgnoreCase(selectedAssign)) {
 				  String gradebookUid = toolManager.getCurrentPlacement().getContext();
 				  String studentId;
-			  	  System.out.println("3: " + gradebookUid);
 				  if(selectedMessage == null && selectedGradedUserId != null && !"".equals(selectedGradedUserId)){
 					  studentId = selectedGradedUserId;
 				  }else{
 					  studentId = userDirectoryService.getUser(selectedMessage.getMessage().getCreatedBy()).getId();  
 				  }				   
-				  System.out.println("4: " + studentId);
 				  
 				  setUpGradeInformation(gradebookUid, toolManager.getCurrentPlacement().getContext(), selectedAssign, studentId);//TODO JUANDAVID pasar el/los gradebookuid que toque
 			  } else {
 				  // this is the "Select a gradebook item" option
-				  System.out.println("5");
 				  allowedToGradeItem = false;
 				  selGBItemRestricted = true;
 			  }
 
-			  System.out.println("6");
 			  return GRADE_MESSAGE; 
 		  } 
 		  catch(Exception e) 
@@ -6062,24 +6047,33 @@ public class DiscussionForumTool {
   public String getCurrentChange(){
 	return currentChange;
   }
-  public String currentChange2;
-  public void setCurrentChange2(String newChange2){
-	currentChange2 = newChange2;
+
+  public String frameIdString;
+  public String getFrameIdString() {
+	if (selectedForum != null) {
+		frameIdString = selectedForum.getForum().getId().toString();
+	} else {
+		frameIdString = getExternalParameterByKey(FORUM_ID);
+	}
+	return frameIdString;
   }
-  public String getCurrentChange2(){
-	return currentChange2;
+
+  public String dialogDivIdString;
+  public String getDialogDivIdString() {
+	String dialogDivSt = "dialogDivId";
+	return getExternalParameterByKey(dialogDivSt);
   }
+
   public String processGradeAssignSend() 
-  { 
-	  System.out.println("1: " + currentChange);
+  {
 	  String changeAssign = currentChange; // Set value
-	  if (changeAssign == null) 
+	  if (changeAssign == null || changeAssign.split(",").length > 1) 
 	  { 
 		  return null; 
 	  } 
 	  else 
-	  { 
-	  	  System.out.println("2: " + changeAssign);
+	  {
+
 		  try 
 		  { 
 			  selectedAssign = changeAssign; 
@@ -6087,29 +6081,43 @@ public class DiscussionForumTool {
 
 			  if(!DEFAULT_GB_ITEM.equalsIgnoreCase(selectedAssign)) {
 				  String gradebookUid = toolManager.getCurrentPlacement().getContext();
+				  if (isGradebookGroupEnabled()) {
+					boolean exit = false;
+					List<Gradebook> gradebookGroupInstances = getGradingService().getGradebookGroupInstances(gradebookUid);
+					int i = 0;
+					while (!exit && i < gradebookGroupInstances.size()) {
+						Gradebook gradebookGroup = gradebookGroupInstances.get(i);
+						List<Assignment> groupAssignments = getGradingService().getAssignments(gradebookGroup.getUid().toString(), toolManager.getCurrentPlacement().getContext(), SortType.SORT_BY_NONE);
+						int z = 0;
+						while (!exit && z < groupAssignments.size()) {
+							Assignment assignment = groupAssignments.get(z);
+							if (assignment.getId().toString().equals(selectedAssign)) {
+								gradebookUid = gradebookGroup.getUid().toString();
+								exit = true;
+							}
+							z++;
+						}
+						i++;
+					}
+				  }
 				  String studentId;
-			  	  System.out.println("3: " + gradebookUid);
 				  if(selectedMessage == null && selectedGradedUserId != null && !"".equals(selectedGradedUserId)){
 					  studentId = selectedGradedUserId;
 				  }else{
 					  studentId = userDirectoryService.getUser(selectedMessage.getMessage().getCreatedBy()).getId();  
 				  }				   
-				  System.out.println("4: " + studentId);
-				  
-				  setUpGradeInformation(gradebookUid, selectedAssign, studentId);
+				  setUpGradeInformation(gradebookUid, toolManager.getCurrentPlacement().getContext(), selectedAssign, studentId);
 			  } else {
 				  // this is the "Select a gradebook item" option
-				  System.out.println("5");
 				  allowedToGradeItem = false;
 				  selGBItemRestricted = true;
 			  }
 
-			  System.out.println("6");
 			  return GRADE_MESSAGE; 
 		  } 
 		  catch(Exception e) 
 		  { 
-			  log.error("processGradeAssignChange in DiscussionFOrumTool - " + e); 
+			  log.error("processGradeAssignChange222222 in DiscussionForumTool - " + e); 
 			  return null; 
 		  } 
 	  } 
@@ -6250,15 +6258,35 @@ public class DiscussionForumTool {
     String studentUid = null;
     try 
     {   
+        String siteId = toolManager.getCurrentPlacement().getContext();
         String gradebookUuid = toolManager.getCurrentPlacement().getContext();
+		if (isGradebookGroupEnabled()) {
+			boolean exit = false;
+			List<Gradebook> gradebookGroupInstances = getGradingService().getGradebookGroupInstances(gradebookUuid);
+			int i = 0;
+			while (!exit && i < gradebookGroupInstances.size()) {
+				Gradebook gradebookGroup = gradebookGroupInstances.get(i);
+				List<Assignment> groupAssignments = getGradingService().getAssignments(gradebookGroup.getUid().toString(), toolManager.getCurrentPlacement().getContext(), SortType.SORT_BY_NONE);
+				int z = 0;
+				while (!exit && z < groupAssignments.size()) {
+					Assignment assignment = groupAssignments.get(z);
+					if (assignment.getId().toString().equals(selectedAssign)) {
+						gradebookUuid = gradebookGroup.getUid().toString();
+						exit = true;
+					}
+					z++;
+				}
+				i++;
+			}
+		}
         if(selectedMessage == null && selectedGradedUserId != null && !"".equals(selectedGradedUserId)){
         	studentUid = selectedGradedUserId;
         }else{
         	studentUid = userDirectoryService.getUser(selectedMessage.getMessage().getCreatedBy()).getId();
         }
         
-        Long gbItemId = gradingService.getAssignmentByNameOrId(gradebookUuid, gradebookUuid, selectedAssign).getId();
-        gradingService.saveGradeAndCommentForStudent(gradebookUuid, gradebookUuid, gbItemId, studentUid, gradePoint, gradeComment);
+        Long gbItemId = gradingService.getAssignmentByNameOrId(gradebookUuid, siteId, selectedAssign).getId();
+		gradingService.saveGradeAndCommentForStudent(gradebookUuid, siteId, gbItemId, studentUid, gradePoint, gradeComment);
         
         if(selectedMessage != null){
 
@@ -6273,7 +6301,7 @@ public class DiscussionForumTool {
         	msg.setGradeAssignmentName(Long.toString(gbItemId));
         	msg.setTopic((DiscussionTopic) forumManager
         			.getTopicByIdWithMessages(selectedTopic.getTopic().getId()));
-        	Message persistedMessage = forumManager.saveMessage(msg);
+			Message persistedMessage = forumManager.saveMessage(msg);
         }
         
         setSuccessMessage(getResourceBundleString(GRADE_SUCCESSFUL));
@@ -6290,13 +6318,13 @@ public class DiscussionForumTool {
     String eventRef = "";
     String evaluatedItemTitle = "";
     if(selectedMessage != null){
-        eventRef = getEventReference(selectedMessage.getMessage());
+	  	eventRef = getEventReference(selectedMessage.getMessage());
         evaluatedItemTitle = selectedMessage.getMessage().getTitle();
     }else if(selectedTopic != null){
-        eventRef = getEventReference(selectedTopic.getTopic());
+	  	eventRef = getEventReference(selectedTopic.getTopic());
         evaluatedItemTitle = selectedTopic.getTopic().getTitle();
     }else if(selectedForum != null){
-        eventRef = getEventReference(selectedForum.getForum());
+	  	eventRef = getEventReference(selectedForum.getForum());
         evaluatedItemTitle = selectedForum.getForum().getTitle();
     }
 
