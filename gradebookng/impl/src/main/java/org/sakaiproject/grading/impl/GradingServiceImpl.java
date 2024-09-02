@@ -838,6 +838,7 @@ public class GradingServiceImpl implements GradingService {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public void updateAssignment(final String gradebookUid, final String siteId, final Long assignmentId, final Assignment assignmentDefinition) {
+        System.out.println("28.2");
 
         if (!gradingAuthz.isUserAbleToEditAssessments(siteId)) {
             log.error("AUTHORIZATION FAILURE: User {} in gradebook {} attempted to change the definition of assignment {}", getUserUid(),
@@ -847,10 +848,13 @@ public class GradingServiceImpl implements GradingService {
 
         final String validatedName = GradebookHelper.validateAssignmentNameAndPoints(assignmentDefinition);
 
+        System.out.println("28.3: " + validatedName);
         final Gradebook gradebook = this.getGradebook(gradebookUid);
+        System.out.println("28.4: " + gradebook.getName());
 
         final GradebookAssignment assignment = getAssignmentWithoutStatsByID(gradebookUid, assignmentId);
         if (assignment == null) {
+            System.out.println("28.5");
             throw new AssessmentNotFoundException(
                     "There is no assignment with id " + assignmentId + " in gradebook " + gradebookUid);
         }
@@ -861,10 +865,12 @@ public class GradingServiceImpl implements GradingService {
         if (Objects.equals(GradingConstants.GRADE_TYPE_PERCENTAGE, gradebook.getGradeType())
                 && !assignment.getPointsPossible().equals(assignmentDefinition.getPoints())) {
             scaleGrades = true;
+            System.out.println("28.6");
         }
 
         if (Objects.equals(GradingConstants.GRADE_TYPE_POINTS, gradebook.getGradeType()) && assignmentDefinition.getScaleGrades()) {
             scaleGrades = true;
+            System.out.println("28.7");
         }
 
         // external assessments are supported, but not these fields
@@ -872,7 +878,9 @@ public class GradingServiceImpl implements GradingService {
             assignment.setName(validatedName);
             assignment.setPointsPossible(assignmentDefinition.getPoints());
             assignment.setDueDate(assignmentDefinition.getDueDate());
+            System.out.println("28.8: " + assignmentDefinition.getDueDate() + " --> " + assignmentDefinition.getPoints());
         }
+        System.out.println("28.9: " + assignment.getName());
         assignment.setExtraCredit(assignmentDefinition.getExtraCredit());
         assignment.setCounted(assignmentDefinition.getCounted());
         assignment.setReleased(assignmentDefinition.getReleased());
@@ -889,28 +897,34 @@ public class GradingServiceImpl implements GradingService {
         if (assignmentDefinition.getCategoryId() != null) {
             final Category cat = gradingPersistenceManager.getCategory(assignmentDefinition.getCategoryId()).orElse(null);
             assignment.setCategory(cat);
+            System.out.println("28.10");
         } else {
             assignment.setCategory(null);
         }
 
+            System.out.println("28.11");
         updateAssignment(assignment);
 
         if (scaleGrades) {
             scaleGrades(gradebook, assignment, originalPointsPossible);
+            System.out.println("28.12");
         }
 
         // Check if this is a plus course
         if ( plusService.enabled() && isCurrentGbSite(gradebookUid)) {
+            System.out.println("28.13");
             try {
                 final Site site = this.siteService.getSite(gradebookUid);
                 if ( plusService.enabled(site) ) {
                     log.debug("Lineitem updated={} created assignment={} gradebook={}", assignmentDefinition.getLineItem(), assignment.getId(), gradebookUid);
                     plusService.updateLineItem(site, assignmentDefinition);
+                    System.out.println("28.14");
                 }
             } catch (Exception e) {
                 log.error("Could not load site associated with gradebook - lineitem not updated", e);
             }
         }
+        System.out.println("28.15");
     }
 
     private CourseGrade getCourseGrade(Long gradebookId) {
@@ -4640,13 +4654,16 @@ public class GradingServiceImpl implements GradingService {
         //final GradebookAssignment asnFromDb = (GradebookAssignment) session.load(GradebookAssignment.class, assignment.getId());
 
         final Long count = gradingPersistenceManager.countDuplicateAssignments(assignment);
+        System.out.println("28.11.1: " + count);
 
         if (count > 0) {
             throw new ConflictingAssignmentNameException("You can not save multiple assignments in a gradebook with the same name");
         }
+        System.out.println("28.11.2: " + assignment.getExternalAppName() + " --> " + assignment.getExternalData() + " --|> " + assignment.getName() + "  ::>  " + assignment.getPointsPossible());
 
         //session.evict(asnFromDb);
         gradingPersistenceManager.saveAssignment(assignment);
+        System.out.println("28.11.3");
         //session.update(assignment);
     }
 
