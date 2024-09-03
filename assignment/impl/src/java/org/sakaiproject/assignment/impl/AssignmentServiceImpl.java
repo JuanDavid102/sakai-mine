@@ -187,6 +187,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.Assert;
+import org.w3c.dom.CDATASection;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -326,7 +327,71 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
                 Element assignmentElement = assignmentDocument.getDocumentElement();
                 Node assignmentNode = doc.importNode(assignmentElement, true);
                 element.appendChild(assignmentNode);
+
+                // Model answer with optional attachments
+                AssignmentModelAnswerItem modelAnswer = assignmentSupplementItemService.getModelAnswer(assignment.getId());
+                if (modelAnswer != null) {
+                    Element modelAnswerElement = doc.createElement("ModelAnswer");
+
+                    if (modelAnswer.getShowTo() != null) {
+                        modelAnswerElement.setAttribute("showTo", modelAnswer.getShowTo().toString());
+                    }
+
+                    // Write text as CDATA
+                    CDATASection cdata = doc.createCDATASection(modelAnswer.getText());
+                    modelAnswerElement.appendChild(cdata);
+
+                    // Add attachments from the supplementary item
+                    addSupplementaryItemAttachments(doc, modelAnswerElement, assignmentSupplementItemService.getAttachmentListForSupplementItem(modelAnswer), attachments);
+
+                    assignmentNode.appendChild(modelAnswerElement);
+                }
+
+                // Note (text only)
+                AssignmentNoteItem noteItem = assignmentSupplementItemService.getNoteItem(assignment.getId());
+                if (noteItem != null) {
+                    Element noteElement = doc.createElement("PrivateNote");
+
+                    if (noteItem.getShareWith() != null) {
+                        noteElement.setAttribute("shareWith", noteItem.getShareWith().toString());
+                    }
+
+                    // Write text as CDATA
+                    CDATASection cdata = doc.createCDATASection(noteItem.getNote());
+                    noteElement.appendChild(cdata);
+
+                    assignmentNode.appendChild(noteElement);
+                }
+
+                // All Purpose Item (with optional attachments)
+                // Not archived: getHide(), getReleaseDate(), getRetractDate(), getAccessSet()
+                AssignmentAllPurposeItem allPurposeItem = assignmentSupplementItemService.getAllPurposeItem(assignment.getId());
+                if (allPurposeItem != null) {
+                    Element itemElement = doc.createElement("AllPurposeItem");
+
+                    if (allPurposeItem.getTitle() != null) {
+                        itemElement.setAttribute("title", allPurposeItem.getTitle());
+                    }
+
+                    // Write text as CDATA
+                    CDATASection cdata = doc.createCDATASection(allPurposeItem.getText());
+                    itemElement.appendChild(cdata);
+
+                    assignmentNode.appendChild(itemElement);
+
+                    // Add attachments from the supplementary item
+                    addSupplementaryItemAttachments(doc, itemElement, assignmentSupplementItemService.getAttachmentListForSupplementItem(allPurposeItem), attachments);
+                }
+
+                // Add attachmments from the assignment
+                for (String resourceId : assignment.getAttachments()) {
+                    attachments.add(entityManager.newReference(resourceId));
+                }
+
+                // Add the assignment
+                element.appendChild(assignmentNode);
                 assignmentsArchived++;
+
             } catch (Exception e) {
                 log.warn("could not append assignment {} to archive, {}", assignment.getId(), e.getMessage());
             }
@@ -336,6 +401,27 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 
         results.append("completed archiving ").append(getLabel()).append(" context ").append(siteId).append(" count (").append(assignmentsArchived).append(")").append(LINE_SEPARATOR);
         return results.toString();
+    }
+
+    private void addSupplementaryItemAttachments(Document doc, Element item, List<String> itemAttachments, List archiveAttachments) {
+
+        if (itemAttachments.isEmpty()) {
+            return;
+        }
+
+        Element attachmentsElement = doc.createElement("attachments");
+
+        // Add attachments from the supplementary item
+        for (String resourceId : itemAttachments) {
+            archiveAttachments.add(entityManager.newReference(resourceId));
+            Element attachmentElement = doc.createElement("attachment");
+            attachmentElement.appendChild(doc.createTextNode(resourceId));
+            attachmentsElement.appendChild(attachmentElement);
+        }
+
+        item.appendChild(attachmentsElement);
+
+        return;
     }
 
     @Override
@@ -1402,58 +1488,32 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
             throw new PermissionException(sessionManager.getCurrentSessionUserId(), SECURE_UPDATE_ASSIGNMENT, null);
         }
 
-        Collection<String> prevAssignedGroupRefs = assignmentRepository.findGroupsForAssignmentById(assignment.getId());
+        Collection<String> oldGroups = assignmentRepository.findGroupsForAssignmentById(assignment.getId());
         switch (assignment.getTypeOfAccess()) {
             case GROUP:
-                Collection<String> currentAssignedGroupRefs = assignment.getGroups();
-                // get the unassigned Group References by removing the current ones !
-                prevAssignedGroupRefs.removeAll(currentAssignedGroupRefs);
-
-                Site site = null;
-                try {
-                    site = siteService.getSite(assignment.getContext());
-                } catch (IdUnusedException e) {
-                    log.warn("Could not get the site {} for assignment {} while updating it", assignment.getContext(), assignment.getId());
-                }
-                // on Lessons, a group assignment or one with prereq. will be managed through a single (access) group
-                Group anAssignedGroup = site.getGroup(currentAssignedGroupRefs.stream().findFirst().orElse(null));
-                // we can infer it is an ACCESS group if it has the following property
-                boolean accessGroupAssigned = StringUtils.isNotBlank(anAssignedGroup.getProperties().getProperty("lessonbuilder_ref"));
-
-                // If the assigned group is not an ACCESS group...
-                if (accessGroupAssigned == false) {
-                    for (String groupRef : prevAssignedGroupRefs) { // remove locks for groups that were removed or unassigned
-                        try {
-                            AuthzGroup group = authzGroupService.getAuthzGroup(groupRef);
-                            group.setLockForReference(reference, AuthzGroup.RealmLockMode.NONE);
-                            authzGroupService.save(group);
-                        } catch (GroupNotDefinedException | AuthzPermissionException e) {
-                            log.warn("Exception while removing lock for assignment {}, {}", assignment.getId(), e.toString());
-                        }
+                oldGroups.removeAll(assignment.getGroups());
+                for (String groupRef : oldGroups) { // remove locks for groups that were removed
+                    try {
+                        AuthzGroup group = authzGroupService.getAuthzGroup(groupRef);
+                        group.setLockForReference(reference, AuthzGroup.RealmLockMode.NONE);
+                        authzGroupService.save(group);
+                    } catch (GroupNotDefinedException | AuthzPermissionException e) {
+                        log.warn("Exception while removing lock for assignment {}, {}", assignment.getId(), e.toString());
                     }
                 }
                 if (!assignment.getDraft()) { // don't add locks for draft assignments
                     if (assignment.getIsGroup()) { // lock mode ALL for group assignments
-                        for (String groupRef : currentAssignedGroupRefs) {
+                        for (String groupRef : assignment.getGroups()) {
                             try {
-                                Group assignedGroup = site.getGroup(groupRef);
-                                boolean isAccessGroup = StringUtils.isNotBlank(assignedGroup.getProperties().getProperty("lessonbuilder_ref"));
-
                                 AuthzGroup group = authzGroupService.getAuthzGroup(groupRef);
-                                if (isAccessGroup) {
-                                    // exception: it's an ACCESS group, membership won't be locked
-                                    // as users are dynamically added to be able to see the related assignment on Lessons
-                                    group.setLockForReference(reference, AuthzGroup.RealmLockMode.DELETE);
-                                } else {
-                                    group.setLockForReference(reference, AuthzGroup.RealmLockMode.ALL);
-                                }
+                                group.setLockForReference(reference, AuthzGroup.RealmLockMode.ALL);
                                 authzGroupService.save(group);
                             } catch (GroupNotDefinedException | AuthzPermissionException e) {
                                 log.warn("Exception while adding lock ALL for assignment {}, {}", assignment.getId(), e.toString());
                             }
                         }
-                    } else { // lock mode DELETE for assignments released to groups through Lessons
-                        for (String groupRef : currentAssignedGroupRefs) {
+                    } else { // lock mode DELETE for assignments released to groups
+                        for (String groupRef : assignment.getGroups()) {
                             try {
                                 AuthzGroup group = authzGroupService.getAuthzGroup(groupRef);
                                 group.setLockForReference(reference, AuthzGroup.RealmLockMode.DELETE);
@@ -1466,7 +1526,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
                 }
                 break;
             case SITE:
-                for (String groupRef : prevAssignedGroupRefs) { // remove all locks if they exist
+                for (String groupRef : oldGroups) { // remove all locks if they exist
                     try {
                         AuthzGroup group = authzGroupService.getAuthzGroup(groupRef);
                         group.setLockForReference(reference, AuthzGroup.RealmLockMode.NONE);

@@ -402,21 +402,6 @@ public class SakaiBLTIUtil {
 			return true;
 		}
 
-		// Place the custom values into the launch
-		public static void addCustomToLaunch(Properties ltiProps, Properties custom)
-		{
-			Enumeration<?> e = custom.propertyNames();
-			while (e.hasMoreElements()) {
-				String keyStr = (String) e.nextElement();
-				String value =  custom.getProperty(keyStr);
-				setProperty(ltiProps,"custom_"+keyStr,value);
-				String mapKeyStr = BasicLTIUtil.mapKeyName(keyStr);
-				if ( ! mapKeyStr.equals(keyStr) ) {
-					setProperty(ltiProps,"custom_"+mapKeyStr,value);
-				}
-			}
-		}
-
 		public static String encryptSecret(String orig) {
 			String encryptionKey = ServerConfigurationService.getString(BASICLTI_ENCRYPTION_KEY, null);
 			return encryptSecret(orig, encryptionKey);
@@ -545,6 +530,11 @@ public class SakaiBLTIUtil {
 			setProperty(ltiProps, BasicLTIConstants.LIS_PERSON_SOURCEDID, user.getEid());
 			setProperty(lti13subst, LTICustomVars.USER_USERNAME, user.getEid());
 			setProperty(lti13subst, LTICustomVars.PERSON_SOURCEDID, user.getEid());
+
+			ResourceProperties userProperties = user.getProperties();
+			userProperties.getPropertyNames().forEachRemaining(name ->
+				setProperty(lti13subst, BasicLTIConstants.SAKAI_USER_PROPERTY + "." + name, userProperties.getProperty(name))
+			);
 
 			UserTimeService userTimeService = ComponentManager.get(UserTimeService.class);
 			TimeZone tz = userTimeService.getLocalTimeZone(user.getId());
@@ -1218,7 +1208,7 @@ public class SakaiBLTIUtil {
 			log.debug("custom={}", custom);
 
 			// Place the custom values into the launch
-			addCustomToLaunch(ltiProps, custom);
+			LTI13Util.addCustomToLaunch(ltiProps, custom);
 
 			if (isLTI13) {
 				return postLaunchJWT(toolProps, ltiProps, site, tool, content, rb);
@@ -1495,7 +1485,7 @@ public class SakaiBLTIUtil {
 			log.debug("custom={}", custom);
 
 			// Place the custom values into the launch
-			addCustomToLaunch(ltiProps, custom);
+			LTI13Util.addCustomToLaunch(ltiProps, custom);
 
 			if ( isLTI13 ) {
 				Properties toolProps = new Properties();
@@ -1904,23 +1894,19 @@ public class SakaiBLTIUtil {
 				endpoint.scope.add(LTI13ConstantsUtil.SCOPE_SCORE);
 				endpoint.scope.add(LTI13ConstantsUtil.SCOPE_RESULT_READONLY);
 
-				if ( allowOutcomes != 0 && outcomesEnabled() && content != null) {
+				if ( allowOutcomes != 0 && outcomesEnabled() && content != null ) {
 					SakaiLineItem defaultLineItem = LineItemUtil.getDefaultLineItem(site, content);
 					if ( defaultLineItem != null ) endpoint.lineitem = defaultLineItem.id;
 				}
 				if ( allowOutcomes != 0 && outcomesEnabled() ) {
-					// SAK-47261 - Legacy URL patterns with signed placement
-					// endpoint.lineitems = getOurServerUrl() + LTI13_PATH + "lineitems/" + signed_placement;
-					endpoint.lineitems = getOurServerUrl() + LTI13_PATH + "lineitems/" + context_id;
+					endpoint.lineitems = getOurServerUrl() + LTI13_PATH + "lineitems/" + signed_placement;
 				}
 				lj.endpoint = endpoint;
 			}
 
-			if (allowRoster != 0 && rosterEnabled() && context_id != null) {
+			if (allowRoster != 0 && rosterEnabled() && signed_placement != null) {
 				NamesAndRoles nar = new NamesAndRoles();
-				// SAK-47261 - Legacy URL patterns with signed placement
-				// nar.context_memberships_url = getOurServerUrl() + LTI13_PATH + "namesandroles/" + signed_placement;
-				nar.context_memberships_url = getOurServerUrl() + LTI13_PATH + "namesandroles/" + context_id;
+				nar.context_memberships_url = getOurServerUrl() + LTI13_PATH + "namesandroles/" + signed_placement;
 				lj.names_and_roles = nar;
 			}
 
