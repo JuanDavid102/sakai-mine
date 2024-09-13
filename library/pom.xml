@@ -22,10 +22,10 @@
 		<ckeditor-math-extra-plugins></ckeditor-math-extra-plugins>
 		<!-- Empty defaults for a11y-->
 		<ckeditor-a11y-extra-plugins></ckeditor-a11y-extra-plugins>
-		<sakai.skin.source>default</sakai.skin.source>
-		<sakai.skin.target>default-skin</sakai.skin.target>
-		<sakai.skin.customization.file>src/skins/${sakai.skin.source}/src/sass/examples/_empty.scss</sakai.skin.customization.file>
-		<sakai.skin.customization.scss.lib>src/skins/${sakai.skin.source}/src/sass/examples/_empty.scss</sakai.skin.customization.scss.lib>
+		<sakai.skin.source>westaco</sakai.skin.source>
+		<sakai.skin.target>westaco-skin</sakai.skin.target>
+		<sakai.skin.customization.file>src/skins/${sakai.skin.source}/src/sass/customization/customization.scss</sakai.skin.customization.file>
+		<sakai.skin.customization.scss.lib>src/skins/${sakai.skin.source}/src/sass/customization/customization.scss</sakai.skin.customization.scss.lib>
 		<!-- Overwrite with with -Dsakai.skin.customization.file -->
 		<sakai.skin.customization.scss.main>${sakai.skin.customization.file}</sakai.skin.customization.scss.main>
 	</properties>
@@ -563,10 +563,10 @@
 									<directory>${basedir}/src/webapp/assets</directory>
 								</fileset>
 								<fileset>
-									<directory>${basedir}/src/skins/default/node_modules</directory>
+									<directory>${basedir}/src/skins/${sakai.skin.source}/node_modules</directory>
 								</fileset>
 								<fileset>
-									<directory>${basedir}/src/skins/default/target</directory>
+									<directory>${basedir}/src/skins/${sakai.skin.source}/target</directory>
 								</fileset>
 							</filesets>
 						</configuration>

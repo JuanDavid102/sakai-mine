@@ -1,0 +1,58 @@
+/******************************************/
+/* WESTACO SKIN CUSTOMIZATION STARTS HERE */
+/******************************************/
+:root, :root.sakaiUserTheme-dark {
+  --sakai-text-color-inverted: #000000;
+}
+
+.portal-header-logo {
+  background: url(images/wtm_nav.png) !important;
+}
+
+@media (min-width: 768px) {
+  .portal-header::before {
+    content: "";
+    position: absolute;
+    left: 224px;
+    z-index: 1;
+    background-image: url(images/OmvPetromLogo.png);
+    width: 214px;
+    height: 63px;
+  }
+}
+.portal-header {
+  background-image: url(images/wtm_nav.png) !important;
+}
+
+@media (min-width: 768px) {
+  .portal-header {
+    background-image: url(images/wtm_nav2.png) !important;
+  }
+}
+.portal-header .btn.btn-outline-light {
+  background-color: #0c3d83;
+  height: 40px;
+  margin-top: 10px !important;
+  padding: 0 1rem !important;
+}
+
+#sakai-system-indicators button,
+#sakai-system-indicators .Mrphs-sakai-samigo #authorIndexForm\:remove-selected,
+.Mrphs-sakai-samigo #sakai-system-indicators #authorIndexForm\:remove-selected,
+#sakai-system-indicators .Mrphs-sakai-samigo .dataTables_wrapper .dataTables_paginate span .paginate_button, .Mrphs-sakai-samigo .dataTables_wrapper .dataTables_paginate span #sakai-system-indicators .paginate_button {
+  color: #0c3d83 !important;
+}
+
+.portal-header-breadcrumb-item > a {
+  color: #0c3d83 !important;
+}
+
+#header-site-title {
+  margin-left: 230px !important;
+}
+
+/******************************************/
+/* WESTACO SKIN CUSTOMIZATION ENDS HERE */
+/******************************************/
+
+/*# sourceMappingURL=customization.css.map */
