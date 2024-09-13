@@ -177,6 +177,7 @@ public class EntityManagerComponent implements EntityManager {
 
     @Override
     public EntityProducer getEntityProducer(String reference, Reference target) {
+
         if (reference.isEmpty()) return null;
 
         String root = parseReferenceRoot(reference);
@@ -196,6 +197,7 @@ public class EntityManagerComponent implements EntityManager {
 
     private EntityProducer getEntityProducerWithStats(String reference, String referenceRoot, Reference target) {
         count++;
+        System.out.println("88888888888888");
 
         if (count == 1000) {
             count = 0;
@@ -263,15 +265,19 @@ public class EntityManagerComponent implements EntityManager {
     }
 
     private String parseReferenceRoot(String reference) {
+
         int n = reference.indexOf('/', 1);
         if (n > 0) {
             if (reference.charAt(0) == '/') {
+                System.out.println(reference.substring(1, n));
                 return reference.substring(1, n);
             } else {
+                System.out.println(reference.substring(0, n));
                 return reference.substring(0, n);
             }
         } else {
             if (reference.charAt(0) == '/') {
+                System.out.println(reference.substring(1));
                 return reference.substring(1);
             }
         }
@@ -282,6 +288,9 @@ public class EntityManagerComponent implements EntityManager {
 
         // direct lookup
         EntityProducer producer = producers.get(referenceRoot);
+        if (target.getReference().indexOf("presence") != -1) {
+            System.out.println("1010101010: " + (target.getReference()) + " - --> " + target.getContext() + "   ---) " + target.getContainer() + "   ::::)   " + target.getUrl());
+        }
         if (producer != null) {
             if (producer.parseEntityReference(reference, target)) {
                 return producer;

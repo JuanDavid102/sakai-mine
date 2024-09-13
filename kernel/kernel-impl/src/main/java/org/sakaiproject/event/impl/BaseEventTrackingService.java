@@ -584,10 +584,13 @@ public abstract class BaseEventTrackingService implements EventTrackingService
 			this.modify = modify;
 			this.priority = priority;
 
-			// Find the context using the reference (let the service that it belongs to parse it)
 			if (StringUtils.isNotBlank(resource)) {
+				if (event.equals("pres.begin") || event.equals("pres.end"))
+					System.out.println(event + ": Here and here: " + resource);
 				Reference ref = entityManager().newReference(resource);
 				if (ref != null) {
+					if (event.equals("pres.begin") || event.equals("pres.end"))
+						System.out.println(event + ": But not Here: " + ref.getContext());
 					this.context = ref.getContext();
 				}
 			}

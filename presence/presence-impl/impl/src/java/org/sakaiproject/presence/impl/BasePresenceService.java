@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
+import javax.xml.crypto.dsig.Reference;
+
 import lombok.extern.slf4j.Slf4j;
 import org.w3c.dom.Element;
 
@@ -52,14 +54,25 @@ import org.sakaiproject.tool.api.ToolSession;
 import org.sakaiproject.user.api.User;
 import org.sakaiproject.user.api.UserDirectoryService;
 
+import org.sakaiproject.entity.api.EntityTransferrer;
+import org.sakaiproject.entity.api.EntityProducer;
+import org.sakaiproject.site.api.SiteService;
+import org.sakaiproject.site.api.Site;
+import lombok.Setter;
+import java.util.HashMap;
+import java.util.Map;
+import org.sakaiproject.entity.api.EntityManager;
+
 /**
  * <p>
  * Implements the PresenceService, all but a Storage model.
  * </p>
  */
 @Slf4j
-public abstract class BasePresenceService implements PresenceService
+public abstract class BasePresenceService implements PresenceService, EntityProducer
+// Can be also: EntityProducer
 {
+	@Setter protected EntityManager m_entityManager;
 
 	/** SessionState key. */
 	protected final static String SESSION_KEY = "sakai.presence.service";
@@ -76,7 +89,57 @@ public abstract class BasePresenceService implements PresenceService
 
 	/** The maintenance. */
 	protected Maintenance m_maintenance = null;
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public String[] myToolIds()
+	{
+		String[] toolIds = { SESSION_KEY };
+		return toolIds;
+	}
 
+    @Setter private SiteService siteService;
+
+	public Map<String, String> transferCopyEntities(String fromContext, String toContext, List<String> ids, List<String> transferOptions) {
+		System.out.println("AAAAAAAAAAAAAAAAAAA");
+        Map<String, String> transversalMap = new HashMap<>();
+		// String locationId;
+		// checkPresence(locationId, true);
+		// siteService.getUserSites();
+		for (Site site : siteService.getUserSites()) {
+			System.out.println("BBBBBBBBBBBBBBBBB");
+			if (checkPresence(site.getId(), true)) {
+				Session curSession = m_sessionManager.getCurrentSession();
+				ToolSession ts = curSession.getToolSession(SESSION_KEY);
+				Presence oldPresence = (Presence) ts.getAttribute(site.getId());
+				Presence nPresence = new Presence(oldPresence.getSession(), site.getId(), m_timeout);
+				System.out.println("CCC: " + this.presenceReference(site.getId()));
+				transversalMap.put(this.presenceReference(site.getId()), this.presenceReference(site.getId()));
+			}
+		}
+        return transversalMap;
+    }
+
+	public Map<String, String> transferCopyEntities(String fromContext, String toContext, List<String> ids, List<String> transferOptions, boolean cleanup) {
+
+        Map<String, String> transversalMap = new HashMap<>();
+
+        try {
+            if (cleanup) {
+				for (Site site : siteService.getUserSites()) {
+					if (checkPresence(site.getId(), true)) {
+						removePresence(site.getId());
+					}
+				}
+            }
+            transversalMap.putAll(transferCopyEntities(fromContext, toContext, ids, transferOptions));
+        } catch (Exception e) {
+            log.info("End removing Assignmentt data {}", e.getMessage());
+        }
+
+        return transversalMap;
+    }
 
 	/**********************************************************************************************************************************************************************************************************************************************************
 	 * Constructors, Dependencies and their setter methods
@@ -186,6 +249,9 @@ public abstract class BasePresenceService implements PresenceService
 	{
 		try
 		{
+			m_entityManager = ComponentManager.get(EntityManager.class);
+			System.out.println("--------------------------------------->   ");
+			m_entityManager.registerEntityProducer(this, REFERENCE_ROOT);
 			// storage
 			m_storage = newStorage();
 
@@ -230,7 +296,6 @@ public abstract class BasePresenceService implements PresenceService
 				
 			});
 
-
 		}
 		catch (Exception t)
 		{
@@ -256,8 +321,8 @@ public abstract class BasePresenceService implements PresenceService
 	 */
 	public String presenceReference(String id)
 	{
+		System.out.println(REFERENCE_ROOT + "     ->      " + Entity.SEPARATOR + "     -:      " + id);
 		return REFERENCE_ROOT + Entity.SEPARATOR + id;
-
 	} // presenceReference
 
 	/**
@@ -298,7 +363,8 @@ public abstract class BasePresenceService implements PresenceService
 			m_storage.setPresence(curSession.getId(), locationId);
 
 			// generate the event
-			Event event = m_eventTrackingService.newEvent(EVENT_PRESENCE, presenceReference(locationId), true);
+			System.out.println(EVENT_PRESENCE + "         :-D     " + locationId + "     ---------------> " + locationId.substring(0, locationId.indexOf("-presence")));
+			Event event = m_eventTrackingService.newEvent(EVENT_PRESENCE, presenceReference(locationId), locationId.substring(0, locationId.indexOf("-presence")), true, 0);
 			m_eventTrackingService.post(event, curSession);
 
 			// create a presence for tracking
@@ -330,7 +396,8 @@ public abstract class BasePresenceService implements PresenceService
 			m_storage.removePresence(curSession.getId(), locationId);
 
 			// generate the event
-			Event event = m_eventTrackingService.newEvent(EVENT_ABSENCE, presenceReference(locationId), true);
+			System.out.println(EVENT_ABSENCE + "    :-?");
+			Event event = m_eventTrackingService.newEvent(EVENT_ABSENCE, presenceReference(locationId), locationId.substring(0, locationId.indexOf("-presence")), true, 0);
 			m_eventTrackingService.post(event, curSession);
 
 			// remove from state
@@ -359,8 +426,10 @@ public abstract class BasePresenceService implements PresenceService
 		// send presence end events for these
 		for (String locationId  : presence)
 		{
+			System.out.println(EVENT_ABSENCE + "    :-O");
 			Event event = m_eventTrackingService.newEvent(PresenceService.EVENT_ABSENCE, 
-					presenceReference(locationId), true);
+					presenceReference(locationId), locationId.substring(0, locationId.indexOf("-presence")), 
+					true, 0);
 			m_eventTrackingService.post(event, session);
 		}
 
@@ -640,6 +709,11 @@ public abstract class BasePresenceService implements PresenceService
 			m_expireTime = System.currentTimeMillis() + m_presence_timeout * 1000;
 		}
 
+		public UsageSession getSession()
+		{
+			return m_session;
+		}
+
 		public void deactivate()
 		{
 			m_active = false;
@@ -680,7 +754,10 @@ public abstract class BasePresenceService implements PresenceService
 				m_storage.removePresence(m_session.getId(), m_locationId);
 
 				// generate the event
-				Event event = m_eventTrackingService.newEvent(EVENT_ABSENCE, presenceReference(m_locationId), true);
+				System.out.println(EVENT_ABSENCE + "    :-/");
+				Event event = m_eventTrackingService.newEvent(EVENT_ABSENCE, presenceReference(m_locationId),
+						m_locationId.substring(0, m_locationId.indexOf("-presence")), true, 0);
+						
 				m_eventTrackingService.post(event, m_session);
 			}
 		}

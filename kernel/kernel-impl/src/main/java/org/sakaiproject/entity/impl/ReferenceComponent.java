@@ -105,6 +105,7 @@ public class ReferenceComponent implements Reference {
      * @param reference The resource reference.
      */
     public ReferenceComponent(Reference reference) {
+        System.out.println("444444444444444");
         ReferenceComponent fromRef = (ReferenceComponent) reference;
 
         this.reference = fromRef.reference;
