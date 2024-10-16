@@ -253,7 +253,7 @@ public class IndexController {
          
             
             JSONObject assignmentGroupArray = new JSONObject();
-            BigDecimal assignmentGroupTotalWeight = BigDecimal.ZERO;
+            double assignmentGroupTotalWeight = 0;
             int RIGHT_READ_ONLY_COLS = 0;
             for(AssignmentGroup assignmentGroup : assignmentGroupList) {
                 JSONObject jsonAssignmentGroup = new JSONObject();
@@ -262,10 +262,10 @@ public class IndexController {
                 jsonAssignmentGroup.put("assignmentGroupWeight", assignmentGroup.getGroupWeight());
                 assignmentGroupArray.put(assignmentGroup.getId().toString(), jsonAssignmentGroup);
                 tableHeaderList.add(String.format("%s (%s%%)", assignmentGroup.getName(), assignmentGroup.getGroupWeight().toString()));
-                assignmentGroupTotalWeight = assignmentGroupTotalWeight.add(new BigDecimal(assignmentGroup.getGroupWeight()));
+                assignmentGroupTotalWeight += assignmentGroup.getGroupWeight();
                 RIGHT_READ_ONLY_COLS++;
             }
-            model.addAttribute("groupWeightsNot100", assignmentGroupTotalWeight.compareTo(new BigDecimal(100)) != 0);
+            model.addAttribute("groupWeightsNot100", (new BigDecimal(assignmentGroupTotalWeight)).compareTo(new BigDecimal(100)) != 0);
 
             tableHeaderList.add(messageSource.getMessage("shared_current_grade", null, LocaleContextHolder.getLocale()));
             tableHeaderList.add(messageSource.getMessage("shared_final_grade", null, LocaleContextHolder.getLocale()));
